@@ -1,0 +1,9 @@
+{
+  "name":"GoWakaAPI",
+  "appType":"jar",
+  "port":"8081",
+  "envs":[
+    {"name":"APP_NAME","value":"GoWakaAPI"}
+  ],
+  "services":[]
+}
