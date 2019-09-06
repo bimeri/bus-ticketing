@@ -8,3 +8,6 @@ The GoWaka service aim at providing an online booking system in Africa and other
 
 ## Domain Object
 ![GoWaka Domain Object](./docs/GoWaka-Domain.png)
+
+
+Project Start Date September, 23 2019
