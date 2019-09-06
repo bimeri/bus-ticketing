@@ -93,8 +93,8 @@ jobs:
         path: ./source-code-from-gitlab/ci/tasks/deploy-dev.sh
       params:
         LDC_TARGET: ((ldc_target))
-        LDC_USERNAME: ((ldc_usernam))
-        LDC_PASSWORD: ((ldc)_password))
+        LDC_USERNAME: ((ldc_username))
+        LDC_PASSWORD: ((ldc_password))
 
 
 - name: major
