@@ -4,14 +4,8 @@ import net.gowaka.gowaka.GlobalConstants;
 import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.CreateUserRequest;
-import net.gowaka.gowaka.dto.EmailPasswordDTO;
-import net.gowaka.gowaka.dto.TokenDTO;
-import net.gowaka.gowaka.dto.UserDTO;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
+import net.gowaka.gowaka.dto.*;
+import net.gowaka.gowaka.network.api.apisecurity.model.*;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.stereotype.Service;
@@ -82,6 +76,18 @@ public class UserServiceImpl implements UserService {
         tokenDTO.setAccessToken(userToken.getToken());
 
         return tokenDTO;
+    }
+
+    @Override
+    public void changeUserPassword(ChangePasswordDTO changePasswordDTO) {
+
+        ApiSecurityChangePassword apiSecurityChangePassword = new ApiSecurityChangePassword();
+        apiSecurityChangePassword.setUsername(changePasswordDTO.getEmail());
+        apiSecurityChangePassword.setOldPassword(changePasswordDTO.getOldPassword());
+        apiSecurityChangePassword.setPassword(changePasswordDTO.getPassword());
+
+        apiSecurityService.changePassword(apiSecurityChangePassword);
+
     }
 
     private ApiSecurityAccessToken getApiSecurityAccessToken() {

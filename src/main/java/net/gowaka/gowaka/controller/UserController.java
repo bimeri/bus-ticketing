@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.CreateUserRequest;
-import net.gowaka.gowaka.dto.EmailPasswordDTO;
-import net.gowaka.gowaka.dto.TokenDTO;
-import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +31,11 @@ public class UserController {
     @PostMapping("/public/login")
     ResponseEntity<TokenDTO> loginUser(@RequestBody EmailPasswordDTO emailPasswordDTO){
         return ResponseEntity.ok(userService.loginUser(emailPasswordDTO));
+    }
+    @PostMapping("/public/change_password")
+    ResponseEntity<?> changeUserPassword(@RequestBody ChangePasswordDTO changePasswordDTO){
+        userService.changeUserPassword(changePasswordDTO);
+        return ResponseEntity.noContent().build();
     }
 
 }

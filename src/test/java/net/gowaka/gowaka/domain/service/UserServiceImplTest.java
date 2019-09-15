@@ -4,11 +4,9 @@ package net.gowaka.gowaka.domain.service;
 import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.CreateUserRequest;
-import net.gowaka.gowaka.dto.EmailPasswordDTO;
-import net.gowaka.gowaka.dto.TokenDTO;
-import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
@@ -42,6 +40,7 @@ public class UserServiceImplTest {
     ArgumentCaptor<ApiSecurityUser> apiSecurityUserArgumentCaptor;
     ArgumentCaptor<String> stringArgumentCaptor;
     ArgumentCaptor<User> userArgumentCaptor;
+    ArgumentCaptor<ApiSecurityChangePassword> apiSecurityChangePasswordArgumentCaptor;
 
     @Before
     public void setUp() {
@@ -130,6 +129,26 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
 
+
+    }
+
+    @Test
+    public void changeUserPassword_calls_ApiSecurityService() {
+        ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
+        changePasswordDTO.setEmail("example@example.com");
+        changePasswordDTO.setOldPassword("secret");
+        changePasswordDTO.setPassword("new-secret");
+
+        apiSecurityChangePasswordArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityChangePassword.class);
+
+        userService.changeUserPassword(changePasswordDTO);
+
+        verify(mockApiSecurityService).changePassword(apiSecurityChangePasswordArgumentCaptor.capture());
+
+        ApiSecurityChangePassword apiSecurityChangePasswordValue = apiSecurityChangePasswordArgumentCaptor.getValue();
+        assertThat(apiSecurityChangePasswordValue.getUsername()).isEqualTo("example@example.com");
+        assertThat(apiSecurityChangePasswordValue.getOldPassword()).isEqualTo("secret");
+        assertThat(apiSecurityChangePasswordValue.getPassword()).isEqualTo("new-secret");
 
     }
 }

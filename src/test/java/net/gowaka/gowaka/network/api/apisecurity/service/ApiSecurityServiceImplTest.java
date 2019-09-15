@@ -1,10 +1,7 @@
 package net.gowaka.gowaka.network.api.apisecurity.service;
 
 import net.gowaka.gowaka.network.api.apisecurity.config.ApiSecurityConfig;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
-import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
+import net.gowaka.gowaka.network.api.apisecurity.model.*;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +47,7 @@ public class ApiSecurityServiceImplTest {
         apiSecurityConfig.setClientAuthorizationPath("/api/public/v1/clients/authorized");
         apiSecurityConfig.setUserAuthorizationPath("/api/public/v1/users/authorized");
         apiSecurityConfig.setRegisterUserPath("/api/protected/v1/users");
+        apiSecurityConfig.setChangeUserPasswordPath("/api/public/v1/users/password");
         apiSecurityService = new ApiSecurityServiceImpl(apiSecurityConfig, mockRestTemplate);
 
         httpEntityArgumentCaptor = ArgumentCaptor.forClass(HttpEntity.class);
@@ -141,4 +139,33 @@ public class ApiSecurityServiceImplTest {
         assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityUser.class);
 
     }
+
+    @Test
+    public void changePassword_calls_RestTemplate() {
+
+        ApiSecurityChangePassword apiSecurityChangePassword = new ApiSecurityChangePassword();
+        apiSecurityChangePassword.setUsername("example@example.com");
+        apiSecurityChangePassword.setPassword("secret");
+        apiSecurityChangePassword.setOldPassword("new-secret");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<ApiSecurityChangePassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityChangePassword(), HttpStatus.OK));
+
+        apiSecurityService.changePassword(apiSecurityChangePassword);
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/password");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(Void.class);
+
+    }
+
+
 }

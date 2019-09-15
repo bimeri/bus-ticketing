@@ -202,4 +202,25 @@ public class UserControllerIntegrationTest {
     }
 
 
+    @Test
+    public void changeUserPassword_success_returns_200() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/users/password",
+                HttpStatus.NO_CONTENT, "");
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("info@go-groups.net");
+        emailPasswordDTO.setPassword("secret");
+
+        RequestBuilder requestBuilder = post("/api/public/change_password")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+    }
+
+
 }

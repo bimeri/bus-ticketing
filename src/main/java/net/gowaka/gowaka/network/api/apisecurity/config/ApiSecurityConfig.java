@@ -17,4 +17,5 @@ public class ApiSecurityConfig {
     private String clientAuthorizationPath;
     private String userAuthorizationPath;
     private String registerUserPath;
+    private String changeUserPasswordPath;
 }
