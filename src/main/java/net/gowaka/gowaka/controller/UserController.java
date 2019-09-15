@@ -1,6 +1,8 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.TokenDTO;
 import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,4 +31,9 @@ public class UserController {
     ResponseEntity<UserDTO> createUser(@RequestBody CreateUserRequest createUserRequest){
         return ResponseEntity.ok(userService.createUser(createUserRequest));
     }
+    @PostMapping("/public/login")
+    ResponseEntity<TokenDTO> loginUser(@RequestBody EmailPasswordDTO emailPasswordDTO){
+        return ResponseEntity.ok(userService.loginUser(emailPasswordDTO));
+    }
+
 }

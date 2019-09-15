@@ -4,6 +4,7 @@ import net.gowaka.gowaka.network.api.apisecurity.config.ApiSecurityConfig;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,7 @@ public class ApiSecurityServiceImplTest {
         apiSecurityConfig.setHost("http://localhost");
         apiSecurityConfig.setPort("8080");
         apiSecurityConfig.setClientAuthorizationPath("/api/public/v1/clients/authorized");
+        apiSecurityConfig.setUserAuthorizationPath("/api/public/v1/users/authorized");
         apiSecurityConfig.setRegisterUserPath("/api/protected/v1/users");
         apiSecurityService = new ApiSecurityServiceImpl(apiSecurityConfig, mockRestTemplate);
 
@@ -75,6 +77,32 @@ public class ApiSecurityServiceImplTest {
                 httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
 
         assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/clients/authorized");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityAccessToken.class);
+
+    }
+
+    @Test
+    public void getUserToken_calls_RestTemplate() {
+        ApiSecurityUsernamePassword apiSecurityUsernamePassword = new ApiSecurityUsernamePassword();
+        apiSecurityUsernamePassword.setUsername("username");
+        apiSecurityUsernamePassword.setPassword("secret");
+        apiSecurityUsernamePassword.setAppName("GoWaka");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<ApiSecurityUsernamePassword> expectedRequest = new HttpEntity<>(apiSecurityUsernamePassword,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityAccessToken(), HttpStatus.OK));
+
+        apiSecurityService.getUserToken(apiSecurityUsernamePassword);
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/authorized");
         assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
         assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
         assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityAccessToken.class);

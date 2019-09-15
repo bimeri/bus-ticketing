@@ -1,6 +1,8 @@
 package net.gowaka.gowaka.service;
 
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.TokenDTO;
 import net.gowaka.gowaka.dto.UserDTO;
 
 /**
@@ -10,4 +12,5 @@ import net.gowaka.gowaka.dto.UserDTO;
 public interface UserService {
 
     UserDTO createUser(CreateUserRequest createUserRequest);
+    TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO);
 }

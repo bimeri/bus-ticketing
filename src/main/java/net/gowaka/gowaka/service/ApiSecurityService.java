@@ -3,6 +3,7 @@ package net.gowaka.gowaka.service;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
 
 /**
  * Author: Edward Tanko <br/>
@@ -11,5 +12,6 @@ import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
 public interface ApiSecurityService {
 
     ApiSecurityAccessToken getClientToken(ApiSecurityClientUser apiSecurityClientUser);
+    ApiSecurityAccessToken getUserToken(ApiSecurityUsernamePassword apiSecurityUsernamePassword);
     ApiSecurityUser registerUser(ApiSecurityUser apiSecurityUser, String clientToken);
 }

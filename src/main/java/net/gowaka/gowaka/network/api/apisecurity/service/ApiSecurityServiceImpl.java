@@ -4,6 +4,7 @@ import net.gowaka.gowaka.network.api.apisecurity.config.ApiSecurityConfig;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,6 +40,18 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getClientAuthorizationPath();
 
         HttpEntity<ApiSecurityClientUser> request = new HttpEntity<>(apiSecurityClientUser,headers);
+
+        return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityAccessToken.class).getBody();
+
+    }
+
+    @Override
+    public ApiSecurityAccessToken getUserToken(ApiSecurityUsernamePassword apiSecurityUsernamePassword) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getUserAuthorizationPath();
+
+        HttpEntity<ApiSecurityUsernamePassword> request = new HttpEntity<>(apiSecurityUsernamePassword,headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityAccessToken.class).getBody();
 

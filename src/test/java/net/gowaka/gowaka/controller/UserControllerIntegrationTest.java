@@ -3,6 +3,7 @@ package net.gowaka.gowaka.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +54,13 @@ public class UserControllerIntegrationTest {
             "  \"version\": \"v1\",\n" +
             "  \"token\": \"jwt-token\"\n" +
             "}";
+    private String successUserTokenResponse = "{\n" +
+            "  \"header\": \"Authorization\",\n" +
+            "  \"type\": \"Bearer\",\n" +
+            "  \"issuer\": \"API-Security\",\n" +
+            "  \"version\": \"v1\",\n" +
+            "  \"token\": \"jwt-token-user\"\n" +
+            "}";
 
     private String successUserResponse = "{\n" +
             "  \"id\": 1,\n" +
@@ -62,7 +70,13 @@ public class UserControllerIntegrationTest {
             "  \"roles\": \"users\"\n" +
             "}";
 
-    private String failureUserResponse = "{\n" +
+    private String failureUserTokenResponse = "{\n" +
+            "  \"code\": \"BAD_CREDENTIALS\",\n" +
+            "  \"message\": \"Wrong  username or password!\",\n" +
+            "  \"path\": \"/api/public/v1/users/authorized\"\n" +
+            "}";
+
+ private String failureUserResponse = "{\n" +
             "  \"code\": \"INVALID_EMAIL\",\n" +
             "  \"message\": \"Invalid email address.\",\n" +
             "  \"path\": \"/api/protected/v1/users\"\n" +
@@ -140,5 +154,52 @@ public class UserControllerIntegrationTest {
                 .andReturn();
 
     }
+
+    @Test
+    public void loginUser_success_returns_200() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
+                HttpStatus.OK, successUserTokenResponse);
+
+        String expectedResponse = "{\"header\":\"Authorization\",\"issuer\":\"API-Security\",\"accessToken\":\"jwt-token-user\",\"type\":\"Bearer\"}";
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("info@go-groups.net");
+        emailPasswordDTO.setPassword("secret");
+
+        RequestBuilder requestBuilder = post("/api/public/login")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+
+    }
+
+    @Test
+    public void loginUser_failed_returns_401() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
+                HttpStatus.UNAUTHORIZED, failureUserTokenResponse);
+
+        String expectedResponse = "{\"code\":\"BAD_CREDENTIALS\",\"message\":\"Wrong  username or password!\",\"endpoint\":\"/api/public/login\"}";
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("info@go-groups.net");
+        emailPasswordDTO.setPassword("secret");
+
+        RequestBuilder requestBuilder = post("/api/public/login")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+
+    }
+
 
 }

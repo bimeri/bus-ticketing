@@ -15,5 +15,6 @@ public class ApiSecurityConfig {
     private String host;
     private String port;
     private String clientAuthorizationPath;
+    private String userAuthorizationPath;
     private String registerUserPath;
 }

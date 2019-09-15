@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +33,12 @@ public class UserControllerTest {
         CreateUserRequest createUserRequest = new CreateUserRequest();
         userController.createUser(createUserRequest);
         verify(mockUserService).createUser(createUserRequest);
+    }
+    @Test
+    public void loginUser_calls_UserService() {
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        userController.loginUser(emailPasswordDTO);
+        verify(mockUserService).loginUser(emailPasswordDTO);
     }
 
 }

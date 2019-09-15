@@ -5,10 +5,13 @@ import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.TokenDTO;
 import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityClientUser;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUsernamePassword;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.stereotype.Service;
@@ -36,11 +39,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO createUser(CreateUserRequest createUserRequest){
 
-        ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
-        apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());
-        apiSecurityClientUser.setClientSecret(clientUserCredConfig.getClientSecret());
-
-        ApiSecurityAccessToken clientToken = apiSecurityService.getClientToken(apiSecurityClientUser);
+        ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
         String roles = GlobalConstants.USERS;
 
@@ -65,6 +64,32 @@ public class UserServiceImpl implements UserService {
         userDTO.setRoles(Arrays.asList(roles));
 
         return userDTO;
+    }
+
+    @Override
+    public TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO) {
+
+        ApiSecurityUsernamePassword apiSecurityUsernamePassword = new ApiSecurityUsernamePassword();
+        apiSecurityUsernamePassword.setUsername(emailPasswordDTO.getEmail());
+        apiSecurityUsernamePassword.setPassword(emailPasswordDTO.getPassword());
+        apiSecurityUsernamePassword.setAppName(clientUserCredConfig.getAppName());
+
+        ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
+        TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setHeader(userToken.getHeader());
+        tokenDTO.setIssuer(userToken.getIssuer());
+        tokenDTO.setType(userToken.getType());
+        tokenDTO.setAccessToken(userToken.getToken());
+
+        return tokenDTO;
+    }
+
+    private ApiSecurityAccessToken getApiSecurityAccessToken() {
+        ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
+        apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());
+        apiSecurityClientUser.setClientSecret(clientUserCredConfig.getClientSecret());
+
+        return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
 }

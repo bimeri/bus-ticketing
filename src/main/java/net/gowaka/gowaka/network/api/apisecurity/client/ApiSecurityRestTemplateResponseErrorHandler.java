@@ -49,6 +49,9 @@ public class ApiSecurityRestTemplateResponseErrorHandler implements ResponseErro
             case NOT_FOUND:
                 errorResponse = new ObjectMapper().readValue(content, ApiSecurityErrorResponse.class);
                 throw new ApiException(errorResponse.getMessage(), ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            case UNAUTHORIZED:
+                errorResponse = new ObjectMapper().readValue(content, ApiSecurityErrorResponse.class);
+                throw new ApiException(errorResponse.getMessage(), errorResponse.getCode(), HttpStatus.UNAUTHORIZED);
             default:
                 throw new ApiException("An unexpected error occurred.", ErrorCodes.INT_SERVER_ERROR.toString(),  HttpStatus.INTERNAL_SERVER_ERROR);
 

@@ -14,4 +14,5 @@ import org.springframework.stereotype.Component;
 public class ClientUserCredConfig {
     private String clientId;
     private String clientSecret;
+    private String appName;
 }

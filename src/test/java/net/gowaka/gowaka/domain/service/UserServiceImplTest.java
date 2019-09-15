@@ -5,6 +5,8 @@ import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.TokenDTO;
 import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
@@ -47,6 +49,7 @@ public class UserServiceImplTest {
         this.clientUserCredConfig = new ClientUserCredConfig();
         this.clientUserCredConfig.setClientId("client-id");
         this.clientUserCredConfig.setClientId("client-secret");
+        this.clientUserCredConfig.setAppName("GoWaka");
 
         userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig);
 
@@ -102,4 +105,31 @@ public class UserServiceImplTest {
     }
 
 
+    @Test
+    public void loginUser_calls_ApiSecurityService() {
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("example@example.com");
+        emailPasswordDTO.setPassword("secret");
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        accessToken.setHeader("Authorization");
+        accessToken.setIssuer("Api-Security");
+        accessToken.setType("Bearer");
+        accessToken.setVersion("v1");
+
+        when(mockApiSecurityService.getUserToken(any()))
+                .thenReturn(accessToken);
+
+        TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO);
+
+        verify(mockApiSecurityService).getUserToken(any());
+        assertThat(tokenDTO.getAccessToken()).isEqualTo("jwt-token");
+        assertThat(tokenDTO.getHeader()).isEqualTo("Authorization");
+        assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
+        assertThat(tokenDTO.getType()).isEqualTo("Bearer");
+
+
+    }
 }
