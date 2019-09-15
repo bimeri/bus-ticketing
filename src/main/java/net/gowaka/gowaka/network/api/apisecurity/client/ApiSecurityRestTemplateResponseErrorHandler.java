@@ -26,34 +26,35 @@ public class ApiSecurityRestTemplateResponseErrorHandler implements ResponseErro
     @Override
     public boolean hasError(ClientHttpResponse clientHttpResponse) throws IOException {
         return (clientHttpResponse.getStatusCode().series() == CLIENT_ERROR
-                        || clientHttpResponse.getStatusCode().series() == SERVER_ERROR);
+                || clientHttpResponse.getStatusCode().series() == SERVER_ERROR);
     }
 
     @Override
     public void handleError(ClientHttpResponse clientHttpResponse) throws IOException {
 
         ApiSecurityErrorResponse errorResponse = null;
-        String content = StreamUtils.copyToString(clientHttpResponse.getBody(), Charset.defaultCharset());
+        String content = null;
 
-        switch (clientHttpResponse.getStatusCode()){
+        switch (clientHttpResponse.getStatusCode()) {
 
             case FORBIDDEN:
                 throw new AuthorizationException("Access Denied.");
             case GATEWAY_TIMEOUT:
-                throw  new ApiException("External service down.",ErrorCodes.EXT_SERVICE_UNAVAILABLE.toString(), HttpStatus.SERVICE_UNAVAILABLE);
+                throw new ApiException("External service down.", ErrorCodes.EXT_SERVICE_UNAVAILABLE.toString(), HttpStatus.SERVICE_UNAVAILABLE);
             case BAD_GATEWAY:
                 throw new ApiException("External service error.", ErrorCodes.EXT_SERVER_ERROR.toString(), HttpStatus.BAD_GATEWAY);
             case UNPROCESSABLE_ENTITY:
+                content = StreamUtils.copyToString(clientHttpResponse.getBody(), Charset.defaultCharset());
                 errorResponse = new ObjectMapper().readValue(content, ApiSecurityErrorResponse.class);
                 throw new ApiException(errorResponse.getMessage(), errorResponse.getCode(), HttpStatus.UNPROCESSABLE_ENTITY);
             case NOT_FOUND:
+                content = StreamUtils.copyToString(clientHttpResponse.getBody(), Charset.defaultCharset());
                 errorResponse = new ObjectMapper().readValue(content, ApiSecurityErrorResponse.class);
                 throw new ApiException(errorResponse.getMessage(), ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
             case UNAUTHORIZED:
-                errorResponse = new ObjectMapper().readValue(content, ApiSecurityErrorResponse.class);
-                throw new ApiException(errorResponse.getMessage(), errorResponse.getCode(), HttpStatus.UNAUTHORIZED);
+                throw new ApiException("Wrong credentials.", ErrorCodes.BAD_CREDENTIALS.toString(), HttpStatus.UNAUTHORIZED);
             default:
-                throw new ApiException("An unexpected error occurred.", ErrorCodes.INT_SERVER_ERROR.toString(),  HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new ApiException("An unexpected error occurred.", ErrorCodes.INT_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
 
         }
 

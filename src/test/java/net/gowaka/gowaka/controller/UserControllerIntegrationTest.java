@@ -76,7 +76,7 @@ public class UserControllerIntegrationTest {
             "  \"path\": \"/api/public/v1/users/authorized\"\n" +
             "}";
 
- private String failureUserResponse = "{\n" +
+    private String failureUserResponse = "{\n" +
             "  \"code\": \"INVALID_EMAIL\",\n" +
             "  \"message\": \"Invalid email address.\",\n" +
             "  \"path\": \"/api/protected/v1/users\"\n" +
@@ -95,9 +95,9 @@ public class UserControllerIntegrationTest {
         mockServer.reset();
     }
 
-    private void startMockServerWith(String url, HttpStatus status, String response){
+    private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
-                .andExpect(header("content-type","application/json;charset=UTF-8"))
+                .andExpect(header("content-type", "application/json;charset=UTF-8"))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
@@ -105,10 +105,10 @@ public class UserControllerIntegrationTest {
     public void createUser_success_returns_200() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
-                HttpStatus.OK,successClientTokenResponse);
+                HttpStatus.OK, successClientTokenResponse);
 
         startMockServerWith("http://localhost:8082/api/protected/v1/users",
-                HttpStatus.OK,successUserResponse);
+                HttpStatus.OK, successUserResponse);
 
         String expectedResponse = "{\"id\":\"1\",\"fullName\":\"Jesus Christ\",\"email\":\"info@go-groups.net\",\"roles\":[\"users\"]}";
 
@@ -132,10 +132,10 @@ public class UserControllerIntegrationTest {
     public void createUser_failure_returns_422() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
-                HttpStatus.OK,successClientTokenResponse);
+                HttpStatus.OK, successClientTokenResponse);
 
         startMockServerWith("http://localhost:8082/api/protected/v1/users",
-                HttpStatus.UNPROCESSABLE_ENTITY,failureUserResponse);
+                HttpStatus.UNPROCESSABLE_ENTITY, failureUserResponse);
 
         String expectedResponse = "{\"code\":\"INVALID_EMAIL\",\"message\":\"Invalid email address.\",\"endpoint\":\"/api/public/register\"}";
 
@@ -184,7 +184,7 @@ public class UserControllerIntegrationTest {
         startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
                 HttpStatus.UNAUTHORIZED, failureUserTokenResponse);
 
-        String expectedResponse = "{\"code\":\"BAD_CREDENTIALS\",\"message\":\"Wrong  username or password!\",\"endpoint\":\"/api/public/login\"}";
+        String expectedResponse = "{\"code\":\"BAD_CREDENTIALS\",\"message\":\"Wrong credentials.\",\"endpoint\":\"/api/public/login\"}";
 
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
         emailPasswordDTO.setEmail("info@go-groups.net");
