@@ -76,6 +76,13 @@ public class UserControllerIntegrationTest {
             "  \"path\": \"/api/public/v1/users/authorized\"\n" +
             "}";
 
+    private String failureChangePasswordResponse = "{\n" +
+            "  \"code\": \"BAD_USER_CREDENTIALS\",\n" +
+            "  \"message\": \"Your old password does not match.\",\n" +
+            "  \"path\": \"/api/public/v1/users/password\"\n" +
+            "}";
+
+
     private String failureUserResponse = "{\n" +
             "  \"code\": \"INVALID_EMAIL\",\n" +
             "  \"message\": \"Invalid email address.\",\n" +
@@ -218,6 +225,29 @@ public class UserControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
+                .andReturn();
+
+    }
+
+    @Test
+    public void changeUserPassword_failure_returns_422() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/users/password",
+                HttpStatus.UNPROCESSABLE_ENTITY, failureChangePasswordResponse);
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("info@go-groups.net");
+        emailPasswordDTO.setPassword("secret");
+
+        String expectedResponse = "{\"code\":\"BAD_USER_CREDENTIALS\",\"message\":\"Your old password does not match.\",\"endpoint\":\"/api/public/change_password\"}";
+
+        RequestBuilder requestBuilder = post("/api/public/change_password")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().json(expectedResponse))
                 .andReturn();
 
     }
