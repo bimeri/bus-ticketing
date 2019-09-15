@@ -37,9 +37,6 @@ public class JwtTokenProvider {
   @Value("${security.jwt.token.expireLength:3600000}")
   private long validityInMilliseconds = 3600000;
 
-  @Value("${spring.application.name}")
-  private String applicationName = "GOWAKA";
-
   private Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
   @PostConstruct
@@ -76,7 +73,7 @@ public class JwtTokenProvider {
     String userId = claims.get("id").toString();
     String userFullName = claims.get("fullName").toString();
     String auth = claims.get("auth").toString();
-    ArrayList<Privilege> privileges;
+    List<String> privileges;
 
     try {
       privileges = new ObjectMapper().readValue(auth, new TypeReference<List<String>>(){});
@@ -87,8 +84,7 @@ public class JwtTokenProvider {
     logger.info("{}",privileges);
 
     List<GrantedAuthority> appGrantedAuthorities = privileges.stream()
-            .filter(privilege -> privilege.getPrivilegeCategory().getName().equalsIgnoreCase(applicationName))
-            .map(privilege -> new AppGrantedAuthority("ROLE_"+privilege.getName()))
+            .map(privilege -> new AppGrantedAuthority("ROLE_"+privilege))
             .collect(Collectors.toList());
 
     UserDetailsImpl user = new UserDetailsImpl();

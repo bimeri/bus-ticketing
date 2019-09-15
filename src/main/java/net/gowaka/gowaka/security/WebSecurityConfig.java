@@ -40,10 +40,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Entry points
         http.authorizeRequests()
-
                 .antMatchers("/api/v1/public/**").permitAll()
                 // Disallow everything else..
-                .antMatchers("/api/v1/protected/**").authenticated();
+                .antMatchers("/api/**").authenticated();
 
         // If a user try to access a resource without having enough permissions
         http.exceptionHandling().accessDeniedPage("/");
@@ -66,7 +65,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .ignoring()
                 .antMatchers("/h2-console/**/**")
-                .antMatchers("/home");
+                .antMatchers("/api/public/**");
     }
 
     @Bean

@@ -51,4 +51,13 @@ public class GlobalExceptionHandler {
         errorResponse.setEndpoint(request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
+
+    @ExceptionHandler(value = {ApiException.class}) //422
+    public ResponseEntity<ErrorResponse> handleApinException(ApiException ex, HttpServletRequest request){
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(ex.getErrorCode());
+        errorResponse.setMessage(ex.getMessage());
+        errorResponse.setEndpoint(request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, ex.getHttpStatus());
+    }
 }
