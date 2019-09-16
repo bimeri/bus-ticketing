@@ -11,5 +11,5 @@ public interface UserService {
     UserDTO createUser(CreateUserRequest createUserRequest);
     TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO);
     void changeUserPassword(ChangePasswordDTO changePasswordDTO);
-
+    void forgotUserPassword(EmailDTO emailDTO);
 }

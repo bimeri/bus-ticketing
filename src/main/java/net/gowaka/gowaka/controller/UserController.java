@@ -37,5 +37,10 @@ public class UserController {
         userService.changeUserPassword(changePasswordDTO);
         return ResponseEntity.noContent().build();
     }
+    @PostMapping("/public/forgot_password")
+    ResponseEntity<?> forgotUserPassword(@RequestBody EmailDTO emailDTO){
+        userService.forgotUserPassword(emailDTO);
+        return ResponseEntity.noContent().build();
+    }
 
 }

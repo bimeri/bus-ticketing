@@ -36,7 +36,7 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getClientAuthorizationPath();
 
-        HttpEntity<ApiSecurityClientUser> request = new HttpEntity<>(apiSecurityClientUser,headers);
+        HttpEntity<ApiSecurityClientUser> request = new HttpEntity<>(apiSecurityClientUser, headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityAccessToken.class).getBody();
 
@@ -48,7 +48,7 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getUserAuthorizationPath();
 
-        HttpEntity<ApiSecurityUsernamePassword> request = new HttpEntity<>(apiSecurityUsernamePassword,headers);
+        HttpEntity<ApiSecurityUsernamePassword> request = new HttpEntity<>(apiSecurityUsernamePassword, headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityAccessToken.class).getBody();
 
@@ -62,7 +62,7 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.set("grant_type", "client_credentials");
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getRegisterUserPath();
 
-        HttpEntity<ApiSecurityUser> request = new HttpEntity<>(apiSecurityUser,headers);
+        HttpEntity<ApiSecurityUser> request = new HttpEntity<>(apiSecurityUser, headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityUser.class).getBody();
 
@@ -75,7 +75,19 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getChangeUserPasswordPath();
 
-        HttpEntity<ApiSecurityChangePassword> request = new HttpEntity<>(apiSecurityChangePassword,headers);
+        HttpEntity<ApiSecurityChangePassword> request = new HttpEntity<>(apiSecurityChangePassword, headers);
+
+        restTemplate.exchange(url, HttpMethod.POST, request, Void.class);
+
+    }
+
+    @Override
+    public void forgotPassword(ApiSecurityForgotPassword apiSecurityForgotPassword) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getForgotPasswordPath();
+
+        HttpEntity<ApiSecurityForgotPassword> request = new HttpEntity<>(apiSecurityForgotPassword, headers);
 
         restTemplate.exchange(url, HttpMethod.POST, request, Void.class);
 

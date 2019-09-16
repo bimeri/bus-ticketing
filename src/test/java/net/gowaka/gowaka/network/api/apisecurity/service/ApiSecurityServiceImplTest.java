@@ -48,6 +48,7 @@ public class ApiSecurityServiceImplTest {
         apiSecurityConfig.setUserAuthorizationPath("/api/public/v1/users/authorized");
         apiSecurityConfig.setRegisterUserPath("/api/protected/v1/users");
         apiSecurityConfig.setChangeUserPasswordPath("/api/public/v1/users/password");
+        apiSecurityConfig.setForgotPasswordPath("/api/public/v1/users/otp");
         apiSecurityService = new ApiSecurityServiceImpl(apiSecurityConfig, mockRestTemplate);
 
         httpEntityArgumentCaptor = ArgumentCaptor.forClass(HttpEntity.class);
@@ -153,7 +154,7 @@ public class ApiSecurityServiceImplTest {
         HttpEntity<ApiSecurityChangePassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword,headers);
 
         when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
-                .thenReturn(new ResponseEntity<>(new ApiSecurityChangePassword(), HttpStatus.OK));
+                .thenReturn(new ResponseEntity<>(new ApiSecurityChangePassword(), HttpStatus.NO_CONTENT));
 
         apiSecurityService.changePassword(apiSecurityChangePassword);
 
@@ -161,6 +162,32 @@ public class ApiSecurityServiceImplTest {
                 httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
 
         assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/password");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(Void.class);
+
+    }
+
+    @Test
+    public void forgotPassword_calls_RestTemplate() {
+
+        ApiSecurityForgotPassword apiSecurityChangePassword = new ApiSecurityForgotPassword();
+        apiSecurityChangePassword.setUsername("example@example.com");
+        apiSecurityChangePassword.setApplicationName("GoWaka");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<ApiSecurityForgotPassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityForgotPassword(), HttpStatus.NO_CONTENT));
+
+        apiSecurityService.forgotPassword(apiSecurityChangePassword);
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/otp");
         assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
         assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
         assertThat(classArgumentCaptor.getValue()).isEqualTo(Void.class);

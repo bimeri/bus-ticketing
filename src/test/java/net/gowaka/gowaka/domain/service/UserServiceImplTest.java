@@ -7,6 +7,7 @@ import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
@@ -41,6 +42,7 @@ public class UserServiceImplTest {
     ArgumentCaptor<String> stringArgumentCaptor;
     ArgumentCaptor<User> userArgumentCaptor;
     ArgumentCaptor<ApiSecurityChangePassword> apiSecurityChangePasswordArgumentCaptor;
+    ArgumentCaptor<ApiSecurityForgotPassword> apiSecurityForgotPasswordArgumentCaptor;
 
     @Before
     public void setUp() {
@@ -150,5 +152,21 @@ public class UserServiceImplTest {
         assertThat(apiSecurityChangePasswordValue.getOldPassword()).isEqualTo("secret");
         assertThat(apiSecurityChangePasswordValue.getPassword()).isEqualTo("new-secret");
 
+    }
+
+    @Test
+    public void forgotUserPassword_calls_ApiSecurityService() {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("example@example.com");
+
+        apiSecurityForgotPasswordArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityForgotPassword.class);
+
+        userService.forgotUserPassword(emailDTO);
+
+        verify(mockApiSecurityService).forgotPassword(apiSecurityForgotPasswordArgumentCaptor.capture());
+
+        ApiSecurityForgotPassword value = apiSecurityForgotPasswordArgumentCaptor.getValue();
+        assertThat(value.getApplicationName()).isEqualTo(clientUserCredConfig.getAppName());
+        assertThat(value.getUsername()).isEqualTo("example@example.com");
     }
 }

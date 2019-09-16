@@ -90,6 +90,15 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
+    public void forgotUserPassword(EmailDTO emailDTO) {
+
+        ApiSecurityForgotPassword apiSecurityForgotPassword = new ApiSecurityForgotPassword();
+        apiSecurityForgotPassword.setApplicationName(clientUserCredConfig.getAppName());
+        apiSecurityForgotPassword.setUsername(emailDTO.getEmail());
+        apiSecurityService.forgotPassword(apiSecurityForgotPassword);
+    }
+
     private ApiSecurityAccessToken getApiSecurityAccessToken() {
         ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
         apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());

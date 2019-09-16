@@ -3,6 +3,7 @@ package net.gowaka.gowaka.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.EmailPasswordDTO;
 import org.junit.After;
 import org.junit.Before;
@@ -210,7 +211,7 @@ public class UserControllerIntegrationTest {
 
 
     @Test
-    public void changeUserPassword_success_returns_200() throws Exception {
+    public void changeUserPassword_success_returns_204() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/password",
                 HttpStatus.NO_CONTENT, "");
@@ -252,5 +253,21 @@ public class UserControllerIntegrationTest {
 
     }
 
+    @Test
+    public void forgotUserPassword_success_return_204() throws Exception {
+        startMockServerWith("http://localhost:8082/api/public/v1/users/otp",
+                HttpStatus.NO_CONTENT, "");
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("info@go-groups.net");
+
+        RequestBuilder requestBuilder = post("/api/public/forgot_password")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
 
 }

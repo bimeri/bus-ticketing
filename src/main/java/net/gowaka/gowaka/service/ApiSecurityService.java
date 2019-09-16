@@ -12,6 +12,5 @@ public interface ApiSecurityService {
     ApiSecurityAccessToken getUserToken(ApiSecurityUsernamePassword apiSecurityUsernamePassword);
     ApiSecurityUser registerUser(ApiSecurityUser apiSecurityUser, String clientToken);
     void changePassword(ApiSecurityChangePassword apiSecurityChangePassword);
-
-
+    void forgotPassword(ApiSecurityForgotPassword apiSecurityForgotPassword);
 }

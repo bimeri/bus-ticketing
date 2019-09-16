@@ -2,6 +2,7 @@ package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.ChangePasswordDTO;
 import net.gowaka.gowaka.dto.CreateUserRequest;
+import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.EmailPasswordDTO;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
@@ -48,6 +49,12 @@ public class UserControllerTest {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         userController.changeUserPassword(changePasswordDTO);
         verify(mockUserService).changeUserPassword(changePasswordDTO);
+    }
+    @Test
+    public void forgotUserPassword_calls_UserService() {
+        EmailDTO emailDTO = new EmailDTO();
+        userController.forgotUserPassword(emailDTO);
+        verify(mockUserService).forgotUserPassword(emailDTO);
     }
 
 }
