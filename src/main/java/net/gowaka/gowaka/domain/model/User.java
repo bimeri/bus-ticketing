@@ -2,10 +2,7 @@ package net.gowaka.gowaka.domain.model;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +20,11 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     List<BookedJourney> bookedJourneys;
+
+    @ManyToOne
+    private OfficialAgency officialAgency;
+    @OneToOne
+    private PersonalAgency personalAgency;
 
     @Transient
     List<String> roles;

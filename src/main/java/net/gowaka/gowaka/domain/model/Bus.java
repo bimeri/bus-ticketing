@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.model;
 import lombok.Data;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +17,9 @@ import java.util.List;
 public class Bus extends Car{
 
     private Integer numberOfSeats;
-    private String agencyName;
-    private String agencyRegistrationNumber;
-    private String agencyAuthorizationDocument;
+
+    @ManyToOne
+    private OfficialAgency officialAgency;
 
     @OneToMany(mappedBy = "bus")
     private List<Seat> seats;

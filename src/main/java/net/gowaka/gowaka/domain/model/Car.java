@@ -20,7 +20,7 @@ public abstract class Car {
     private Long id;
     private String name;
     private String licensePlateNumber;
-    private Boolean isAgencyIndicator;
+    private Boolean isOfficialAgencyIndicator;
     @ElementCollection
     private List<String> images = new ArrayList<>();
     private Boolean isCarApproved;

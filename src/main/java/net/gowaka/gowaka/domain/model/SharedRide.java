@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.model;
 import lombok.Data;
 
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
 /**
  * Author: Edward Tanko <br/>
@@ -13,7 +14,11 @@ import javax.persistence.Entity;
 public class SharedRide extends Car{
 
     private String carOwnerName;
-    private String getCarOwnerIdNumber;
+    private String carOwnerIdNumber;
     private String frontPictureOfIdCard;
     private String backPictureOfIdCard;
+
+    @ManyToOne
+    private PersonalAgency personalAgency;
+
 }
