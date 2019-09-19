@@ -1,6 +1,5 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.GlobalConstants;
 import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
@@ -12,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+
+import static net.gowaka.gowaka.constant.GlobalConstants.USERS;
 
 /**
  * Author: Edward Tanko <br/>
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
 
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
-        String roles = GlobalConstants.USERS;
+        String roles = USERS;
 
         ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
         apiSecurityUser.setFullName(createUserRequest.getFullName());

@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,6 +20,8 @@ public class OfficialAgency {
     private String agencyName;
     private String agencyRegistrationNumber;
     private String agencyAuthorizationDocument;
+    private String logo;
+    private Boolean isDisabled;
 
     @OneToMany(mappedBy = "officialAgency")
     private List<Bus> buses;
@@ -26,4 +29,8 @@ public class OfficialAgency {
     @OneToMany(mappedBy = "officialAgency")
     private List<User> users;
 
+    public OfficialAgency() {
+        this.buses = new ArrayList<>();
+        this.users = new ArrayList<>();
+    }
 }

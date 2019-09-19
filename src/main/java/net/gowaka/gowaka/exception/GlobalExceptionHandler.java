@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = {ApiException.class}) //422
-    public ResponseEntity<ErrorResponse> handleApinException(ApiException ex, HttpServletRequest request){
+    public ResponseEntity<ErrorResponse> handleApiException(ApiException ex, HttpServletRequest request){
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setCode(ex.getErrorCode());
         errorResponse.setMessage(ex.getMessage());

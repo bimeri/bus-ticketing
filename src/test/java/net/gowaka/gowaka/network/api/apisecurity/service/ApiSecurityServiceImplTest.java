@@ -49,6 +49,8 @@ public class ApiSecurityServiceImplTest {
         apiSecurityConfig.setRegisterUserPath("/api/protected/v1/users");
         apiSecurityConfig.setChangeUserPasswordPath("/api/public/v1/users/password");
         apiSecurityConfig.setForgotPasswordPath("/api/public/v1/users/otp");
+        apiSecurityConfig.setGetUserByUsernamePath("/api/public/v1/users");
+        apiSecurityConfig.setUpdateUserInfo("/api/protected/v1/users/{userId}/{field}");
         apiSecurityService = new ApiSecurityServiceImpl(apiSecurityConfig, mockRestTemplate);
 
         httpEntityArgumentCaptor = ArgumentCaptor.forClass(HttpEntity.class);
@@ -194,5 +196,56 @@ public class ApiSecurityServiceImplTest {
 
     }
 
+    @Test
+    public void getUserByUsername_calls_RestTemplate() {
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
+
+        apiSecurityService.getUserByUsername("example@example.com");
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users?username=example@example.com");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityUser.class);
+
+
+    }
+
+    @Test
+    public void updateUserInfo_calls_RestTemplate() {
+
+        String userId = "12";
+        String field = "ROLES";
+        String value = "user;agency_user";
+        String token  = "jwt-token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(token);
+        headers.set("grant_type", "client_credentials");
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+        apiSecurityService.updateUserInfo(userId,field, value, token);
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/protected/v1/users/12/ROLES?value=user;agency_user");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.PATCH);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(Void.class);
+
+
+    }
 }
