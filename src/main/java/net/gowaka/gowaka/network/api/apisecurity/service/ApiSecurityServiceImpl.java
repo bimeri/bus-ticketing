@@ -94,10 +94,12 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
     }
 
     @Override
-    public ApiSecurityUser getUserByUsername(String username) {
+    public ApiSecurityUser getUserByUsername(String username, String clientToken) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(clientToken);
+        headers.set("grant_type", "client_credentials");
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort()
                 + apiSecurityConfig.getGetUserByUsernamePath()+"?username="+username;
 

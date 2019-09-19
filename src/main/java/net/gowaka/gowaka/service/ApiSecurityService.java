@@ -13,7 +13,7 @@ public interface ApiSecurityService {
     ApiSecurityUser registerUser(ApiSecurityUser apiSecurityUser, String clientToken);
     void changePassword(ApiSecurityChangePassword apiSecurityChangePassword);
     void forgotPassword(ApiSecurityForgotPassword apiSecurityForgotPassword);
-    ApiSecurityUser getUserByUsername(String username);
-    void updateUserInfo(String userId, String field, String value, String token);
+    ApiSecurityUser getUserByUsername(String username, String clientToken);
+    void updateUserInfo(String userId, String field, String value, String clientToken);
 
 }

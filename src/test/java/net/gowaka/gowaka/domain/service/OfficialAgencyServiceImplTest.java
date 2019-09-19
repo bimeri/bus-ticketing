@@ -79,7 +79,7 @@ public class OfficialAgencyServiceImplTest {
         apiSecurityUser.setFullName("Jesus Christ");
         apiSecurityUser.setUsername("example@example.com");
 
-        when(mockApiSecurityService.getUserByUsername(any()))
+        when(mockApiSecurityService.getUserByUsername(any(), any()))
                 .thenReturn(apiSecurityUser);
 
         ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();

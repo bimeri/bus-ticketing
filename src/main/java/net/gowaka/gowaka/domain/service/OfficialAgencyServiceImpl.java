@@ -52,13 +52,14 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         // add user to agency and save agency
         // create DTO and return
 
-        String username = createOfficialAgencyDTO.getAgencyAdminEmail();
-        ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(username);
-
         ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
         apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());
         apiSecurityClientUser.setClientSecret(clientUserCredConfig.getClientSecret());
         ApiSecurityAccessToken clientToken = apiSecurityService.getClientToken(apiSecurityClientUser);
+
+        String username = createOfficialAgencyDTO.getAgencyAdminEmail();
+        ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(username, clientToken.getToken());
+
 
         String userRole = apiSecurityUser.getRoles()+";"+AGENCY_ADMIN;
         apiSecurityService.updateUserInfo(apiSecurityUser.getId(), "ROLES", userRole, clientToken.getToken());

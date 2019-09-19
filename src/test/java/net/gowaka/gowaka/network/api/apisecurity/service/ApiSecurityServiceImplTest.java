@@ -201,12 +201,14 @@ public class ApiSecurityServiceImplTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth("token");
+        headers.set("grant_type", "client_credentials");
         HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
 
         when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
 
-        apiSecurityService.getUserByUsername("example@example.com");
+        apiSecurityService.getUserByUsername("example@example.com", "token");
 
         verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
                 httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());

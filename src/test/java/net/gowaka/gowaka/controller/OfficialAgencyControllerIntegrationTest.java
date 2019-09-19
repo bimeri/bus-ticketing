@@ -109,7 +109,9 @@ public class OfficialAgencyControllerIntegrationTest {
     @Test
     public void createOfficialAgency_success_return_200() throws Exception {
 
-        startMockServerWith("http://localhost:8082/api/public/v1/users?username=admin@example.com",
+        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
+                HttpStatus.OK, successClientTokenResponse);
+        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=admin@example.com",
                 HttpStatus.OK, "{\n" +
                         "  \"id\": \"10\",\n" +
                         "  \"fullName\":\"Agency User\",\n" +
@@ -117,8 +119,7 @@ public class OfficialAgencyControllerIntegrationTest {
                         "  \"email\": \"admin@example.com\",\n" +
                         "  \"roles\":\"users\"\n" +
                         "}");
-        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
-                HttpStatus.OK, successClientTokenResponse);
+
         startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=users;agency_admin",
                 HttpStatus.NO_CONTENT, "");
 
