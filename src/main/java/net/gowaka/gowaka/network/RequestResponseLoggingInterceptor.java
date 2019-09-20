@@ -40,7 +40,7 @@ public class RequestResponseLoggingInterceptor implements ClientHttpRequestInter
             log.debug("Status code  : {}", response.getStatusCode());
             log.debug("Status text  : {}", response.getStatusText());
             log.debug("Headers      : {}", response.getHeaders());
-            log.debug("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
+//            log.debug("Response body: {}", StreamUtils.copyToString(response.getBody(), Charset.defaultCharset()));
             log.debug("============================response end=================================================");
         }
     }
