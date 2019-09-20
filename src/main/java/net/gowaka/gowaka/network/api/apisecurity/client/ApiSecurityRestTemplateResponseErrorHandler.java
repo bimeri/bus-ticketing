@@ -54,7 +54,7 @@ public class ApiSecurityRestTemplateResponseErrorHandler implements ResponseErro
             case UNAUTHORIZED:
                 throw new ApiException("Wrong credentials.", ErrorCodes.BAD_CREDENTIALS.toString(), HttpStatus.UNAUTHORIZED);
             default:
-                throw new ApiException("An unexpected error occurred.", ErrorCodes.INT_SERVER_ERROR.toString(), HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new ApiException("An unexpected error occurred.", ErrorCodes.INT_SERVER_ERROR.toString(), clientHttpResponse.getStatusCode());
 
         }
 
