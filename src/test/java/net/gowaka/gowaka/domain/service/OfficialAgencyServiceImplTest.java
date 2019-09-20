@@ -65,7 +65,6 @@ public class OfficialAgencyServiceImplTest {
         ArgumentCaptor<String> fieldArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> roleArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> valueArgumentCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> tokenArgumentCaptor = ArgumentCaptor.forClass(String.class);
 
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
         createOfficialAgencyDTO.setAgencyAdminEmail("example@example.com");
@@ -101,11 +100,11 @@ public class OfficialAgencyServiceImplTest {
         OfficialAgencyDTO officialAgencyDTO = officialAgencyService.createOfficialAgency(createOfficialAgencyDTO);
 
         verify(mockApiSecurityService).updateUserInfo(idArgumentCaptor.capture(), fieldArgumentCaptor.capture(),
-                roleArgumentCaptor.capture(), tokenArgumentCaptor.capture());
+                roleArgumentCaptor.capture(), valueArgumentCaptor.capture());
         assertThat(idArgumentCaptor.getValue()).isEqualTo("12");
         assertThat(fieldArgumentCaptor.getValue()).isEqualTo("ROLES");
         assertThat(roleArgumentCaptor.getValue()).isEqualTo("users;agency_admin");
-        assertThat(tokenArgumentCaptor.getValue()).isEqualTo("jwt-token");
+        assertThat(valueArgumentCaptor.getValue()).isEqualTo("jwt-token");
 
         verify(mockUserRepository).findById("12");
 
@@ -122,6 +121,7 @@ public class OfficialAgencyServiceImplTest {
         assertThat(officialAgencyDTO.getAgencyAdmin()).isNotNull();
         assertThat(officialAgencyDTO.getAgencyName()).isEqualTo("Amo Mezam");
         assertThat(officialAgencyDTO.getAgencyRegistrationNumber()).isEqualTo("ABC20111234");
+
 
 
     }
