@@ -73,7 +73,7 @@ public class OfficialAgencyServiceImplTest {
 
         ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
         apiSecurityUser.setId("12");
-        apiSecurityUser.setRoles("users");
+        apiSecurityUser.setRoles("users;");
         apiSecurityUser.setEmail("example@example.com");
         apiSecurityUser.setFullName("Jesus Christ");
         apiSecurityUser.setUsername("example@example.com");

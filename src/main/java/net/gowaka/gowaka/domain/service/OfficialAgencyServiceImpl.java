@@ -61,7 +61,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(username, clientToken.getToken());
 
 
-        String userRole = apiSecurityUser.getRoles()+";"+AGENCY_ADMIN;
+        String userRole = apiSecurityUser.getRoles()+AGENCY_ADMIN;
         apiSecurityService.updateUserInfo(apiSecurityUser.getId(), "ROLES", userRole, clientToken.getToken());
 
         Optional<User> userOptional = userRepository.findById(apiSecurityUser.getId());

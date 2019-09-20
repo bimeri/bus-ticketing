@@ -117,7 +117,7 @@ public class OfficialAgencyControllerIntegrationTest {
                         "  \"fullName\":\"Agency User\",\n" +
                         "  \"username\": \"admin@example.com\",\n" +
                         "  \"email\": \"admin@example.com\",\n" +
-                        "  \"roles\":\"users\"\n" +
+                        "  \"roles\":\"users;\"\n" +
                         "}");
 
         startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=users;agency_admin",
