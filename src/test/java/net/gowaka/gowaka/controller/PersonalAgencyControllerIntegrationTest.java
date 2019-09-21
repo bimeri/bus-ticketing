@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
-import org.junit.After;
+import net.gowaka.gowaka.dto.CreatePersonalAgencyDTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,9 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -28,8 +25,6 @@ import java.time.LocalDateTime;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,9 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ActiveProfiles("test")
-public class OfficialAgencyControllerIntegrationTest {
+public class PersonalAgencyControllerIntegrationTest {
 
 
     @Value("${security.jwt.token.secretKey}")
@@ -88,53 +83,18 @@ public class OfficialAgencyControllerIntegrationTest {
 
     }
 
-    @After
-    public void tearDown() throws Exception {
-        mockServer.reset();
-    }
-
-
-    private void startMockServerWith(String url, HttpStatus status, String response) {
-        mockServer.expect(requestTo(url))
-//                .andExpect(header("content-type", "application/json;charset=UTF-8"))
-                .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
-    }
-
-
     @Test
     public void createOfficialAgency_success_return_200() throws Exception {
 
-        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
-                HttpStatus.OK, successClientTokenResponse);
-        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=admin@example.com",
-                HttpStatus.OK, "{\n" +
-                        "  \"id\": \"10\",\n" +
-                        "  \"fullName\":\"Agency User\",\n" +
-                        "  \"username\": \"admin@example.com\",\n" +
-                        "  \"email\": \"admin@example.com\",\n" +
-                        "  \"roles\":\"users;\"\n" +
-                        "}");
-
-        startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=users;agency_admin",
-                HttpStatus.NO_CONTENT, "");
+        CreatePersonalAgencyDTO createOfficialAgencyDTO = new CreatePersonalAgencyDTO();
+        createOfficialAgencyDTO.setName("GG Express");
 
 
+        String jwtToken = createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"users"});
 
-        User agencyAdminUser = new User();
-        agencyAdminUser.setUserId("10");
-        agencyAdminUser.setTimestamp(LocalDateTime.now());
-        userRepository.save(agencyAdminUser);
+        String expectedResponse = "{\"id\":1,\"name\":\"GG Express\"}";
 
-        CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
-        createOfficialAgencyDTO.setAgencyRegistrationNumber("123456789");
-        createOfficialAgencyDTO.setAgencyName("GG Express");
-        createOfficialAgencyDTO.setAgencyAdminEmail("admin@example.com");
-
-        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"users", "gw_admin"});
-
-        String expectedResponse = "{\"id\":1,\"agencyName\":\"GG Express\",\"agencyRegistrationNumber\":\"123456789\",\"agencyAdmin\":{\"id\":\"10\",\"fullName\":\"Agency User\"}}\n";
-
-        RequestBuilder requestBuilder = post("/api/protected/agency")
+        RequestBuilder requestBuilder = post("/api/protected/users/agency")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(createOfficialAgencyDTO))
@@ -144,9 +104,10 @@ public class OfficialAgencyControllerIntegrationTest {
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
 
-        User aUser = userRepository.findById("10").get();
-        assertThat(aUser.getOfficialAgency()).isNotNull();
+        User aUser = userRepository.findById("12").get();
+        assertThat(aUser.getPersonalAgency()).isNotNull();
 
     }
+
 
 }

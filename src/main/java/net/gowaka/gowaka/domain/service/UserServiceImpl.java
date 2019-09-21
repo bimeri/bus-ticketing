@@ -5,12 +5,16 @@ import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.network.api.apisecurity.model.*;
+import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.constant.GlobalConstants.USERS;
 
@@ -98,6 +102,21 @@ public class UserServiceImpl implements UserService {
         apiSecurityForgotPassword.setApplicationName(clientUserCredConfig.getAppName());
         apiSecurityForgotPassword.setUsername(emailDTO.getEmail());
         apiSecurityService.forgotPassword(apiSecurityForgotPassword);
+    }
+
+    @Override
+    public UserDTO getCurrentAuthUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) principal;
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(userDetails.getId());
+        userDTO.setFullName(userDetails.getFullName());
+        userDTO.setEmail(userDetails.getUsername());
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .collect(Collectors.toList());
+        userDTO.setRoles(roles);
+        return userDTO;
     }
 
     private ApiSecurityAccessToken getApiSecurityAccessToken() {

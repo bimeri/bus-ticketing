@@ -9,6 +9,8 @@ import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.security.AppGrantedAuthority;
+import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
@@ -17,6 +19,10 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.Arrays;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -168,5 +174,25 @@ public class UserServiceImplTest {
         ApiSecurityForgotPassword value = apiSecurityForgotPasswordArgumentCaptor.getValue();
         assertThat(value.getApplicationName()).isEqualTo(clientUserCredConfig.getAppName());
         assertThat(value.getUsername()).isEqualTo("example@example.com");
+    }
+
+    @Test
+    public void getCurrentAuthUser_getUserInfo_from_securityContextHolder() {
+
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setId("12");
+        userDetails.setFullName("Jesus Christ");
+        userDetails.setUsername("example@example.com");
+        userDetails.setPassword("secret");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        assertThat(currentAuthUser.getId()).isEqualTo("12");
+        assertThat(currentAuthUser.getEmail()).isEqualTo("example@example.com");
+        assertThat(currentAuthUser.getFullName()).isEqualTo("Jesus Christ");
+        assertThat(currentAuthUser.getRoles()).isEqualTo(Arrays.asList("users"));
+
     }
 }

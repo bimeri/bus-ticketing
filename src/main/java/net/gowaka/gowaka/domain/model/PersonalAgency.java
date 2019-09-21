@@ -16,6 +16,7 @@ public class PersonalAgency {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String name;
 
     @OneToMany(mappedBy = "personalAgency")
     private List<SharedRide> sharedRides;
