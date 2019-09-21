@@ -42,9 +42,12 @@ public class PersonalAgencyServiceImpl implements PersonalAgencyService {
         if(!userOptional.isPresent()){
             throw new ResourceNotFoundException("User not found.");
         }
+        //can only be one Personal Agency per user
         User user = userOptional.get();
-
-        PersonalAgency personalAgency = new PersonalAgency();
+        PersonalAgency personalAgency = user.getPersonalAgency();
+        if(personalAgency==null) {
+            personalAgency = new PersonalAgency();
+        }
         personalAgency.setName(createPersonalAgencyDTO.getName());
         personalAgency.setUser(user);
 
