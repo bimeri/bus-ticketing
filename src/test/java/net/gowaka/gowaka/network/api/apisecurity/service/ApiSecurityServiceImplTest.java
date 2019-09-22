@@ -50,6 +50,7 @@ public class ApiSecurityServiceImplTest {
         apiSecurityConfig.setChangeUserPasswordPath("/api/public/v1/users/password");
         apiSecurityConfig.setForgotPasswordPath("/api/public/v1/users/otp");
         apiSecurityConfig.setGetUserByUsernamePath("/api/public/v1/users");
+        apiSecurityConfig.setGetUserByUserIdPath("/api/public/v1/users/{userId}");
         apiSecurityConfig.setUpdateUserInfo("/api/protected/v1/users/{userId}/{field}");
         apiSecurityService = new ApiSecurityServiceImpl(apiSecurityConfig, mockRestTemplate);
 
@@ -214,6 +215,31 @@ public class ApiSecurityServiceImplTest {
                 httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
 
         assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users?username=example@example.com");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityUser.class);
+
+
+    }
+
+    @Test
+    public void getUserByUserId_calls_RestTemplate() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth("token");
+        headers.set("grant_type", "client_credentials");
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
+
+        apiSecurityService.getUserByUserId("12", "token");
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/12");
         assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
         assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
         assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityUser.class);

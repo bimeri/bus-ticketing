@@ -8,10 +8,9 @@ import net.gowaka.gowaka.service.OfficialAgencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -30,14 +29,20 @@ public class OfficialAgencyController {
 
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @PostMapping("/protected/agency")
-    ResponseEntity<OfficialAgencyDTO> createOfficialAgency(@RequestBody CreateOfficialAgencyDTO createOfficialAgencyDTO){
+    ResponseEntity<OfficialAgencyDTO> createOfficialAgency(@RequestBody CreateOfficialAgencyDTO createOfficialAgencyDTO) {
         return ResponseEntity.ok(officialAgencyService.createOfficialAgency(createOfficialAgencyDTO));
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
     @PostMapping("/protected/agency/user/role")
-    ResponseEntity<OfficialAgencyUserDTO> assignAgencyUserRole(@RequestBody OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO){
+    ResponseEntity<OfficialAgencyUserDTO> assignAgencyUserRole(@RequestBody OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO) {
         return ResponseEntity.ok(officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO));
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @GetMapping("/protected/agency/user")
+    ResponseEntity<List<OfficialAgencyUserDTO>> getAgencyUsers() {
+        return ResponseEntity.ok(officialAgencyService.getAgencyUsers());
     }
 
 }

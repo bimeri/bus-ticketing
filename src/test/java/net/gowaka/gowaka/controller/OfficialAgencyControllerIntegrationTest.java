@@ -33,6 +33,7 @@ import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -197,6 +198,66 @@ public class OfficialAgencyControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(officialAgencyUserRoleRequestDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+
+    }
+
+    @Test
+    public void getAgencyUsers_success_return_200() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
+                HttpStatus.OK, successClientTokenResponse);
+
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/10",
+                HttpStatus.OK, "{\n" +
+                        "  \"id\": \"10\",\n" +
+                        "  \"fullName\":\"Agency User10\",\n" +
+                        "  \"username\": \"user1@example.com\",\n" +
+                        "  \"email\": \"user@example.com\",\n" +
+                        "  \"roles\":\"USERS;AGENCY_MANAGER\"\n" +
+                        "}");
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/11",
+                HttpStatus.OK, "{\n" +
+                        "  \"id\": \"11\",\n" +
+                        "  \"fullName\":\"Agency User11\",\n" +
+                        "  \"username\": \"user@example.com\",\n" +
+                        "  \"email\": \"user2@example.com\",\n" +
+                        "  \"roles\":\"USERS;AGENCY_OPERATOR\"\n" +
+                        "}");
+
+        User authUser = userRepository.findById("12").get();
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+        authUser.setOfficialAgency(officialAgency);
+
+        officialAgencyRepository.save(officialAgency);
+        userRepository.save(authUser);
+
+        User aUser = new User();
+        aUser.setUserId("10");
+        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setOfficialAgency(officialAgency);
+        userRepository.save(aUser);
+
+        User anotherUser = new User();
+        anotherUser.setUserId("11");
+        anotherUser.setTimestamp(LocalDateTime.now());
+        anotherUser.setOfficialAgency(officialAgency);
+        userRepository.save(anotherUser);
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
+
+        String expectedResponse = "[{\"id\":\"10\",\"fullName\":\"Agency User10\",\"roles\":[\"USERS\",\"AGENCY_MANAGER\"]},{\"id\":\"11\",\"fullName\":\"Agency User11\",\"roles\":[\"USERS\",\"AGENCY_OPERATOR\"]}]";
+
+        RequestBuilder requestBuilder = get("/api/protected/agency/user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())

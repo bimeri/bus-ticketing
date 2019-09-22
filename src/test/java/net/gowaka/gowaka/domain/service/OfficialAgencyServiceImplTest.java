@@ -5,10 +5,7 @@ import net.gowaka.gowaka.domain.model.OfficialAgency;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
-import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
@@ -25,12 +22,14 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -164,7 +163,7 @@ public class OfficialAgencyServiceImplTest {
 
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("User already belong to an agency.");
-        expectedException.expect(hasProperty("errorCode",is("USER_ALREADY_IN_AN_AGENCY")));
+        expectedException.expect(hasProperty("errorCode", is("USER_ALREADY_IN_AN_AGENCY")));
 
         officialAgencyService.createOfficialAgency(createOfficialAgencyDTO);
 
@@ -275,6 +274,53 @@ public class OfficialAgencyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is("USER_NOT_IN_AGENCY")));
 
         officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
+
+    }
+
+    @Test
+    public void getAgencyUsers_getAll_Users_in_Agency() {
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        User user1 = new User();
+        user1.setUserId("10");
+        User user2 = new User();
+        user2.setUserId("11");
+        officialAgency.setUsers(Arrays.asList(user1, user2));
+
+        User user = new User();
+        user.setUserId("1");
+        user.setOfficialAgency(officialAgency);
+
+        ApiSecurityAccessToken clientToken = new ApiSecurityAccessToken();
+        clientToken.setToken("jwt-token");
+
+        when(mockApiSecurityService.getClientToken(any()))
+                .thenReturn(clientToken);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+
+        ApiSecurityUser apiSecurityUser1 = new ApiSecurityUser();
+        apiSecurityUser1.setId("10");
+        apiSecurityUser1.setEmail("ex1@example.com");
+        apiSecurityUser1.setRoles("USER;AGENCY_ADMIN");
+
+        ApiSecurityUser apiSecurityUser2 = new ApiSecurityUser();
+        apiSecurityUser2.setId("10");
+        apiSecurityUser2.setEmail("ex1@example.com");
+        apiSecurityUser2.setRoles("USER;AGENCY_ADMIN");
+
+        when(mockApiSecurityService.getUserByUserId("10", "jwt-token"))
+                .thenReturn(apiSecurityUser1);
+        when(mockApiSecurityService.getUserByUserId("11", "jwt-token"))
+                .thenReturn(apiSecurityUser2);
+
+        List<OfficialAgencyUserDTO> agencyUsers = officialAgencyService.getAgencyUsers();
+        assertThat(agencyUsers.size()).isEqualTo(2);
 
     }
 

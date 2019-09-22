@@ -14,6 +14,7 @@ public interface ApiSecurityService {
     void changePassword(ApiSecurityChangePassword apiSecurityChangePassword);
     void forgotPassword(ApiSecurityForgotPassword apiSecurityForgotPassword);
     ApiSecurityUser getUserByUsername(String username, String clientToken);
+    ApiSecurityUser getUserByUserId(String userId, String clientToken);
     void updateUserInfo(String userId, String field, String value, String clientToken);
 
 }

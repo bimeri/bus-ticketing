@@ -20,5 +20,6 @@ public class ApiSecurityConfig {
     private String changeUserPasswordPath;
     private String forgotPasswordPath;
     private String getUserByUsernamePath;
+    private String getUserByUserIdPath;
     private String updateUserInfo;
 }

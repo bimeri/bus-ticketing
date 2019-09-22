@@ -109,6 +109,21 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
     }
 
     @Override
+    public ApiSecurityUser getUserByUserId(String userId, String clientToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(clientToken);
+        headers.set("grant_type", "client_credentials");
+
+        String path = apiSecurityConfig.getGetUserByUserIdPath().replace("{userId}", userId);
+
+        String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + path;
+        HttpEntity<Void> request = new HttpEntity<>(null, headers);
+
+        return restTemplate.exchange(url, HttpMethod.GET, request, ApiSecurityUser.class).getBody();
+    }
+
+    @Override
     public void updateUserInfo(String userId, String field, String value, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));

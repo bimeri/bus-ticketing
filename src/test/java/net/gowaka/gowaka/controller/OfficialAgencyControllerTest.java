@@ -44,4 +44,11 @@ public class OfficialAgencyControllerTest {
         verify(mockOfficialAgencyService).assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
 
     }
+
+    @Test
+    public void getAgencyUser_calls_OfficialAgencyService() {
+        officialAgencyController.getAgencyUsers();
+        verify(mockOfficialAgencyService).getAgencyUsers();
+
+    }
 }
