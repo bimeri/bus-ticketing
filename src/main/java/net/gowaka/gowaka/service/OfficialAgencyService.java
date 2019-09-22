@@ -2,6 +2,8 @@ package net.gowaka.gowaka.service;
 
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
 import net.gowaka.gowaka.dto.OfficialAgencyDTO;
+import net.gowaka.gowaka.dto.OfficialAgencyUserDTO;
+import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 
 /**
  * Author: Edward Tanko <br/>
@@ -10,5 +12,6 @@ import net.gowaka.gowaka.dto.OfficialAgencyDTO;
 public interface OfficialAgencyService {
 
     OfficialAgencyDTO createOfficialAgency(CreateOfficialAgencyDTO createOfficialAgencyDTO);
+    OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO);
 
 }

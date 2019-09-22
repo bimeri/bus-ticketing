@@ -90,7 +90,7 @@ public class PersonalAgencyControllerIntegrationTest {
         createOfficialAgencyDTO.setName("GG Express");
 
 
-        String jwtToken = createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"users"});
+        String jwtToken = createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"USERS"});
 
         String expectedResponse = "{\"id\":1,\"name\":\"GG Express\"}";
 

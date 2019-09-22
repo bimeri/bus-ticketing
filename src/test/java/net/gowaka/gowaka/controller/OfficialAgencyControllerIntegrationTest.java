@@ -1,10 +1,12 @@
 package net.gowaka.gowaka.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gowaka.gowaka.domain.model.OfficialAgency;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
+import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +27,7 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -112,10 +115,10 @@ public class OfficialAgencyControllerIntegrationTest {
                         "  \"fullName\":\"Agency User\",\n" +
                         "  \"username\": \"admin@example.com\",\n" +
                         "  \"email\": \"admin@example.com\",\n" +
-                        "  \"roles\":\"users;\"\n" +
+                        "  \"roles\":\"USERS;\"\n" +
                         "}");
 
-        startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=users;agency_admin",
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=USERS;AGENCY_ADMIN",
                 HttpStatus.NO_CONTENT, "");
 
 
@@ -130,7 +133,7 @@ public class OfficialAgencyControllerIntegrationTest {
         createOfficialAgencyDTO.setAgencyName("GG Express");
         createOfficialAgencyDTO.setAgencyAdminEmail("admin@example.com");
 
-        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"users", "gw_admin"});
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
 
         String expectedResponse = "{\"id\":1,\"agencyName\":\"GG Express\",\"agencyRegistrationNumber\":\"123456789\",\"agencyAdmin\":{\"id\":\"10\",\"fullName\":\"Agency User\"}}\n";
 
@@ -146,6 +149,59 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User aUser = userRepository.findById("10").get();
         assertThat(aUser.getOfficialAgency()).isNotNull();
+
+    }
+
+    @Test
+    public void assignAgencyUserRole_success_return_200() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
+                HttpStatus.OK, successClientTokenResponse);
+        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=user@example.com",
+                HttpStatus.OK, "{\n" +
+                        "  \"id\": \"10\",\n" +
+                        "  \"fullName\":\"Agency User\",\n" +
+                        "  \"username\": \"user@example.com\",\n" +
+                        "  \"email\": \"user@example.com\",\n" +
+                        "  \"roles\":\"USERS;\"\n" +
+                        "}");
+
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=USERS;AGENCY_MANAGER;AGENCY_OPERATOR",
+                HttpStatus.NO_CONTENT, "");
+
+        User authUser = userRepository.findById("12").get();
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+        authUser.setOfficialAgency(officialAgency);
+
+        officialAgencyRepository.save(officialAgency);
+        userRepository.save(authUser);
+
+        User aUser = new User();
+        aUser.setUserId("10");
+        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setOfficialAgency(officialAgency);
+        userRepository.save(aUser);
+
+        OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
+        officialAgencyUserRoleRequestDTO.setEmail("user@example.com");
+        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_MANAGER","AGENCY_OPERATOR"));
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
+
+        String expectedResponse = "{\"id\":\"10\",\"fullName\":\"Agency User\",\"roles\":[\"USERS\",\"AGENCY_MANAGER\",\"AGENCY_OPERATOR\"]}";
+
+        RequestBuilder requestBuilder = post("/api/protected/agency/user/role")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(officialAgencyUserRoleRequestDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
 
     }
 

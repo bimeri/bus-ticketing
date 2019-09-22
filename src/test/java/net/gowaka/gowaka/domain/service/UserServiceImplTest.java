@@ -92,7 +92,7 @@ public class UserServiceImplTest {
         ApiSecurityUser apiSecurityUserValue = apiSecurityUserArgumentCaptor.getValue();
         String TokenValue = stringArgumentCaptor.getValue();
 
-        assertThat(apiSecurityUserValue.getRoles()).isEqualTo("users");
+        assertThat(apiSecurityUserValue.getRoles()).isEqualTo("USERS");
         assertThat(apiSecurityUserValue.getEmail()).isEqualTo("example@example.com");
         assertThat(apiSecurityUserValue.getFullName()).isEqualTo("Jesus Christ");
         assertThat(apiSecurityUserValue.getUsername()).isEqualTo("example@example.com");
@@ -107,7 +107,7 @@ public class UserServiceImplTest {
         assertThat(userDTO.getFullName()).isEqualTo("Jesus Christ");
         assertThat(userDTO.getEmail()).isEqualTo("example@example.com");
         assertThat(userDTO.getRoles().size()).isEqualTo(1);
-        assertThat(userDTO.getRoles().get(0)).isEqualTo("users");
+        assertThat(userDTO.getRoles().get(0)).isEqualTo("USERS");
 
     }
 

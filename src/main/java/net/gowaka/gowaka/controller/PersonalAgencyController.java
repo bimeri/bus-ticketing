@@ -26,7 +26,7 @@ public class PersonalAgencyController {
         this.personalAgencyService = personalAgencyService;
     }
 
-    @PreAuthorize("hasRole('ROLE_users')")
+    @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/protected/users/agency")
     ResponseEntity<PersonalAgencyDTO> createPersonalAgency(@RequestBody CreatePersonalAgencyDTO createPersonalAgencyDTO){
         return ResponseEntity.ok(personalAgencyService.createPersonalAgency(createPersonalAgencyDTO));

@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
+import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import net.gowaka.gowaka.service.OfficialAgencyService;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +33,15 @@ public class OfficialAgencyControllerTest {
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
         officialAgencyController.createOfficialAgency(createOfficialAgencyDTO);
         verify(mockOfficialAgencyService).createOfficialAgency(createOfficialAgencyDTO);
+
+    }
+
+    @Test
+    public void assignAgencyUserRole_calls_OfficialAgencyService() {
+
+        OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
+        officialAgencyController.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
+        verify(mockOfficialAgencyService).assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
 
     }
 }

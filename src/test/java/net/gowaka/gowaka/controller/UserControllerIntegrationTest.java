@@ -118,7 +118,7 @@ public class UserControllerIntegrationTest {
         startMockServerWith("http://localhost:8082/api/protected/v1/users",
                 HttpStatus.OK, successUserResponse);
 
-        String expectedResponse = "{\"id\":\"1\",\"fullName\":\"Jesus Christ\",\"email\":\"info@go-groups.net\",\"roles\":[\"users\"]}";
+        String expectedResponse = "{\"id\":\"1\",\"fullName\":\"Jesus Christ\",\"email\":\"info@go-groups.net\",\"roles\":[\"USERS\"]}";
 
         CreateUserRequest userReq = new CreateUserRequest();
         userReq.setFullName("Jesus Christ");

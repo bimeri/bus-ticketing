@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static net.gowaka.gowaka.constant.GlobalConstants.USERS;
+import static net.gowaka.gowaka.constant.UserRoles.USERS;
 
 /**
  * Author: Edward Tanko <br/>
@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService {
 
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
-        String roles = USERS;
+        String roles = USERS.toString();
 
         ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
         apiSecurityUser.setFullName(createUserRequest.getFullName());

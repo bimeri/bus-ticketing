@@ -6,7 +6,6 @@ package net.gowaka.gowaka.constant;
  */
 
 public class GlobalConstants {
-    public static final String USERS = "users";
-    public static final String AGENCY_ADMIN = "agency_admin";
+
 
 }

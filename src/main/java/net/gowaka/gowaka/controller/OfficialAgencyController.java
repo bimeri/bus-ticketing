@@ -1,5 +1,7 @@
 package net.gowaka.gowaka.controller;
 
+import net.gowaka.gowaka.dto.OfficialAgencyUserDTO;
+import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
 import net.gowaka.gowaka.dto.OfficialAgencyDTO;
 import net.gowaka.gowaka.service.OfficialAgencyService;
@@ -26,10 +28,16 @@ public class OfficialAgencyController {
         this.officialAgencyService = officialAgencyService;
     }
 
-    @PreAuthorize("hasRole('ROLE_gw_admin')")
+    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @PostMapping("/protected/agency")
     ResponseEntity<OfficialAgencyDTO> createOfficialAgency(@RequestBody CreateOfficialAgencyDTO createOfficialAgencyDTO){
         return ResponseEntity.ok(officialAgencyService.createOfficialAgency(createOfficialAgencyDTO));
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @PostMapping("/protected/agency/user/role")
+    ResponseEntity<OfficialAgencyUserDTO> assignAgencyUserRole(@RequestBody OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO){
+        return ResponseEntity.ok(officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO));
     }
 
 }
