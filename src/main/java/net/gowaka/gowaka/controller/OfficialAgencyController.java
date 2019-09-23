@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.OfficialAgencyUserDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
-import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.OfficialAgencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +40,12 @@ public class OfficialAgencyController {
     @GetMapping("/protected/agency/user")
     ResponseEntity<List<OfficialAgencyUserDTO>> getAgencyUsers() {
         return ResponseEntity.ok(officialAgencyService.getAgencyUsers());
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @PostMapping("/protected/agency/user")
+    ResponseEntity<OfficialAgencyUserDTO> addAgencyUser(@RequestBody EmailDTO emailDTO) {
+        return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO));
     }
 
 }

@@ -78,7 +78,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         User user = userOptional.get();
 
         if (user.getOfficialAgency() != null) {
-            throw new ApiException("User already belong to an agency.", ErrorCodes.USER_ALREADY_IN_AN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new ApiException("User already a member of an agency.", ErrorCodes.USER_ALREADY_IN_AN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         OfficialAgency officialAgency = new OfficialAgency();
@@ -185,6 +185,40 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                 })
                 .filter(officialAgencyUserDTO -> officialAgencyUserDTO.getId() != null)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO) {
+
+        UserDTO authUserDTO = userService.getCurrentAuthUser();
+        Optional<User> authUserOptional = userRepository.findById(authUserDTO.getId());
+        if(!authUserOptional.isPresent()) {
+            throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        ApiSecurityAccessToken apiSecurityAccessToken = getApiSecurityAccessToken();
+        ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(emailDTO.getEmail(), apiSecurityAccessToken.getToken());
+
+        Optional<User> userOptional = userRepository.findById(apiSecurityUser.getId());
+        if(!userOptional.isPresent()) {
+            throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        User authUser = authUserOptional.get();
+        User user = userOptional.get();
+        if(user.getOfficialAgency()!=null){
+            throw new ApiException("User already a member of an agency.", ErrorCodes.USER_ALREADY_IN_AN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        user.setOfficialAgency(authUser.getOfficialAgency());
+        userRepository.save(user);
+
+        OfficialAgencyUserDTO officialAgencyUserDTO = new OfficialAgencyUserDTO();
+        officialAgencyUserDTO.setFullName(apiSecurityUser.getFullName());
+        officialAgencyUserDTO.setId(apiSecurityUser.getId());
+        officialAgencyUserDTO.setRoles(Collections.arrayToList(apiSecurityUser.getRoles().split(";")));
+
+        return officialAgencyUserDTO;
     }
 
     private ApiSecurityAccessToken getApiSecurityAccessToken() {

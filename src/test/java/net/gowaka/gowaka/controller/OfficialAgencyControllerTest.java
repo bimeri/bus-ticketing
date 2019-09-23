@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
+import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import net.gowaka.gowaka.service.OfficialAgencyService;
 import org.junit.Before;
@@ -51,4 +52,13 @@ public class OfficialAgencyControllerTest {
         verify(mockOfficialAgencyService).getAgencyUsers();
 
     }
+
+    @Test
+    public void addAgencyUser_calls_OfficialAgencyService() {
+        EmailDTO emailDTO = new EmailDTO();
+        officialAgencyController.addAgencyUser(emailDTO);
+        verify(mockOfficialAgencyService).addAgencyUser(emailDTO);
+
+    }
+
 }

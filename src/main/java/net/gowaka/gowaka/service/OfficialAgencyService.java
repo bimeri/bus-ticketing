@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.service;
 
-import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyUserDTO;
-import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
+import net.gowaka.gowaka.dto.*;
 
 import java.util.List;
 
@@ -16,5 +13,5 @@ public interface OfficialAgencyService {
     OfficialAgencyDTO createOfficialAgency(CreateOfficialAgencyDTO createOfficialAgencyDTO);
     OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO);
     List<OfficialAgencyUserDTO> getAgencyUsers();
-
+    OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO);
 }

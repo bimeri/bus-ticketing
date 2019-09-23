@@ -6,6 +6,7 @@ import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreateOfficialAgencyDTO;
+import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import org.junit.After;
 import org.junit.Before;
@@ -258,6 +259,55 @@ public class OfficialAgencyControllerIntegrationTest {
         RequestBuilder requestBuilder = get("/api/protected/agency/user")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+
+    }
+
+    @Test
+    public void addAgencyUser_success_return_200() throws Exception {
+
+        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
+                HttpStatus.OK, successClientTokenResponse);
+
+        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=user@example.com",
+                HttpStatus.OK, "{\n" +
+                        "  \"id\": \"10\",\n" +
+                        "  \"fullName\":\"Agency User10\",\n" +
+                        "  \"username\": \"user@example.com\",\n" +
+                        "  \"email\": \"user@example.com\",\n" +
+                        "  \"roles\":\"USERS;\"\n" +
+                        "}");
+
+        User authUser = userRepository.findById("12").get();
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+        authUser.setOfficialAgency(officialAgency);
+
+        officialAgencyRepository.save(officialAgency);
+        userRepository.save(authUser);
+
+        User aUser = new User();
+        aUser.setUserId("10");
+        aUser.setTimestamp(LocalDateTime.now());
+        userRepository.save(aUser);
+
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("user@example.com");
+        String expectedResponse = "{\"id\":\"10\",\"fullName\":\"Agency User10\",\"roles\":[\"USERS\"]}";
+
+        RequestBuilder requestBuilder = post("/api/protected/agency/user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
