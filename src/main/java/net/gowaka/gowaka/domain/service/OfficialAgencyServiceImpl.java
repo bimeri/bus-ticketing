@@ -241,6 +241,10 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
             throw new ApiException("User must be a member to your agency.", ErrorCodes.USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
+        if(user.getUserId().equals(authUser.getUserId())){
+            throw new ApiException("Operation not allowed.", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
         apiSecurityService.updateUserInfo(userId, "ROLES", USERS.toString(), clientToken.getToken());
 
