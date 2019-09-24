@@ -48,4 +48,11 @@ public class OfficialAgencyController {
         return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO));
     }
 
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @DeleteMapping("/protected/agency/user/{userId}")
+    ResponseEntity<?> removeAgencyUser(@PathVariable("userId") String userId) {
+        officialAgencyService.removeAgencyUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

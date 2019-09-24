@@ -52,6 +52,12 @@ public class OfficialAgencyControllerTest {
         verify(mockOfficialAgencyService).getAgencyUsers();
 
     }
+    @Test
+    public void removeAgencyUser_calls_OfficialAgencyService() {
+        officialAgencyController.removeAgencyUser("12");
+        verify(mockOfficialAgencyService).removeAgencyUser("12");
+
+    }
 
     @Test
     public void addAgencyUser_calls_OfficialAgencyService() {

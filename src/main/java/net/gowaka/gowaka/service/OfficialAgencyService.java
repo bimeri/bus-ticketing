@@ -14,4 +14,5 @@ public interface OfficialAgencyService {
     OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO);
     List<OfficialAgencyUserDTO> getAgencyUsers();
     OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO);
+    void removeAgencyUser(String userId);
 }

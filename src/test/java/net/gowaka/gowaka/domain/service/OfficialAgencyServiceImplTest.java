@@ -422,4 +422,82 @@ public class OfficialAgencyServiceImplTest {
 
         assertThat(user.getOfficialAgency()).isEqualTo(officialAgency);
     }
+
+    @Test
+    public void removeAgencyUser_remove_a_user_from_an_Agency() {
+
+        String userId = "10";
+        User user = new User();
+        user.setUserId(userId);
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.getUsers().add(user);
+        officialAgency.setId(1l);
+        user.setOfficialAgency(officialAgency);
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.of(user));
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        User authUser = new User();
+        authUser.setUserId("12");
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        when(mockApiSecurityService.getClientToken(any()))
+                .thenReturn(accessToken);
+
+        officialAgencyService.removeAgencyUser(userId);
+
+        ArgumentCaptor<String> userIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> fieldCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> roleCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+
+        verify(mockApiSecurityService).updateUserInfo(userIdCaptor.capture(),fieldCaptor.capture(), roleCaptor.capture(),tokenCaptor.capture());
+
+        assertThat(userIdCaptor.getValue()).isEqualTo("10");
+        assertThat(fieldCaptor.getValue()).isEqualTo("ROLES");
+        assertThat(roleCaptor.getValue()).isEqualTo("USERS");
+        assertThat(tokenCaptor.getValue()).isEqualTo("jwt-token");
+
+        verify(mockUserRepository).save(any());
+        assertThat(user.getOfficialAgency()).isNull();
+    }
+
+    @Test
+    public void removeAgencyUser_throw_Exception_when_user_is_not_a_member_Agency() {
+        String userId = "10";
+        User user = new User();
+        user.setUserId(userId);
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.getUsers().add(user);
+        officialAgency.setId(1l);
+        user.setOfficialAgency(officialAgency);
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.of(user));
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        User authUser = new User();
+        authUser.setUserId("12");
+        authUser.setOfficialAgency(new OfficialAgency());
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("User must be a member to your agency.");
+        expectedException.expect(hasProperty("errorCode", is("USER_NOT_IN_AGENCY")));
+
+        officialAgencyService.removeAgencyUser(userId);
+
+    }
+
 }

@@ -221,6 +221,34 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         return officialAgencyUserDTO;
     }
 
+    @Override
+    public void removeAgencyUser(String userId) {
+
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (!userOptional.isPresent()) {
+            throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        User user = userOptional.get();
+
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        Optional<User> currentAuthUserOptional = userRepository.findById(currentAuthUser.getId());
+        if (!currentAuthUserOptional.isPresent()) {
+            throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        User authUser = currentAuthUserOptional.get();
+        if (!user.getOfficialAgency().getId().equals(authUser.getOfficialAgency().getId())) {
+            throw new ApiException("User must be a member to your agency.", ErrorCodes.USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
+        apiSecurityService.updateUserInfo(userId, "ROLES", USERS.toString(), clientToken.getToken());
+
+        user.setOfficialAgency(null);
+        userRepository.save(user);
+
+    }
+
     private ApiSecurityAccessToken getApiSecurityAccessToken() {
         ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
         apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());
