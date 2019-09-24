@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 public class OfficialAgencyUserRoleRequestDTO {
 
-    private String email;
+    private String userId;
     List<String> roles;
 
     public OfficialAgencyUserRoleRequestDTO() {

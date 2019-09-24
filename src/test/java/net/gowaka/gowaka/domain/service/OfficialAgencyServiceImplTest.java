@@ -200,7 +200,7 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.of(authUser));
 
-        when(mockApiSecurityService.getUserByUsername(any(), any()))
+        when(mockApiSecurityService.getUserByUserId(any(), any()))
                 .thenReturn(apiSecurityUser);
 
         ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
@@ -209,7 +209,7 @@ public class OfficialAgencyServiceImplTest {
                 .thenReturn(accessToken);
 
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
-        officialAgencyUserRoleRequestDTO.setEmail("example@example.com");
+        officialAgencyUserRoleRequestDTO.setUserId("12");
         officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_ADMIN", "AGENCY_MANAGER"));
 
         officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
@@ -226,13 +226,6 @@ public class OfficialAgencyServiceImplTest {
 
     @Test
     public void assignAgencyUserRole_throw_Exception_when_User_not_inSameAgency_as_AuthUser() {
-
-        ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
-        apiSecurityUser.setId("12");
-        apiSecurityUser.setRoles("USERS;");
-        apiSecurityUser.setEmail("example@example.com");
-        apiSecurityUser.setFullName("Jesus Christ");
-        apiSecurityUser.setUsername("example@example.com");
 
         OfficialAgency userOfficialAgency = new OfficialAgency();
         userOfficialAgency.setId(88L);
@@ -251,16 +244,8 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.of(authUser));
 
-        when(mockApiSecurityService.getUserByUsername(any(), any()))
-                .thenReturn(apiSecurityUser);
-
-        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
-        accessToken.setToken("jwt-token");
-        when(mockApiSecurityService.getClientToken(any()))
-                .thenReturn(accessToken);
-
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
-        officialAgencyUserRoleRequestDTO.setEmail("example@example.com");
+        officialAgencyUserRoleRequestDTO.setUserId("12");
         officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_ADMIN", "AGENCY_MANAGER"));
 
         expectedException.expect(ApiException.class);

@@ -159,7 +159,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
                 HttpStatus.OK, successClientTokenResponse);
-        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=user@example.com",
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/10",
                 HttpStatus.OK, "{\n" +
                         "  \"id\": \"10\",\n" +
                         "  \"fullName\":\"Agency User\",\n" +
@@ -188,7 +188,7 @@ public class OfficialAgencyControllerIntegrationTest {
         userRepository.save(aUser);
 
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
-        officialAgencyUserRoleRequestDTO.setEmail("user@example.com");
+        officialAgencyUserRoleRequestDTO.setUserId("10");
         officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_MANAGER","AGENCY_OPERATOR"));
 
         String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});

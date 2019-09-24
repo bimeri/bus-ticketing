@@ -109,12 +109,10 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
     @Override
     public OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO) {
-        ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
-        String username = officialAgencyUserRoleRequestDTO.getEmail();
-        ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(username, clientToken.getToken());
+        String userId = officialAgencyUserRoleRequestDTO.getUserId();
 
-        Optional<User> userOptional = userRepository.findById(apiSecurityUser.getId());
+        Optional<User> userOptional = userRepository.findById(userId);
         if (!userOptional.isPresent()) {
             throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -141,6 +139,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
             userRole += ";" + role;
         }
 
+        ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
+        ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUserId(userId, clientToken.getToken());
 
         apiSecurityService.updateUserInfo(apiSecurityUser.getId(), "ROLES", userRole, clientToken.getToken());
         OfficialAgencyUserDTO officialAgencyUserDTO = new OfficialAgencyUserDTO();
