@@ -1,15 +1,13 @@
 package net.gowaka.gowaka.domain.service;
 
 
-import net.gowaka.gowaka.domain.model.*;
+import net.gowaka.gowaka.domain.model.Bus;
+import net.gowaka.gowaka.domain.model.Seat;
+import net.gowaka.gowaka.domain.model.SharedRide;
+import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.CarRepository;
-import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
-import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.ApproveCarDTO;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.CarService;
@@ -19,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 
 /**
@@ -32,7 +28,6 @@ public class CarServiceImpl implements CarService {
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
-    private static final String  role_prefix = "ROLE_";
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
@@ -43,18 +38,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO) {
-        UserDTO authUser = userService.getCurrentAuthUser();
-        String []managementRoles = {role_prefix + "AGENCY_ADMIN", role_prefix + "AGENCY_MANAGER"};
-        // verify auth user role
-        if (Collections.disjoint(authUser.getRoles(), Arrays.asList(managementRoles))){
-            throw new ApiException("You are not allowed to perform this action", ErrorCodes.ACCESS_DENIED.toString(), HttpStatus.UNAUTHORIZED);
-        }
-        // get user entity
-        Optional<User> optionalUser = userRepository.findById(authUser.getId());
-        if (!optionalUser.isPresent()){
-            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        User agencyManager = optionalUser.get();
+        User agencyManager = verifyCurrentAuthUser();
         // save the bus
         Bus bus = new Bus();
         bus.setName(busDTO.getName());
@@ -80,6 +64,28 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
+    public ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO) {
+        User user = verifyCurrentAuthUser();
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
+        sharedRide.setCarOwnerName(sharedRideDTO.getCarOwnerName());
+        sharedRide.setName(sharedRideDTO.getName());
+        sharedRide.setLicensePlateNumber(sharedRideDTO.getLicensePlateNumber());
+        sharedRide.setIsCarApproved(false);
+        sharedRide.setIsOfficialAgencyIndicator(false);
+        sharedRide.setTimestamp(LocalDateTime.now());
+        sharedRide.setPersonalAgency(user.getPersonalAgency());
+        SharedRide savedRide = carRepository.save(sharedRide);
+        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
+        responseSharedRideDTO.setId(savedRide.getId());
+        responseSharedRideDTO.setName(savedRide.getName());
+        responseSharedRideDTO.setLicensePlateNumber(savedRide.getLicensePlateNumber());
+        responseSharedRideDTO.setCarOwnerIdNumber(savedRide.getCarOwnerIdNumber());
+        responseSharedRideDTO.setCarOwnerName(savedRide.getCarOwnerName());
+        return responseSharedRideDTO;
+    }
+
+    @Override
     public void approve(ApproveCarDTO approveCarDTO, Long id) {
         /*
         Optional<Car> optionalCar = carRepository.findById(id);
@@ -92,6 +98,16 @@ public class CarServiceImpl implements CarService {
         carRepository.save(car);
 
          */
+    }
+
+    private User verifyCurrentAuthUser(){
+        UserDTO authUser = userService.getCurrentAuthUser();
+        // get user entity
+        Optional<User> optionalUser = userRepository.findById(authUser.getId());
+        if (!optionalUser.isPresent()){
+            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalUser.get();
     }
 
 }

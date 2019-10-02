@@ -1,8 +1,6 @@
 package net.gowaka.gowaka.service;
 
-import net.gowaka.gowaka.dto.ApproveCarDTO;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
+import net.gowaka.gowaka.dto.*;
 
 /**
  * @author Nnouka Stephen
@@ -11,4 +9,5 @@ import net.gowaka.gowaka.dto.ResponseBusDTO;
 public interface CarService {
     void approve(ApproveCarDTO approveCarDTO, Long id);
     ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO);
+    ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO);
 }
