@@ -1,10 +1,7 @@
 package net.gowaka.gowaka.domain.service;
 
 
-import net.gowaka.gowaka.domain.model.Bus;
-import net.gowaka.gowaka.domain.model.Seat;
-import net.gowaka.gowaka.domain.model.SharedRide;
-import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
@@ -17,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author Nnouka Stephen
@@ -83,6 +82,29 @@ public class CarServiceImpl implements CarService {
         responseSharedRideDTO.setCarOwnerIdNumber(savedRide.getCarOwnerIdNumber());
         responseSharedRideDTO.setCarOwnerName(savedRide.getCarOwnerName());
         return responseSharedRideDTO;
+    }
+
+    @Override
+    public List<ResponseBusDTO> getAllOfficialAgencyBuses() {
+        User agencyManager = verifyCurrentAuthUser();
+        System.out.println(agencyManager.getUserId());
+        OfficialAgency officialAgency = agencyManager.getOfficialAgency();
+        if (officialAgency == null) {
+            throw new ApiException("No Agency found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        if (officialAgency.getBuses().isEmpty()){
+            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
+        }
+        return officialAgency.getBuses().stream().map(
+                officialAgencyBus -> {
+                    ResponseBusDTO responseBusDTO = new ResponseBusDTO();
+                    responseBusDTO.setId(officialAgencyBus.getId());
+                    responseBusDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
+                    responseBusDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
+                    responseBusDTO.setName(officialAgencyBus.getName());
+                    return responseBusDTO;
+                }
+        ).collect(Collectors.toList());
     }
 
     @Override

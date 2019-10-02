@@ -2,9 +2,14 @@ package net.gowaka.gowaka.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gowaka.gowaka.domain.model.Bus;
+import net.gowaka.gowaka.domain.model.OfficialAgency;
 import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.BusDTO;
+import net.gowaka.gowaka.dto.ResponseBusDTO;
 import net.gowaka.gowaka.dto.SharedRideDTO;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.CarService;
@@ -29,13 +34,16 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,6 +57,12 @@ public class CarControllerIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private OfficialAgencyRepository officialAgencyRepository;
+
+    @Autowired
+    private CarRepository carRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -155,7 +169,7 @@ public class CarControllerIntegrationTest {
         sharedRideDTO.setCarOwnerName("Ndifor Fuh");
         sharedRideDTO.setLicensePlateNumber("1245NW");
 
-        RequestBuilder requestBuilder = post("/api/protected/user/car")
+        RequestBuilder requestBuilder = post("/api/protected/users/car")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(sharedRideDTO))
@@ -175,7 +189,7 @@ public class CarControllerIntegrationTest {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         sharedRideDTO.setName("Danfo Driver");
 
-        RequestBuilder requestBuilder = post("/api/protected/agency/car")
+        RequestBuilder requestBuilder = post("/api/protected/users/car")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(sharedRideDTO))
@@ -183,6 +197,41 @@ public class CarControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(ErrorCodes.VALIDATION_ERROR.toString()))
+                .andReturn();
+    }
+
+    @Test
+    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTOList() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Te widikum");
+        bus.setNumberOfSeats(3);
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+        Bus bus1 = new Bus();
+        bus1.setName("Fly way");
+        bus1.setNumberOfSeats(7);
+        bus1.setOfficialAgency(officialAgency);
+        carRepository.save(bus1);
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        RequestBuilder requestBuilder = get("/api/protected/agency/car")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString( new ArrayList<>(Arrays.asList(bus, bus1)).stream().map(
+                        officialAgencyBus -> {
+                            ResponseBusDTO responseBusDTO = new ResponseBusDTO();
+                            responseBusDTO.setId(officialAgencyBus.getId());
+                            responseBusDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
+                            responseBusDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
+                            responseBusDTO.setName(officialAgencyBus.getName());
+                            return responseBusDTO;
+                        }
+                ).collect(Collectors.toList()))))
                 .andReturn();
     }
 

@@ -1,12 +1,12 @@
 package net.gowaka.gowaka.controller;
 
+import net.gowaka.gowaka.domain.model.Bus;
+import net.gowaka.gowaka.domain.model.OfficialAgency;
+import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.domain.service.CarServiceImpl;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.ResponseSharedRideDTO;
-import net.gowaka.gowaka.dto.SharedRideDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.CarService;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
@@ -20,8 +20,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,12 +41,13 @@ public class CarControllerTest {
     private UserService mockUserService;
     @Mock
     private UserRepository mockUserRepository;
+    @Mock
+    private CarRepository mockCarRepository;
+    @Mock
+    private OfficialAgency mockOfficialAgency;
 
     private CarController carController;
     private CarService carService;
-
-    @Mock
-    private CarRepository mockCarRepository;
 
     @Before
     public void setup(){
@@ -120,6 +124,44 @@ public class CarControllerTest {
         assertThat(responseBody.getCarOwnerIdNumber(), is(equalTo(sharedRideDTO.getCarOwnerIdNumber())));
         assertThat(responseBody.getLicensePlateNumber(), is(equalTo(sharedRideDTO.getLicensePlateNumber())));
         assertThat(responseBody.getCarOwnerName(), is(equalTo(sharedRideDTO.getCarOwnerName())));
+        assertThat(response.getStatusCode(), is(equalTo(HttpStatus.OK)));
+    }
+
+    @Test
+    public void official_agency_get_all_buses_should_call_car_service_get_all_buses(){
+        carController.getAllOfficialAgencyBuses();
+        verify(mockCarService).getAllOfficialAgencyBuses();
+    }
+
+    @Test
+    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTO_list(){
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Happy");
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        bus1.setName("Angry");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        User user = new User();
+        user.setUserId("1");
+        when(mockCarService.getAllOfficialAgencyBuses()).thenAnswer(new Answer<List<ResponseBusDTO>>() {
+            public List<ResponseBusDTO> answer(InvocationOnMock invocation) throws Throwable {
+              ResponseBusDTO responseBusDTO = new ResponseBusDTO();
+              responseBusDTO.setId(bus.getId());
+              responseBusDTO.setName(bus.getName());
+              ResponseBusDTO responseBusDTO1 = new ResponseBusDTO();
+              responseBusDTO1.setId(bus1.getId());
+              responseBusDTO1.setName(bus1.getName());
+              return new ArrayList<>(Arrays.asList(responseBusDTO, responseBusDTO1));
+            }
+        });
+        ReflectionTestUtils.setField(carController, "carService", mockCarService);
+        ResponseEntity<List<ResponseBusDTO>> response = carController.getAllOfficialAgencyBuses();
+        verify(mockCarService).getAllOfficialAgencyBuses();
+        List<ResponseBusDTO> responseBody = response.getBody();
+        assertThat(responseBody.get(0).getName(), is(bus.getName()));
+        assertThat(responseBody.get(1).getId(), both(is(not(bus.getId()))).and(is(bus1.getId())));
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.OK)));
     }
 
