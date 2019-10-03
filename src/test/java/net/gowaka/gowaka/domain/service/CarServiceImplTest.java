@@ -213,15 +213,37 @@ public class CarServiceImplTest {
          assertFalse(car.getIsCarApproved());
      }
 
-     @Test(expected = ApiException.class)
+     @Test
      public void should_throw_car_not_found_api_exception(){
          Car car = new Bus();
          ApproveCarDTO approveCarDTO = new ApproveCarDTO();
          car.setId(1L);
          when(mockCarRepository.findById(anyLong())).thenReturn(Optional.empty());
          approveCarDTO.setApprove(true);
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("Car not found");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
          carService.approve(approveCarDTO, 1L);
-         verify(mockCarRepository).findById(1L);
+     }
+
+     @Test
+     public void should_throw_license_plate_number_in_use_api_exception(){
+         SharedRide sharedRide = new SharedRide();
+         sharedRide.setId(1L);
+         sharedRide.setLicensePlateNumber("12345");
+         user.setUserId("1");
+         SharedRideDTO sharedRideDTO = new SharedRideDTO();
+         sharedRideDTO.setLicensePlateNumber("12345");
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+         when(mockCarRepository.findByLicensePlateNumber(anyString())).thenReturn(Optional.of(sharedRide));
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("License plate number already in use");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString())));
+         carService.addSharedRide(sharedRideDTO);
      }
 
 }

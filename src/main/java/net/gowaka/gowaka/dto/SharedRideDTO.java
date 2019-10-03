@@ -2,7 +2,7 @@ package net.gowaka.gowaka.dto;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 
 /**
  *@author Nnouka Stephen
@@ -12,10 +12,10 @@ import javax.validation.constraints.NotNull;
 @Data
 public class SharedRideDTO {
     private String name;
-    @NotNull(message = "license plate number is required")
+    @NotBlank(message = "licensePlateNumber is required")
     private String licensePlateNumber;
-    @NotNull(message = "car owner name is required")
+    @NotBlank(message = "carOwnerName is required")
     private String carOwnerName;
-    @NotNull(message = "car owner ID is required")
+    @NotBlank(message = "carOwnerId is required")
     private String carOwnerIdNumber;
 }

@@ -38,10 +38,14 @@ public class CarServiceImpl implements CarService {
     @Override
     public ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO) {
         OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
+        String licensePlateNumber = busDTO.getLicensePlateNumber();
+        verifyCarExists(licensePlateNumber);
         // save the bus
         Bus bus = new Bus();
         bus.setName(busDTO.getName());
-        bus.setLicensePlateNumber(busDTO.getLicensePlateNumber());
+        bus.setLicensePlateNumber(
+                licensePlateNumber == null ? null : licensePlateNumber.trim()
+        );
         bus.setNumberOfSeats(busDTO.getNumberOfSeats());
         bus.setTimestamp(LocalDateTime.now());
         bus.setIsOfficialAgencyIndicator(true);
@@ -62,11 +66,14 @@ public class CarServiceImpl implements CarService {
     @Override
     public ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO) {
         PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
+        String licensePlateNumber = sharedRideDTO.getLicensePlateNumber();
+        verifyCarExists(licensePlateNumber);
         SharedRide sharedRide = new SharedRide();
         sharedRide.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
         sharedRide.setCarOwnerName(sharedRideDTO.getCarOwnerName());
         sharedRide.setName(sharedRideDTO.getName());
-        sharedRide.setLicensePlateNumber(sharedRideDTO.getLicensePlateNumber());
+        sharedRide.setLicensePlateNumber(
+                licensePlateNumber == null ? null : licensePlateNumber.trim());
         sharedRide.setIsCarApproved(false);
         sharedRide.setIsOfficialAgencyIndicator(false);
         sharedRide.setTimestamp(LocalDateTime.now());
@@ -159,6 +166,13 @@ public class CarServiceImpl implements CarService {
             throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
         }
         return sharedRides;
+    }
+
+    private void verifyCarExists(String licensePlateNumber){
+        if (licensePlateNumber != null && carRepository.findByLicensePlateNumber(licensePlateNumber.trim()).isPresent()){
+            throw new ApiException("License plate number already in use",
+                    ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
+        }
     }
 
 }

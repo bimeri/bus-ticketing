@@ -2,11 +2,8 @@ package net.gowaka.gowaka.dto;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *@author Nnouka Stephen
@@ -16,8 +13,8 @@ import java.util.List;
 @Data
 public class BusDTO {
     private String name;
-    @NotNull(message = "license plate number is required")
+    @NotBlank(message = "licensePlateNumber is required")
     private String licensePlateNumber;
-    @NotNull(message = "number of seats is required")
+    @NotNull(message = "numberOfSeats is required")
     private Integer numberOfSeats;
 }
