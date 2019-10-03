@@ -91,17 +91,13 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void approve(ApproveCarDTO approveCarDTO, Long id) {
-        /*
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
-
         Car car = optionalCar.get();
         car.setIsCarApproved(approveCarDTO.isApprove());
         carRepository.save(car);
-
-         */
     }
 
     private User verifyCurrentAuthUser(){

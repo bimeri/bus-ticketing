@@ -7,10 +7,7 @@ import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.ResponseSharedRideDTO;
-import net.gowaka.gowaka.dto.SharedRideDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.CarService;
 import org.junit.After;
@@ -274,6 +271,23 @@ public class CarControllerIntegrationTest {
                             return responseSharedRideDTO;
                         }
                 ).collect(Collectors.toList()))))
+                .andReturn();
+    }
+
+    @Test
+    public void approve_should_return_204() throws Exception {
+        ApproveCarDTO approveCarDTO = new ApproveCarDTO();
+        approveCarDTO.setApprove(true);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setName("happi");
+        carRepository.save(sharedRide);
+        RequestBuilder requestBuilder = post("/api/protected/car/" + sharedRide.getId() + "/approve")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(approveCarDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
                 .andReturn();
     }
 

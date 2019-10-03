@@ -1,15 +1,13 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.domain.model.Bus;
+import net.gowaka.gowaka.domain.model.Car;
 import net.gowaka.gowaka.domain.model.OfficialAgency;
 import net.gowaka.gowaka.domain.model.SharedRide;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.domain.service.CarServiceImpl;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.ResponseSharedRideDTO;
-import net.gowaka.gowaka.dto.SharedRideDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.CarService;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
@@ -26,12 +24,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Nnouka Stephen
@@ -198,16 +196,16 @@ public class CarControllerTest {
         assertThat(responseBody.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
                 .and(equalTo(sharedRide1.getName()))));
     }
-/*
+
     @Test
-    public void should_call_car_service_approve_method(){
+    public void approve_should_call_car_service_approve_method(){
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController.shallApprove(approveCarDTO, "1");
         verify(mockCarService).approve(approveCarDTO, 1L);
     }
 
     @Test
-    public void should_return_204_no_content_status_code(){
+    public void approve_should_return_204_no_content_status_code(){
         Car car = new Bus();
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController = new CarController(carService);
@@ -221,13 +219,12 @@ public class CarControllerTest {
         verify(mockCarRepository).findById(1L);
         verify(mockCarRepository).save(car);
         assertTrue(car.getIsCarApproved());
-        assertTrue(responseEntity.getStatusCode().toString().equals("204 NO_CONTENT"));
+        assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
 
         approveCarDTO.setApprove(false);
         carController.shallApprove(approveCarDTO, "1");
         assertFalse(car.getIsCarApproved());
-        assertTrue(responseEntity.getStatusCode().toString().equals("204 NO_CONTENT"));
+        assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
     }
 
- */
 }

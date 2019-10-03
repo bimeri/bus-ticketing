@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
@@ -192,7 +192,6 @@ public class CarServiceImplTest {
         assertThat(responseSharedRideDTOS.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
                 .and(is(equalTo(sharedRide1.getName())))));
     }
-/*
      @Test
      public void should_approve_disapprove_car(){
          Car car = new Bus();
@@ -225,5 +224,4 @@ public class CarServiceImplTest {
          verify(mockCarRepository).findById(1L);
      }
 
- */
 }

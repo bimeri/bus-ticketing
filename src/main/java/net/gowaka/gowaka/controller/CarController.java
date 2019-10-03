@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.ResponseSharedRideDTO;
-import net.gowaka.gowaka.dto.SharedRideDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.CarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -50,13 +47,13 @@ public class CarController {
     public ResponseEntity<List<ResponseSharedRideDTO>> getSharedRides() {
         return ResponseEntity.ok(carService.getAllSharedRides());
     }
-/*
-    @PostMapping("/{id}/approve")
-    public ResponseEntity<Object> shallApprove(@RequestBody ApproveCarDTO approveCarDTO,
+
+    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
+    @PostMapping("/car/{id}/approve")
+    public ResponseEntity<Object> shallApprove(@Valid @RequestBody ApproveCarDTO approveCarDTO,
                                                       @PathVariable("id") String id){
+        System.out.println("approving: " + approveCarDTO.isApprove());
         carService.approve(approveCarDTO, Long.parseLong(id));
         return ResponseEntity.noContent().build();
     }
-
- */
 }
