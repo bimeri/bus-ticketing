@@ -1,15 +1,9 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.domain.model.Bus;
-import net.gowaka.gowaka.domain.model.OfficialAgency;
-import net.gowaka.gowaka.domain.model.SharedRide;
-import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
-import net.gowaka.gowaka.dto.BusDTO;
-import net.gowaka.gowaka.dto.ResponseBusDTO;
-import net.gowaka.gowaka.dto.SharedRideDTO;
-import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.CarService;
@@ -45,10 +39,16 @@ public class CarServiceImplTest {
      private UserService mockUserService;
      @Mock
      private UserRepository mockUserRepository;
+     @Mock
+     private User user;
+
      private CarService carService;
 
      @Mock
      private OfficialAgency mockOfficialAgency;
+
+     @Mock
+     private PersonalAgency mockPersonalAgency;
 
      @Rule
      public ExpectedException expectedException = ExpectedException.none();
@@ -62,22 +62,18 @@ public class CarServiceImplTest {
      public void official_agency_should_add_car(){
          Bus bus = new Bus();
          bus.setId(1L);
-         bus.setNumberOfSeats(0);
-         User user = new User();
          user.setUserId("1");
          BusDTO busDTO = new BusDTO();
-         busDTO.setNumberOfSeats(0);
          UserDTO userDTO = new UserDTO();
          userDTO.setId("1");
-         String []roles = {"ROLE_AGENCY_MANAGER"};
-         userDTO.setRoles(Arrays.asList(roles));
+         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
          when(mockCarRepository.save(any())).thenReturn(bus);
          when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
          when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
          carService.addOfficialAgencyBus(busDTO);
          verify(mockUserService).getCurrentAuthUser();
          verify(mockUserRepository).findById("1");
-         verify(mockCarRepository).save(bus);
+         verify(mockCarRepository).save(any());
      }
 
      @Test
@@ -92,25 +88,25 @@ public class CarServiceImplTest {
      }
 
      @Test
-     public void private_agency_should_add_sharedRide(){
+     public void personal_agency_should_add_sharedRide(){
          SharedRide sharedRide = new SharedRide();
          sharedRide.setId(1L);
-         User user = new User();
          user.setUserId("1");
          SharedRideDTO sharedRideDTO = new SharedRideDTO();
          UserDTO userDTO = new UserDTO();
          userDTO.setId("1");
+         when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
          when(mockCarRepository.save(any())).thenReturn(sharedRide);
          when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
          when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
          carService.addSharedRide(sharedRideDTO);
          verify(mockUserService).getCurrentAuthUser();
          verify(mockUserRepository).findById("1");
-         verify(mockCarRepository).save(sharedRide);
+         verify(mockCarRepository).save(any());
      }
 
      @Test
-     public void private_agency_should_throw_resource_not_found_exception(){
+     public void personal_agency_should_throw_resource_not_found_exception(){
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         UserDTO userDTO = new UserDTO();
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
@@ -119,6 +115,19 @@ public class CarServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         carService.addSharedRide(sharedRideDTO);
      }
+
+    @Test
+    public void personal_agency_add_sharedRide_should_throw_resource_not_found_exception(){
+        UserDTO userDTO = new UserDTO();
+        User user = new User();
+        SharedRideDTO sharedRideDTO = new SharedRideDTO();
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("No Personal Agency found for this user");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carService.addSharedRide(sharedRideDTO);
+    }
 
     @Test
     public void official_agency_manager_should_get_all_buses(){
@@ -130,12 +139,10 @@ public class CarServiceImplTest {
         bus1.setName("Angry");
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
-        User user = new User();
-        user.setUserId("1");
-        user.setOfficialAgency(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         when(mockOfficialAgency.getBuses()).thenReturn(new ArrayList<>(Arrays.asList(bus, bus1)));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         List<ResponseBusDTO> responseBusDTOS = carService.getAllOfficialAgencyBuses();
         assertThat(responseBusDTOS.get(0).getId(), is(bus.getId()));
         assertThat(responseBusDTOS.get(0).getName(), is(bus.getName()));
@@ -144,30 +151,46 @@ public class CarServiceImplTest {
     }
 
     @Test
-    public void official_agency_get_buses_should_throw_resource_not_found_exception(){
+    public void official_agency_get_buses_should_throw_resource_not_found_exception_no_agency(){
         UserDTO userDTO = new UserDTO();
         User user = new User();
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         expectedException.expect(ApiException.class);
-        expectedException.expectMessage("No Agency found");
+        expectedException.expectMessage("No Official Agency found for this user");
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         carService.getAllOfficialAgencyBuses();
     }
 
     @Test
-    public void official_agency_get_buses_should_throw_resource_not_found_exception_with_204_no_content(){
+    public void official_agency_get_buses_should_throw_resource_not_found_exception_empty_agency(){
         UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        User user = new User();
-        user.setUserId("1");
-        user.setOfficialAgency(mockOfficialAgency);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("Agency is Empty");
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         carService.getAllOfficialAgencyBuses();
+    }
+
+    @Test
+    public void user_should_get_all_sharedRides(){
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setId(1L);
+        sharedRide.setName("Happy");
+        SharedRide sharedRide1 = new SharedRide();
+        sharedRide1.setId(2L);
+        sharedRide1.setName("Angry");
+        UserDTO userDTO = new UserDTO();
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockPersonalAgency.getSharedRides()).thenReturn(new ArrayList<>(Arrays.asList(sharedRide, sharedRide1)));
+        List<ResponseSharedRideDTO> responseSharedRideDTOS = carService.getAllSharedRides();
+        assertThat(responseSharedRideDTOS.get(0).getId(), is(equalTo(sharedRide.getId())));
+        assertThat(responseSharedRideDTOS.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
+                .and(is(equalTo(sharedRide1.getName())))));
     }
 /*
      @Test

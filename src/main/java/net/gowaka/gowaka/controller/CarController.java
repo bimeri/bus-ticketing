@@ -44,6 +44,12 @@ public class CarController {
     public ResponseEntity<List<ResponseBusDTO>> getAllOfficialAgencyBuses(){
         return ResponseEntity.ok(carService.getAllOfficialAgencyBuses());
     }
+
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @GetMapping("/users/car")
+    public ResponseEntity<List<ResponseSharedRideDTO>> getSharedRides() {
+        return ResponseEntity.ok(carService.getAllSharedRides());
+    }
 /*
     @PostMapping("/{id}/approve")
     public ResponseEntity<Object> shallApprove(@RequestBody ApproveCarDTO approveCarDTO,

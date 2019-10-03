@@ -2,14 +2,14 @@ package net.gowaka.gowaka.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.gowaka.gowaka.domain.model.Bus;
-import net.gowaka.gowaka.domain.model.OfficialAgency;
-import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
+import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.BusDTO;
 import net.gowaka.gowaka.dto.ResponseBusDTO;
+import net.gowaka.gowaka.dto.ResponseSharedRideDTO;
 import net.gowaka.gowaka.dto.SharedRideDTO;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.CarService;
@@ -60,6 +60,9 @@ public class CarControllerIntegrationTest {
 
     @Autowired
     private OfficialAgencyRepository officialAgencyRepository;
+
+    @Autowired
+    private PersonalAgencyRepository personalAgencyRepository;
 
     @Autowired
     private CarRepository carRepository;
@@ -131,7 +134,10 @@ public class CarControllerIntegrationTest {
         busDTO.setLicensePlateNumber("12345LT");
         busDTO.setNumberOfSeats(5);
         busDTO.setName("Malingo Royal");
-
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName(user.getUserId());
+        user.setOfficialAgency(officialAgencyRepository.save(officialAgency));
+        userRepository.save(user);
         RequestBuilder requestBuilder = post("/api/protected/agency/car")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -168,6 +174,10 @@ public class CarControllerIntegrationTest {
         sharedRideDTO.setName("Danfo Driver");
         sharedRideDTO.setCarOwnerName("Ndifor Fuh");
         sharedRideDTO.setLicensePlateNumber("1245NW");
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgency.setName(user.getUserId());
+        user.setPersonalAgency(personalAgencyRepository.save(personalAgency));
+        userRepository.save(user);
 
         RequestBuilder requestBuilder = post("/api/protected/users/car")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -230,6 +240,38 @@ public class CarControllerIntegrationTest {
                             responseBusDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
                             responseBusDTO.setName(officialAgencyBus.getName());
                             return responseBusDTO;
+                        }
+                ).collect(Collectors.toList()))))
+                .andReturn();
+    }
+
+    @Test
+    public void personal_agency_get_shared_rides_should_return_200_with_shared_ride_list() throws Exception {
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgency.setName("Homer home");
+        personalAgencyRepository.save(personalAgency);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setName("H1");
+        sharedRide.setPersonalAgency(personalAgency);
+        SharedRide sharedRide1 = new SharedRide();
+        sharedRide1.setName("H2");
+        sharedRide1.setPersonalAgency(personalAgency);
+        carRepository.save(sharedRide);
+        carRepository.save(sharedRide1);
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+        RequestBuilder requestBuilder = get("/api/protected/users/car")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString( new ArrayList<>(Arrays.asList(sharedRide, sharedRide1))
+                        .stream().map(
+                        sharedRides -> {
+                            ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
+                            responseSharedRideDTO.setName(sharedRides.getName());
+                            responseSharedRideDTO.setId(sharedRides.getId());
+                            return responseSharedRideDTO;
                         }
                 ).collect(Collectors.toList()))))
                 .andReturn();

@@ -37,7 +37,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO) {
-        User agencyManager = verifyCurrentAuthUser();
+        OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
         // save the bus
         Bus bus = new Bus();
         bus.setName(busDTO.getName());
@@ -46,25 +46,22 @@ public class CarServiceImpl implements CarService {
         bus.setTimestamp(LocalDateTime.now());
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
-        bus.setOfficialAgency(agencyManager.getOfficialAgency());
-        for (int i = 0; i < busDTO.getNumberOfSeats(); i++){
-            Seat seat = new Seat();
-            seat.setSeatNumber(i + 1);
-            seat.setBus(bus);
-            bus.getSeats().add(seat);
+        bus.setOfficialAgency(officialAgency);
+        if (busDTO.getNumberOfSeats() != null){
+            for (int i = 0; i < busDTO.getNumberOfSeats(); i++){
+                Seat seat = new Seat();
+                seat.setSeatNumber(i + 1);
+                seat.setBus(bus);
+                bus.getSeats().add(seat);
+            }
         }
         Bus savedbus = carRepository.save(bus);
-        ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-        responseBusDTO.setId(savedbus.getId());
-        responseBusDTO.setNumberOfSeats(savedbus.getNumberOfSeats());
-        responseBusDTO.setName(savedbus.getName());
-        responseBusDTO.setLicensePlateNumber(savedbus.getLicensePlateNumber());
-        return responseBusDTO;
+        return getResponseBusDTO(savedbus);
     }
 
     @Override
     public ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO) {
-        User user = verifyCurrentAuthUser();
+        PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
         SharedRide sharedRide = new SharedRide();
         sharedRide.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
         sharedRide.setCarOwnerName(sharedRideDTO.getCarOwnerName());
@@ -73,37 +70,22 @@ public class CarServiceImpl implements CarService {
         sharedRide.setIsCarApproved(false);
         sharedRide.setIsOfficialAgencyIndicator(false);
         sharedRide.setTimestamp(LocalDateTime.now());
-        sharedRide.setPersonalAgency(user.getPersonalAgency());
+        sharedRide.setPersonalAgency(personalAgency);
         SharedRide savedRide = carRepository.save(sharedRide);
-        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
-        responseSharedRideDTO.setId(savedRide.getId());
-        responseSharedRideDTO.setName(savedRide.getName());
-        responseSharedRideDTO.setLicensePlateNumber(savedRide.getLicensePlateNumber());
-        responseSharedRideDTO.setCarOwnerIdNumber(savedRide.getCarOwnerIdNumber());
-        responseSharedRideDTO.setCarOwnerName(savedRide.getCarOwnerName());
-        return responseSharedRideDTO;
+        return getResponseSharedRideDTO(savedRide);
     }
 
     @Override
     public List<ResponseBusDTO> getAllOfficialAgencyBuses() {
-        User agencyManager = verifyCurrentAuthUser();
-        System.out.println(agencyManager.getUserId());
-        OfficialAgency officialAgency = agencyManager.getOfficialAgency();
-        if (officialAgency == null) {
-            throw new ApiException("No Agency found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        if (officialAgency.getBuses().isEmpty()){
-            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
-        }
-        return officialAgency.getBuses().stream().map(
-                officialAgencyBus -> {
-                    ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-                    responseBusDTO.setId(officialAgencyBus.getId());
-                    responseBusDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
-                    responseBusDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
-                    responseBusDTO.setName(officialAgencyBus.getName());
-                    return responseBusDTO;
-                }
+        return getBuses(getOfficialAgency(verifyCurrentAuthUser())).stream().map(
+                this::getResponseBusDTO
+        ).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ResponseSharedRideDTO> getAllSharedRides() {
+        return getSharedRides(getPersonalAgency(verifyCurrentAuthUser())).stream().map(
+                this::getResponseSharedRideDTO
         ).collect(Collectors.toList());
     }
 
@@ -130,6 +112,57 @@ public class CarServiceImpl implements CarService {
             throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalUser.get();
+    }
+
+    private PersonalAgency getPersonalAgency(User user) {
+        PersonalAgency personalAgency = user.getPersonalAgency();
+        if (personalAgency == null) {
+            throw new ApiException("No Personal Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return personalAgency;
+    }
+
+    private OfficialAgency getOfficialAgency(User user) {
+        OfficialAgency officialAgency = user.getOfficialAgency();
+        if (officialAgency == null){
+            throw new ApiException("No Official Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return officialAgency;
+    }
+
+    private ResponseSharedRideDTO getResponseSharedRideDTO(SharedRide sharedRide) {
+        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
+        responseSharedRideDTO.setId(sharedRide.getId());
+        responseSharedRideDTO.setName(sharedRide.getName());
+        responseSharedRideDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
+        responseSharedRideDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
+        responseSharedRideDTO.setCarOwnerName(sharedRide.getCarOwnerName());
+        return responseSharedRideDTO;
+    }
+
+    private ResponseBusDTO getResponseBusDTO(Bus bus){
+        ResponseBusDTO responseBusDTO = new ResponseBusDTO();
+        responseBusDTO.setId(bus.getId());
+        responseBusDTO.setNumberOfSeats(bus.getNumberOfSeats());
+        responseBusDTO.setName(bus.getName());
+        responseBusDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
+        return responseBusDTO;
+    }
+
+    private List<Bus> getBuses(OfficialAgency officialAgency){
+        List<Bus> buses = officialAgency.getBuses();
+        if (buses.isEmpty()){
+            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
+        }
+        return buses;
+    }
+
+    private List<SharedRide> getSharedRides(PersonalAgency personalAgency){
+        List<SharedRide> sharedRides = personalAgency.getSharedRides();
+        if (sharedRides.isEmpty()){
+            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
+        }
+        return sharedRides;
     }
 
 }

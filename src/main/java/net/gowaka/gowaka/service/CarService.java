@@ -13,4 +13,5 @@ public interface CarService {
     ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO);
     ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO);
     List<ResponseBusDTO> getAllOfficialAgencyBuses();
+    List<ResponseSharedRideDTO> getAllSharedRides();
 }
