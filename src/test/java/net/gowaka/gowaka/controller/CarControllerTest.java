@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.domain.model.Bus;
-import net.gowaka.gowaka.domain.model.Car;
-import net.gowaka.gowaka.domain.model.OfficialAgency;
-import net.gowaka.gowaka.domain.model.SharedRide;
+import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.domain.service.CarServiceImpl;
@@ -209,11 +206,13 @@ public class CarControllerTest {
         Car car = new Bus();
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController = new CarController(carService);
-
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
         car.setId(1L);
         when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(car));
         when(mockCarRepository.save(any())).thenReturn(car);
-
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(new User()));
         approveCarDTO.setApprove(true);
         ResponseEntity<Object> responseEntity = carController.shallApprove(approveCarDTO, "1");
         verify(mockCarRepository).findById(1L);
@@ -226,5 +225,6 @@ public class CarControllerTest {
         assertFalse(car.getIsCarApproved());
         assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
     }
+
 
 }

@@ -291,4 +291,47 @@ public class CarControllerIntegrationTest {
                 .andReturn();
     }
 
+    @Test
+    public void gw_admin_get_unapproved_shared_rides_should_return_200_with_shared_ride_list() throws Exception {
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgency.setName("Homer home");
+        PersonalAgency personalAgency1 = new PersonalAgency();
+        personalAgency1.setName("My agency");
+        personalAgencyRepository.save(personalAgency);
+        personalAgencyRepository.save(personalAgency1);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setName("H1");
+        sharedRide.setPersonalAgency(personalAgency);
+        SharedRide sharedRide1 = new SharedRide();
+        sharedRide1.setName("H2");
+        sharedRide1.setIsCarApproved(false);
+        sharedRide1.setPersonalAgency(personalAgency);
+        SharedRide sharedRide2 = new SharedRide();
+        sharedRide2.setName("H3");
+        sharedRide2.setIsCarApproved(true);
+        sharedRide2.setPersonalAgency(personalAgency1);
+        carRepository.save(sharedRide);
+        carRepository.save(sharedRide1);
+        carRepository.save(sharedRide2);
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+        RequestBuilder requestBuilder = get("/api/protected/cars/unapproved")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString( new ArrayList<>(Arrays.asList(sharedRide, sharedRide1))
+                        .stream().map(
+                                sharedRides -> {
+                                    ResponseSharedRideXDTO responseSharedRideXDTO = new ResponseSharedRideXDTO();
+                                    responseSharedRideXDTO.setName(sharedRides.getName());
+                                    responseSharedRideXDTO.setId(sharedRides.getId());
+                                    responseSharedRideXDTO.setIsCarApproved(sharedRides.getIsCarApproved());
+                                    responseSharedRideXDTO.setPersonalAgency(sharedRides.getPersonalAgency().getName());
+                                    responseSharedRideXDTO.setTimestamp(sharedRides.getTimestamp());
+                                    return responseSharedRideXDTO;
+                                }
+                        ).collect(Collectors.toList()))))
+                .andReturn();
+    }
 }

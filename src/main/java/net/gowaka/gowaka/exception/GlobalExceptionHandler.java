@@ -68,12 +68,15 @@ public class GlobalExceptionHandler {
         ValidationErrorResponse validationErrorResponse = new ValidationErrorResponse();
         validationErrorResponse.setEndpoint(request.getRequestURI());
         validationErrorResponse.setCode(VALIDATION_ERROR.toString());
-        validationErrorResponse.setMessage("MethodArgumentNotValidException");
         List<FieldError> fieldErrorList = ex.getBindingResult().getFieldErrors();
+        StringBuilder message = new StringBuilder("MethodArgumentNotValidException:");
 
         for(FieldError fieldError: fieldErrorList){
             validationErrorResponse.getErrors().put(fieldError.getField(), fieldError.getDefaultMessage());
+            message.append(" #").append(fieldError.getField());
         }
+        message.append(" @errors.");
+        validationErrorResponse.setMessage(message.toString());
 
         return new ResponseEntity<>(validationErrorResponse, HttpStatus.BAD_REQUEST);
     }

@@ -52,8 +52,13 @@ public class CarController {
     @PostMapping("/car/{id}/approve")
     public ResponseEntity<Object> shallApprove(@Valid @RequestBody ApproveCarDTO approveCarDTO,
                                                       @PathVariable("id") String id){
-        System.out.println("approving: " + approveCarDTO.isApprove());
         carService.approve(approveCarDTO, Long.parseLong(id));
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
+    @GetMapping("/cars/unapproved")
+    public ResponseEntity<List<ResponseSharedRideXDTO>> getAllUnapprovedSharedRides(){
+        return ResponseEntity.ok(carService.getAllUnapprovedSharedRides());
     }
 }

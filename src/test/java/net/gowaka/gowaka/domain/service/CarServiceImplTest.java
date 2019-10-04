@@ -2,6 +2,7 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -49,6 +50,9 @@ public class CarServiceImplTest {
 
      @Mock
      private PersonalAgency mockPersonalAgency;
+
+     @Mock
+     private PersonalAgencyRepository personalAgencyRepository;
 
      @Rule
      public ExpectedException expectedException = ExpectedException.none();
@@ -196,11 +200,13 @@ public class CarServiceImplTest {
      public void should_approve_disapprove_car(){
          Car car = new Bus();
          ApproveCarDTO approveCarDTO = new ApproveCarDTO();
-
-
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
          car.setId(1L);
          when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(car));
          when(mockCarRepository.save(any())).thenReturn(car);
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(new User()));
 
          approveCarDTO.setApprove(true);
          carService.approve(approveCarDTO, 1L);
@@ -218,7 +224,11 @@ public class CarServiceImplTest {
          Car car = new Bus();
          ApproveCarDTO approveCarDTO = new ApproveCarDTO();
          car.setId(1L);
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
          when(mockCarRepository.findById(anyLong())).thenReturn(Optional.empty());
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(new User()));
          approveCarDTO.setApprove(true);
          expectedException.expect(ApiException.class);
          expectedException.expectMessage("Car not found");
@@ -244,6 +254,24 @@ public class CarServiceImplTest {
          expectedException.expectMessage("License plate number already in use");
          expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString())));
          carService.addSharedRide(sharedRideDTO);
+     }
+
+     @Test
+     public void gw_admin_get_all_unapproved_shared_rides_should_throw_agency_not_found_api_exception(){
+         SharedRide sharedRide = new SharedRide();
+         sharedRide.setId(1L);
+         sharedRide.setLicensePlateNumber("12345");
+         user.setUserId("1");
+         SharedRideDTO sharedRideDTO = new SharedRideDTO();
+         sharedRideDTO.setLicensePlateNumber("12345");
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("No Personal Agency found for this user");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+         carService.getAllSharedRides();
      }
 
 }

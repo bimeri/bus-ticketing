@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ public class CarServiceImpl implements CarService {
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
+    private PersonalAgencyRepository personalAgencyRepository;
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
@@ -35,11 +38,16 @@ public class CarServiceImpl implements CarService {
         this.userRepository = userRepository;
     }
 
+    @Autowired
+    public void setPersonalAgencyRepository(PersonalAgencyRepository personalAgencyRepository) {
+        this.personalAgencyRepository = personalAgencyRepository;
+    }
+
     @Override
     public ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO) {
         OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
         String licensePlateNumber = busDTO.getLicensePlateNumber();
-        verifyCarExists(licensePlateNumber);
+        verifyCarLicensePlateNumber(licensePlateNumber);
         // save the bus
         Bus bus = new Bus();
         bus.setName(busDTO.getName());
@@ -67,7 +75,7 @@ public class CarServiceImpl implements CarService {
     public ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO) {
         PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
         String licensePlateNumber = sharedRideDTO.getLicensePlateNumber();
-        verifyCarExists(licensePlateNumber);
+        verifyCarLicensePlateNumber(licensePlateNumber);
         SharedRide sharedRide = new SharedRide();
         sharedRide.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
         sharedRide.setCarOwnerName(sharedRideDTO.getCarOwnerName());
@@ -98,13 +106,28 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void approve(ApproveCarDTO approveCarDTO, Long id) {
-        Optional<Car> optionalCar = carRepository.findById(id);
-        if (!optionalCar.isPresent()){
-            throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
-        }
-        Car car = optionalCar.get();
+        verifyCurrentAuthUser();
+        Car car = verifyCarById(id);
         car.setIsCarApproved(approveCarDTO.isApprove());
         carRepository.save(car);
+    }
+
+    @Override
+    public List<ResponseSharedRideXDTO> getAllUnapprovedSharedRides() {
+        verifyCurrentAuthUser();
+        List<ResponseSharedRideXDTO> responseSharedRideXDTOS = new ArrayList<>();
+        getPersonalAgencies().forEach(
+                personalAgency -> {
+                    List<SharedRide> sharedRides = personalAgency.getSharedRides();
+                    if (!sharedRides.isEmpty()){
+                        sharedRides.stream().filter(sharedRide -> sharedRide.getIsCarApproved() == null ||
+                                !sharedRide.getIsCarApproved()).forEach(
+                                        sharedRide -> responseSharedRideXDTOS.add(getResponseSharedRideXDTO(sharedRide))
+                        );
+                    }
+                }
+        );
+        return responseSharedRideXDTOS;
     }
 
     private User verifyCurrentAuthUser(){
@@ -170,11 +193,48 @@ public class CarServiceImpl implements CarService {
         return sharedRides;
     }
 
-    private void verifyCarExists(String licensePlateNumber){
+    private void verifyCarLicensePlateNumber(String licensePlateNumber){
         if (licensePlateNumber != null && carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber.trim()).isPresent()){
             throw new ApiException("License plate number already in use",
                     ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
         }
+    }
+
+    private Car verifyCarById(Long id){
+        Optional<Car> optionalCar = carRepository.findById(id);
+        if (!optionalCar.isPresent()){
+            throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        return optionalCar.get();
+    }
+
+    /**
+     * specific to unapproved shared rides
+     * @param sharedRide
+     * @return
+     */
+    private ResponseSharedRideXDTO getResponseSharedRideXDTO(SharedRide sharedRide){
+        ResponseSharedRideXDTO responseSharedRideXDTO = new ResponseSharedRideXDTO();
+        responseSharedRideXDTO.setId(sharedRide.getId());
+        responseSharedRideXDTO.setName(sharedRide.getName());
+        responseSharedRideXDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
+        responseSharedRideXDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
+        responseSharedRideXDTO.setCarOwnerName(sharedRide.getCarOwnerName());
+        responseSharedRideXDTO.setIsCarApproved(sharedRide.getIsCarApproved());
+        responseSharedRideXDTO.setIsOfficialAgencyIndicator(sharedRide.getIsOfficialAgencyIndicator());
+        responseSharedRideXDTO.setIsOfficialAgencyIndicator(sharedRide.getIsOfficialAgencyIndicator());
+        responseSharedRideXDTO.setPersonalAgency(sharedRide.getPersonalAgency().getName());
+        responseSharedRideXDTO.setTimestamp(sharedRide.getTimestamp());
+        return responseSharedRideXDTO;
+    }
+
+    private List<PersonalAgency> getPersonalAgencies(){
+        List<PersonalAgency> personalAgencies = personalAgencyRepository.findAll();
+        if(personalAgencies.isEmpty()){
+            throw new ApiException("No Personal Agency found.",
+                    ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return personalAgencies;
     }
 
 }
