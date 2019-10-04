@@ -12,5 +12,5 @@ import java.util.Optional;
  */
 @Repository
 public interface CarRepository extends JpaRepository<Car, Long> {
-    Optional<Car> findByLicensePlateNumber(String licensePlateNumber);
+    Optional<Car> findByLicensePlateNumberIgnoreCase(String licensePlateNumber);
 }

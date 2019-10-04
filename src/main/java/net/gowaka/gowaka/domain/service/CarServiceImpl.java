@@ -169,7 +169,7 @@ public class CarServiceImpl implements CarService {
     }
 
     private void verifyCarExists(String licensePlateNumber){
-        if (licensePlateNumber != null && carRepository.findByLicensePlateNumber(licensePlateNumber.trim()).isPresent()){
+        if (licensePlateNumber != null && carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber.trim()).isPresent()){
             throw new ApiException("License plate number already in use",
                     ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
         }

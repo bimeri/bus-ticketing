@@ -237,7 +237,7 @@ public class CarServiceImplTest {
          UserDTO userDTO = new UserDTO();
          userDTO.setId("1");
          when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
-         when(mockCarRepository.findByLicensePlateNumber(anyString())).thenReturn(Optional.of(sharedRide));
+         when(mockCarRepository.findByLicensePlateNumberIgnoreCase(anyString())).thenReturn(Optional.of(sharedRide));
          when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
          when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
          expectedException.expect(ApiException.class);

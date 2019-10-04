@@ -10,11 +10,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.util.ArrayList;
 import java.util.List;
 
-import static java.lang.String.valueOf;
 import static net.gowaka.gowaka.exception.ErrorCodes.*;
 
 /**
@@ -67,7 +64,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(value = {MethodArgumentNotValidException.class})
     public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex,
-                                                                               HttpServletRequest request){
+                                                                                         HttpServletRequest request){
         ValidationErrorResponse validationErrorResponse = new ValidationErrorResponse();
         validationErrorResponse.setEndpoint(request.getRequestURI());
         validationErrorResponse.setCode(VALIDATION_ERROR.toString());
@@ -75,11 +72,7 @@ public class GlobalExceptionHandler {
         List<FieldError> fieldErrorList = ex.getBindingResult().getFieldErrors();
 
         for(FieldError fieldError: fieldErrorList){
-            List<ValidationError> validationErrorList = validationErrorResponse.getErrors().computeIfAbsent(fieldError.getField(), k -> new ArrayList<>());
-            ValidationError validationError = new ValidationError();
-            validationError.setCode(fieldError.getCode());
-            validationError.setMessage(fieldError.getDefaultMessage());
-            validationErrorList.add(validationError);
+            validationErrorResponse.getErrors().put(fieldError.getField(), fieldError.getDefaultMessage());
         }
 
         return new ResponseEntity<>(validationErrorResponse, HttpStatus.BAD_REQUEST);
