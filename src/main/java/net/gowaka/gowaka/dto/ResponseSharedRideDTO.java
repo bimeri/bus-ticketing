@@ -12,4 +12,5 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ResponseSharedRideDTO extends SharedRideDTO {
     private Long id;
+    private Boolean isCarApproved;
 }

@@ -140,6 +140,7 @@ public class CarServiceImpl implements CarService {
         responseSharedRideDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
         responseSharedRideDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
         responseSharedRideDTO.setCarOwnerName(sharedRide.getCarOwnerName());
+        responseSharedRideDTO.setIsCarApproved(sharedRide.getIsCarApproved());
         return responseSharedRideDTO;
     }
 
@@ -149,6 +150,7 @@ public class CarServiceImpl implements CarService {
         responseBusDTO.setNumberOfSeats(bus.getNumberOfSeats());
         responseBusDTO.setName(bus.getName());
         responseBusDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
+        responseBusDTO.setIsCarApproved(bus.getIsCarApproved());
         return responseBusDTO;
     }
 
