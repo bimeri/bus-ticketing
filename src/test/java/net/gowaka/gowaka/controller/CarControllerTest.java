@@ -226,5 +226,9 @@ public class CarControllerTest {
         assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
     }
 
-
+    @Test
+    public void getAllUnapprovedCars_calls_carService() {
+        carController.getAllUnapprovedCars();
+        verify(mockCarService).getAllUnapprovedCars();
+    }
 }

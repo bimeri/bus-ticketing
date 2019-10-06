@@ -58,7 +58,7 @@ public class CarController {
 
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @GetMapping("/cars/unapproved")
-    public ResponseEntity<List<ResponseSharedRideXDTO>> getAllUnapprovedSharedRides(){
-        return ResponseEntity.ok(carService.getAllUnapprovedSharedRides());
+    public ResponseEntity<List<CarDTO>> getAllUnapprovedCars(){
+        return ResponseEntity.ok(carService.getAllUnapprovedCars());
     }
 }

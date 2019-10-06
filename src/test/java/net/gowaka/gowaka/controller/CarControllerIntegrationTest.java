@@ -75,9 +75,6 @@ public class CarControllerIntegrationTest {
 
     private MockRestServiceServer mockServer;
 
-    @Mock
-    private CarService mockCarService;
-
 
     private String successClientTokenResponse = "{\n" +
             "  \"header\": \"Authorization\",\n" +
@@ -98,31 +95,7 @@ public class CarControllerIntegrationTest {
 
         this.user = userRepository.save(newUser);
 
-        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
-                HttpStatus.OK, successClientTokenResponse);
-        startMockServerWith("http://localhost:8082/api/protected/v1/users?username=admin@example.com",
-                HttpStatus.OK, "{\n" +
-                        "  \"id\": \"10\",\n" +
-                        "  \"fullName\":\"Agency User\",\n" +
-                        "  \"username\": \"admin@example.com\",\n" +
-                        "  \"email\": \"admin@example.com\",\n" +
-                        "  \"roles\":\"USERS;\"\n" +
-                        "}");
-
-        startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=USERS;AGENCY_ADMIN",
-                HttpStatus.NO_CONTENT, "");
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        mockServer.reset();
-    }
-
-
-    private void startMockServerWith(String url, HttpStatus status, String response) {
-        mockServer.expect(requestTo(url))
-                .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
@@ -292,7 +265,8 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void gw_admin_get_unapproved_shared_rides_should_return_200_with_shared_ride_list() throws Exception {
+    public void gw_admin_get_unapproved_cars_should_return_200_with_car_list() throws Exception {
+
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgency.setName("Homer home");
         PersonalAgency personalAgency1 = new PersonalAgency();
@@ -302,6 +276,7 @@ public class CarControllerIntegrationTest {
         SharedRide sharedRide = new SharedRide();
         sharedRide.setName("H1");
         sharedRide.setPersonalAgency(personalAgency);
+        sharedRide.setIsCarApproved(false);
         SharedRide sharedRide1 = new SharedRide();
         sharedRide1.setName("H2");
         sharedRide1.setIsCarApproved(false);
@@ -320,18 +295,7 @@ public class CarControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().json(new ObjectMapper().writeValueAsString( new ArrayList<>(Arrays.asList(sharedRide, sharedRide1))
-                        .stream().map(
-                                sharedRides -> {
-                                    ResponseSharedRideXDTO responseSharedRideXDTO = new ResponseSharedRideXDTO();
-                                    responseSharedRideXDTO.setName(sharedRides.getName());
-                                    responseSharedRideXDTO.setId(sharedRides.getId());
-                                    responseSharedRideXDTO.setIsCarApproved(sharedRides.getIsCarApproved());
-                                    responseSharedRideXDTO.setPersonalAgency(sharedRides.getPersonalAgency().getName());
-                                    responseSharedRideXDTO.setTimestamp(sharedRides.getTimestamp());
-                                    return responseSharedRideXDTO;
-                                }
-                        ).collect(Collectors.toList()))))
+                .andExpect(content().json("[{\"id\":1,\"name\":\"H1\",\"licensePlateNumber\":null,\"isOfficialAgencyIndicator\":null,\"isCarApproved\":false,\"timestamp\":null},{\"id\":2,\"name\":\"H2\",\"licensePlateNumber\":null,\"isOfficialAgencyIndicator\":null,\"isCarApproved\":false,\"timestamp\":null}]"))
                 .andReturn();
     }
 }
