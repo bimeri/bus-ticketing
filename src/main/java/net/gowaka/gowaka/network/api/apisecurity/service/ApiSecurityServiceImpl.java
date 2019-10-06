@@ -20,11 +20,10 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
 
     private ApiSecurityConfig apiSecurityConfig;
 
-    @Qualifier("apiSecurityRestTemplate")
     private RestTemplate restTemplate;
 
     @Autowired
-    public ApiSecurityServiceImpl(ApiSecurityConfig apiSecurityConfig, RestTemplate restTemplate) {
+    public ApiSecurityServiceImpl(ApiSecurityConfig apiSecurityConfig, @Qualifier("apiSecurityRestTemplate") RestTemplate restTemplate) {
         this.apiSecurityConfig = apiSecurityConfig;
         this.restTemplate = restTemplate;
     }
