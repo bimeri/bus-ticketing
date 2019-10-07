@@ -113,21 +113,21 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public List<ResponseSharedRideXDTO> getAllUnapprovedSharedRides() {
-        verifyCurrentAuthUser();
-        List<ResponseSharedRideXDTO> responseSharedRideXDTOS = new ArrayList<>();
-        getPersonalAgencies().forEach(
-                personalAgency -> {
-                    List<SharedRide> sharedRides = personalAgency.getSharedRides();
-                    if (!sharedRides.isEmpty()){
-                        sharedRides.stream().filter(sharedRide -> sharedRide.getIsCarApproved() == null ||
-                                !sharedRide.getIsCarApproved()).forEach(
-                                        sharedRide -> responseSharedRideXDTOS.add(getResponseSharedRideXDTO(sharedRide))
-                        );
-                    }
-                }
-        );
-        return responseSharedRideXDTOS;
+    public List<CarDTO> getAllUnapprovedCars() {
+        List<Car> unApprovedCars = carRepository.findByIsCarApproved(false);
+        List<CarDTO> carDTOs = unApprovedCars.stream()
+                .map(car -> {
+                    CarDTO carDTO = new CarDTO();
+                    carDTO.setId(car.getId());
+                    carDTO.setName(car.getName());
+                    carDTO.setIsCarApproved(car.getIsCarApproved());
+                    carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator());
+                    carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
+                    carDTO.setTimestamp(car.getTimestamp());
+                    return carDTO;
+                }).collect(Collectors.toList());
+
+       return carDTOs;
     }
 
     @Override

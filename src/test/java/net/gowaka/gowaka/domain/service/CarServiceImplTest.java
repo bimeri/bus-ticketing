@@ -257,7 +257,7 @@ public class CarServiceImplTest {
      }
 
      @Test
-     public void gw_admin_get_all_unapproved_shared_rides_should_throw_agency_not_found_api_exception(){
+     public void user_get_all_shared_rides_should_throw_agency_not_found_api_exception(){
          SharedRide sharedRide = new SharedRide();
          sharedRide.setId(1L);
          sharedRide.setLicensePlateNumber("12345");
@@ -273,6 +273,43 @@ public class CarServiceImplTest {
          expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
          carService.getAllSharedRides();
      }
+
+    @Test
+    public void getAllUnapprovedCars_calls_CarRepository_for_all_unapproved_cars(){
+
+        Car bus = new Bus();
+        bus.setId(1L);
+        bus.setIsCarApproved(false);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123LT");
+        bus.setName("Kontri People");
+
+        Car sharedRide = new SharedRide();
+        sharedRide.setId(2L);
+        sharedRide.setIsCarApproved(false);
+        sharedRide.setIsOfficialAgencyIndicator(false);
+        sharedRide.setLicensePlateNumber("321LT");
+        sharedRide.setName("Jungle Boy");
+
+        when(mockCarRepository.findByIsCarApproved(false))
+                 .thenReturn(Arrays.asList(bus, sharedRide));
+
+        List<CarDTO> allUnapprovedCars = carService.getAllUnapprovedCars();
+        assertThat(allUnapprovedCars.size(), is(2));
+
+        assertThat(allUnapprovedCars.get(0).getId(), is(1L));
+        assertThat(allUnapprovedCars.get(0).getIsCarApproved(), is(false));
+        assertThat(allUnapprovedCars.get(0).getIsOfficialAgencyIndicator(), is(true));
+        assertThat(allUnapprovedCars.get(0).getLicensePlateNumber(), is("123LT"));
+        assertThat(allUnapprovedCars.get(0).getName(), is("Kontri People"));
+
+        assertThat(allUnapprovedCars.get(1).getId(), is(2L));
+        assertThat(allUnapprovedCars.get(1).getIsCarApproved(), is(false));
+        assertThat(allUnapprovedCars.get(1).getIsOfficialAgencyIndicator(), is(false));
+        assertThat(allUnapprovedCars.get(1).getLicensePlateNumber(), is("321LT"));
+        assertThat(allUnapprovedCars.get(1).getName(), is("Jungle Boy"));
+
+    }
 
      @Test
      public void search_by_license_plate_should_throw_car_not_found_api_exception(){
