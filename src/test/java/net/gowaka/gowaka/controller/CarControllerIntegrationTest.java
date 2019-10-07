@@ -334,4 +334,28 @@ public class CarControllerIntegrationTest {
                         ).collect(Collectors.toList()))))
                 .andReturn();
     }
+
+    @Test
+    public void gw_admin_search_should_return_200_ok_status_code_with_responseCarDTO() throws Exception {
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setLicensePlateNumber("1234");
+        sharedRide.setName("H3");
+        sharedRide.setIsCarApproved(true);
+        sharedRide.setIsOfficialAgencyIndicator(false);
+        carRepository.save(sharedRide);
+        ResponseCarDTO carDTO = new ResponseCarDTO();
+        carDTO.setId(sharedRide.getId());
+        carDTO.setName(sharedRide.getName());
+        carDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
+        carDTO.setIsCarApproved(sharedRide.getIsCarApproved());
+        carDTO.setIsOfficialAgencyIndicator(sharedRide.getIsOfficialAgencyIndicator());
+
+        RequestBuilder requestBuilder = get("/api/protected/car/search?licensePlateNumber=" + sharedRide.getLicensePlateNumber())
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString(carDTO)))
+                .andReturn();
+    }
 }

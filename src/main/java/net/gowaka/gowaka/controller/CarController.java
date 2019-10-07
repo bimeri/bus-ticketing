@@ -61,4 +61,11 @@ public class CarController {
     public ResponseEntity<List<ResponseSharedRideXDTO>> getAllUnapprovedSharedRides(){
         return ResponseEntity.ok(carService.getAllUnapprovedSharedRides());
     }
+
+    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
+    @GetMapping("/car/search")
+    public ResponseEntity<ResponseCarDTO> searchByLicensePlateNumber(
+            @RequestParam("licensePlateNumber") String licensePlateNumber){
+        return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
+    }
 }

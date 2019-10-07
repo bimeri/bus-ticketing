@@ -107,7 +107,7 @@ public class CarServiceImpl implements CarService {
     @Override
     public void approve(ApproveCarDTO approveCarDTO, Long id) {
         verifyCurrentAuthUser();
-        Car car = verifyCarById(id);
+        Car car = getCarById(id);
         car.setIsCarApproved(approveCarDTO.isApprove());
         carRepository.save(car);
     }
@@ -128,6 +128,12 @@ public class CarServiceImpl implements CarService {
                 }
         );
         return responseSharedRideXDTOS;
+    }
+
+    @Override
+    public ResponseCarDTO searchByLicensePlateNumber(String licensePlateNumber) {
+        verifyCurrentAuthUser();
+        return getResponseCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
     }
 
     private User verifyCurrentAuthUser(){
@@ -156,27 +162,6 @@ public class CarServiceImpl implements CarService {
         return officialAgency;
     }
 
-    private ResponseSharedRideDTO getResponseSharedRideDTO(SharedRide sharedRide) {
-        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
-        responseSharedRideDTO.setId(sharedRide.getId());
-        responseSharedRideDTO.setName(sharedRide.getName());
-        responseSharedRideDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
-        responseSharedRideDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
-        responseSharedRideDTO.setCarOwnerName(sharedRide.getCarOwnerName());
-        responseSharedRideDTO.setIsCarApproved(sharedRide.getIsCarApproved());
-        return responseSharedRideDTO;
-    }
-
-    private ResponseBusDTO getResponseBusDTO(Bus bus){
-        ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-        responseBusDTO.setId(bus.getId());
-        responseBusDTO.setNumberOfSeats(bus.getNumberOfSeats());
-        responseBusDTO.setName(bus.getName());
-        responseBusDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
-        responseBusDTO.setIsCarApproved(bus.getIsCarApproved());
-        return responseBusDTO;
-    }
-
     private List<Bus> getBuses(OfficialAgency officialAgency){
         List<Bus> buses = officialAgency.getBuses();
         if (buses.isEmpty()){
@@ -200,13 +185,51 @@ public class CarServiceImpl implements CarService {
         }
     }
 
-    private Car verifyCarById(Long id){
+    private Car getCarById(Long id){
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
     }
+    private Car getCarByLicensePlateNumber(String licensePlateNumber){
+        Optional<Car> optionalCar = carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber);
+        if (!optionalCar.isPresent()){
+            throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        return optionalCar.get();
+    }
+
+    private List<PersonalAgency> getPersonalAgencies(){
+        List<PersonalAgency> personalAgencies = personalAgencyRepository.findAll();
+        if(personalAgencies.isEmpty()){
+            throw new ApiException("No Personal Agency found.",
+                    ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return personalAgencies;
+    }
+
+    private ResponseSharedRideDTO getResponseSharedRideDTO(SharedRide sharedRide) {
+        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
+        responseSharedRideDTO.setId(sharedRide.getId());
+        responseSharedRideDTO.setName(sharedRide.getName());
+        responseSharedRideDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
+        responseSharedRideDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
+        responseSharedRideDTO.setCarOwnerName(sharedRide.getCarOwnerName());
+        responseSharedRideDTO.setIsCarApproved(sharedRide.getIsCarApproved());
+        return responseSharedRideDTO;
+    }
+
+    private ResponseBusDTO getResponseBusDTO(Bus bus){
+        ResponseBusDTO responseBusDTO = new ResponseBusDTO();
+        responseBusDTO.setId(bus.getId());
+        responseBusDTO.setNumberOfSeats(bus.getNumberOfSeats());
+        responseBusDTO.setName(bus.getName());
+        responseBusDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
+        responseBusDTO.setIsCarApproved(bus.getIsCarApproved());
+        return responseBusDTO;
+    }
+
 
     /**
      * specific to unapproved shared rides
@@ -228,13 +251,16 @@ public class CarServiceImpl implements CarService {
         return responseSharedRideXDTO;
     }
 
-    private List<PersonalAgency> getPersonalAgencies(){
-        List<PersonalAgency> personalAgencies = personalAgencyRepository.findAll();
-        if(personalAgencies.isEmpty()){
-            throw new ApiException("No Personal Agency found.",
-                    ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        return personalAgencies;
+    private ResponseCarDTO getResponseCarDTO(Car car){
+        ResponseCarDTO responseCarDTO = new ResponseCarDTO();
+        responseCarDTO.setId(car.getId());
+        responseCarDTO.setName(car.getName());
+        responseCarDTO.setLicensePlateNumber(car.getLicensePlateNumber());
+        responseCarDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
+        responseCarDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+        responseCarDTO.setTimestamp(car.getTimestamp());
+        return responseCarDTO;
     }
+
 
 }

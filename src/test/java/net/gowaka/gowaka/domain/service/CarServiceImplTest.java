@@ -274,4 +274,31 @@ public class CarServiceImplTest {
          carService.getAllSharedRides();
      }
 
+     @Test
+     public void search_by_license_plate_should_throw_car_not_found_api_exception(){
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         user.setUserId("1");
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("Car not found");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+         carService.searchByLicensePlateNumber("123");
+     }
+
+     @Test
+     public void search_by_license_plate_should_return_response_car_dto(){
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         user.setUserId("1");
+         Car car = new SharedRide();
+         car.setId(1L);
+         car.setLicensePlateNumber("1234LT");
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         when(mockCarRepository.findByLicensePlateNumberIgnoreCase(anyString())).thenReturn(Optional.of(car));
+         assertThat(carService.searchByLicensePlateNumber(car.getLicensePlateNumber()).getId(), is(equalTo(car.getId())));
+     }
+
 }

@@ -15,4 +15,5 @@ public interface CarService {
     List<ResponseBusDTO> getAllOfficialAgencyBuses();
     List<ResponseSharedRideDTO> getAllSharedRides();
     List<ResponseSharedRideXDTO> getAllUnapprovedSharedRides();
+    ResponseCarDTO searchByLicensePlateNumber(String licensePlateNumber);
 }
