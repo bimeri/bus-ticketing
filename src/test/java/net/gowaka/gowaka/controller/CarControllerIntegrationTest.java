@@ -307,7 +307,7 @@ public class CarControllerIntegrationTest {
         sharedRide.setIsCarApproved(true);
         sharedRide.setIsOfficialAgencyIndicator(false);
         carRepository.save(sharedRide);
-        ResponseCarDTO carDTO = new ResponseCarDTO();
+        CarDTO carDTO = new CarDTO();
         carDTO.setId(sharedRide.getId());
         carDTO.setName(sharedRide.getName());
         carDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
