@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -131,9 +130,9 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public ResponseCarDTO searchByLicensePlateNumber(String licensePlateNumber) {
+    public CarDTO searchByLicensePlateNumber(String licensePlateNumber) {
         verifyCurrentAuthUser();
-        return getResponseCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
+        return getCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
     }
 
     private User verifyCurrentAuthUser(){
@@ -200,15 +199,6 @@ public class CarServiceImpl implements CarService {
         return optionalCar.get();
     }
 
-    private List<PersonalAgency> getPersonalAgencies(){
-        List<PersonalAgency> personalAgencies = personalAgencyRepository.findAll();
-        if(personalAgencies.isEmpty()){
-            throw new ApiException("No Personal Agency found.",
-                    ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        return personalAgencies;
-    }
-
     private ResponseSharedRideDTO getResponseSharedRideDTO(SharedRide sharedRide) {
         ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
         responseSharedRideDTO.setId(sharedRide.getId());
@@ -230,36 +220,15 @@ public class CarServiceImpl implements CarService {
         return responseBusDTO;
     }
 
-
-    /**
-     * specific to unapproved shared rides
-     * @param sharedRide
-     * @return
-     */
-    private ResponseSharedRideXDTO getResponseSharedRideXDTO(SharedRide sharedRide){
-        ResponseSharedRideXDTO responseSharedRideXDTO = new ResponseSharedRideXDTO();
-        responseSharedRideXDTO.setId(sharedRide.getId());
-        responseSharedRideXDTO.setName(sharedRide.getName());
-        responseSharedRideXDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
-        responseSharedRideXDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
-        responseSharedRideXDTO.setCarOwnerName(sharedRide.getCarOwnerName());
-        responseSharedRideXDTO.setIsCarApproved(sharedRide.getIsCarApproved());
-        responseSharedRideXDTO.setIsOfficialAgencyIndicator(sharedRide.getIsOfficialAgencyIndicator());
-        responseSharedRideXDTO.setIsOfficialAgencyIndicator(sharedRide.getIsOfficialAgencyIndicator());
-        responseSharedRideXDTO.setPersonalAgency(sharedRide.getPersonalAgency().getName());
-        responseSharedRideXDTO.setTimestamp(sharedRide.getTimestamp());
-        return responseSharedRideXDTO;
-    }
-
-    private ResponseCarDTO getResponseCarDTO(Car car){
-        ResponseCarDTO responseCarDTO = new ResponseCarDTO();
-        responseCarDTO.setId(car.getId());
-        responseCarDTO.setName(car.getName());
-        responseCarDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-        responseCarDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
-        responseCarDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
-        responseCarDTO.setTimestamp(car.getTimestamp());
-        return responseCarDTO;
+    private CarDTO getCarDTO(Car car){
+        CarDTO carDTO = new CarDTO();
+        carDTO.setId(car.getId());
+        carDTO.setName(car.getName());
+        carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
+        carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
+        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+        carDTO.setTimestamp(car.getTimestamp());
+        return carDTO;
     }
 
 

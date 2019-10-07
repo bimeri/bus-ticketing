@@ -64,7 +64,7 @@ public class CarController {
 
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @GetMapping("/car/search")
-    public ResponseEntity<ResponseCarDTO> searchByLicensePlateNumber(
+    public ResponseEntity<CarDTO> searchByLicensePlateNumber(
             @RequestParam("licensePlateNumber") String licensePlateNumber){
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
     }
