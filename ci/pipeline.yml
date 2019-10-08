@@ -95,6 +95,9 @@ jobs:
         LDC_TARGET: ((ldc_target))
         LDC_USERNAME: ((ldc_username))
         LDC_PASSWORD: ((ldc_password))
+        APP_NAME: ((app_name))
+        APP_CLIENT_ID: ((app_client_id))
+        APP_CLIENT_SECRET: ((app_client_secret))
 
 
 - name: major
