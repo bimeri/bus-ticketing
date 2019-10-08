@@ -1,7 +1,10 @@
 package net.gowaka.gowaka.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gowaka.gowaka.domain.model.Location;
+import net.gowaka.gowaka.domain.model.TransitAndStop;
 import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.LocationDTO;
 import org.junit.Before;
@@ -45,6 +48,9 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TransitAndStopRepository transitAndStopRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -101,8 +107,8 @@ public class TransitAndStopControllerIntegrationTest {
     }
 
     @Test
-    public void transit_should_return_400_bad_request() throws Exception{
-        String badeRequest = "{\n" +
+    public void transit_should_return_400_bad_request() throws Exception {
+        String badResponse = "{\n" +
                 "  \"code\": \"VALIDATION_ERROR\",\n" +
                 "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
                 "  \"endpoint\": \"/api/protected/location\",\n" +
@@ -121,7 +127,89 @@ public class TransitAndStopControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(badeRequest))
+                .andExpect(content().json(badResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void transit_should_update_and_return_204_no_content() throws Exception {
+        LocationDTO locationDTO = new LocationDTO();
+        locationDTO.setState("SW");
+        locationDTO.setCountry("CMR");
+        locationDTO.setAddress("Malingo");
+        locationDTO.setCity("Buea");
+        Location location = new Location();
+        location.setAddress("Long Street");
+        location.setCity(locationDTO.getCity());
+        location.setState(locationDTO.getState());
+        location.setCountry(locationDTO.getCountry());
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        RequestBuilder requestBuilder = post("/api/protected/location/" + transitAndStop.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(locationDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    @Test
+    public void transit_update_should_return_400_bad_request() throws Exception {
+        String badResponse = "{\n" +
+                "  \"code\": \"VALIDATION_ERROR\",\n" +
+                "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
+                "  \"endpoint\": \"/api/protected/location/1\",\n" +
+                "  \"errors\": {\n" +
+                "    \"country\": \"country is required\"\n" +
+                "  }\n" +
+                "}";
+        LocationDTO locationDTO = new LocationDTO();
+        locationDTO.setState("SW");
+        locationDTO.setAddress("Malingo");
+        locationDTO.setCity("Buea");
+        RequestBuilder requestBuilder = post("/api/protected/location/1")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(locationDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(badResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void transit_update_should_and_return_409_conflict_transit_already_in_use() throws Exception {
+
+        LocationDTO locationDTO = new LocationDTO();
+        locationDTO.setState("SW");
+        locationDTO.setCountry("CMR");
+        locationDTO.setAddress("Malingo");
+        locationDTO.setCity("Buea");
+        Location location = new Location();
+        location.setAddress(locationDTO.getAddress());
+        location.setCity(locationDTO.getCity());
+        location.setState(locationDTO.getState());
+        location.setCountry(locationDTO.getCountry());
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        String badResponse = "{\n" +
+                "  \"code\": \"TRANSIT_AND_STOP_ALREADY_IN_USE\",\n" +
+                "  \"message\": \"TransitAndStop already Exists\",\n" +
+                "  \"endpoint\": \"/api/protected/location/" + transitAndStop.getId() + "\"\n" +
+                "}";
+        RequestBuilder requestBuilder = post("/api/protected/location/" + transitAndStop.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(locationDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isConflict())
+                .andExpect(content().json(badResponse))
                 .andReturn();
     }
 }

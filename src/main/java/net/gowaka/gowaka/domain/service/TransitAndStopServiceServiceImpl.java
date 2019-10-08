@@ -46,6 +46,13 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         return transitAndStopRepository.save(transitAndStop);
     }
 
+    @Override
+    public TransitAndStop updateLocation(Long id, LocationDTO locationDTO) {
+        verifyCurrentAuthUser();
+        TransitAndStop transitAndStop = getTransitAndStop(id);
+        transitAndStop.setLocation(verifyLocation(locationDTO));
+        return transitAndStopRepository.save(transitAndStop);
+    }
 
     private User verifyCurrentAuthUser(){
         UserDTO authUser = userService.getCurrentAuthUser();
@@ -70,5 +77,13 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
             throw new ApiException("TransitAndStop already Exists", ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
         }
         return location;
+    }
+
+    private TransitAndStop getTransitAndStop(Long id){
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
+        if (!optionalTransitAndStop.isPresent()){
+            throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalTransitAndStop.get();
     }
 }
