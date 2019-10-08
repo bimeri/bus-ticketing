@@ -1,8 +1,11 @@
 package net.gowaka.gowaka.domain.repository;
 
+import net.gowaka.gowaka.domain.model.Location;
 import net.gowaka.gowaka.domain.model.TransitAndStop;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 /**
  * Author: Edward Tanko <br/>
@@ -10,4 +13,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface TransitAndStopRepository extends JpaRepository<TransitAndStop, Long> {
+    Optional<TransitAndStop> findDistinctByLocation(Location location);
 }

@@ -2,7 +2,6 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
-import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -50,9 +49,6 @@ public class CarServiceImplTest {
 
      @Mock
      private PersonalAgency mockPersonalAgency;
-
-     @Mock
-     private PersonalAgencyRepository personalAgencyRepository;
 
      @Rule
      public ExpectedException expectedException = ExpectedException.none();
@@ -157,7 +153,6 @@ public class CarServiceImplTest {
     @Test
     public void official_agency_get_buses_should_throw_resource_not_found_exception_no_agency(){
         UserDTO userDTO = new UserDTO();
-        User user = new User();
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         expectedException.expect(ApiException.class);

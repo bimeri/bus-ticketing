@@ -61,7 +61,6 @@ public class CarController {
     public ResponseEntity<List<CarDTO>> getAllUnapprovedCars(){
         return ResponseEntity.ok(carService.getAllUnapprovedCars());
     }
-
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @GetMapping("/car/search")
     public ResponseEntity<CarDTO> searchByLicensePlateNumber(

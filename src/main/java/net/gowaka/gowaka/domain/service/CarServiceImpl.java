@@ -3,7 +3,6 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
-import net.gowaka.gowaka.domain.repository.PersonalAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -28,18 +27,12 @@ public class CarServiceImpl implements CarService {
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
-    private PersonalAgencyRepository personalAgencyRepository;
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
         this.carRepository = carRepository;
         this.userService = userService;
         this.userRepository = userRepository;
-    }
-
-    @Autowired
-    public void setPersonalAgencyRepository(PersonalAgencyRepository personalAgencyRepository) {
-        this.personalAgencyRepository = personalAgencyRepository;
     }
 
     @Override

@@ -1,6 +1,9 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.domain.model.*;
+import net.gowaka.gowaka.domain.model.Bus;
+import net.gowaka.gowaka.domain.model.Car;
+import net.gowaka.gowaka.domain.model.SharedRide;
+import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.domain.service.CarServiceImpl;
@@ -42,8 +45,6 @@ public class CarControllerTest {
     private UserRepository mockUserRepository;
     @Mock
     private CarRepository mockCarRepository;
-    @Mock
-    private OfficialAgency mockOfficialAgency;
 
     private CarController carController;
     private CarService carService;
