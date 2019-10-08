@@ -2,10 +2,6 @@
   "name":"GoWakaAPI",
   "appType":"jar",
   "port":"8081",
-  "envs":[
-    {"name":"APP_NAME","value":"GoWakaAPI"},
-    {"name":"APP_CLIENT_ID","value":"GW2019"},
-    {"name":"APP_CLIENT_SECRET","value":"gwsecret@1"}
-  ],
+  "env": "GoWakaEnv",
   "services":[]
 }
