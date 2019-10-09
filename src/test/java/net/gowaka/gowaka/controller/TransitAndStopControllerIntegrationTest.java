@@ -33,15 +33,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@RunWith(SpringJUnit4ClassRunner.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@WebAppConfiguration
 /**
  * @author Nnouka Stephen
  * @date 08 Oct 2019
  */
+@SpringBootTest
+@AutoConfigureMockMvc
+@RunWith(SpringJUnit4ClassRunner.class)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@WebAppConfiguration
 public class TransitAndStopControllerIntegrationTest {
     @Value("${security.jwt.token.secretKey}")
     private String secretKey = "";
@@ -90,6 +90,7 @@ public class TransitAndStopControllerIntegrationTest {
     }
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void transit_should_return_201_created_status() throws Exception{
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
@@ -182,6 +183,7 @@ public class TransitAndStopControllerIntegrationTest {
     }
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void transit_update_should_and_return_409_conflict_transit_already_in_use() throws Exception {
 
         LocationDTO locationDTO = new LocationDTO();

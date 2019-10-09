@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @RunWith(SpringJUnit4ClassRunner.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @WebAppConfiguration
 public class CarControllerIntegrationTest {
 
@@ -259,6 +259,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void gw_admin_get_unapproved_cars_should_return_200_with_car_list() throws Exception {
 
         PersonalAgency personalAgency = new PersonalAgency();
