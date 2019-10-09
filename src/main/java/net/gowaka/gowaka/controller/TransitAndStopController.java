@@ -34,4 +34,11 @@ public class TransitAndStopController {
         transitAndStopService.updateLocation(Long.parseLong(id), locationDTO);
         return ResponseEntity.noContent().build();
     }
+
+    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
+    @DeleteMapping("/location/{id}")
+    public ResponseEntity deleteLocation(@PathVariable String id){
+        transitAndStopService.deleteLocation(Long.parseLong(id));
+        return ResponseEntity.noContent().build();
+    }
 }

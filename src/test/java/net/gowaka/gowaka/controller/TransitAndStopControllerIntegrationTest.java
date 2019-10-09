@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -184,7 +185,7 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
-    public void transit_update_should_and_return_409_conflict_transit_already_in_use() throws Exception {
+    public void transit_update_should_return_409_conflict_transit_already_in_use() throws Exception {
 
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
@@ -212,6 +213,16 @@ public class TransitAndStopControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isConflict())
                 .andExpect(content().json(badResponse))
+                .andReturn();
+    }
+    @Test
+    public void transit_delete_should_delete_and_return_204_no_content() throws Exception {
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStopRepository.save(transitAndStop);
+        RequestBuilder requestBuilder = delete("/api/protected/location/" + transitAndStop.getId())
+                .header("Authorization", "Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
                 .andReturn();
     }
 }

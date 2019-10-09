@@ -10,4 +10,5 @@ import net.gowaka.gowaka.dto.LocationDTO;
 public interface TransitAndStopService {
     TransitAndStop addLocation(LocationDTO locationDTO);
     TransitAndStop updateLocation(Long id, LocationDTO locationDTO);
+    void deleteLocation(Long id);
 }

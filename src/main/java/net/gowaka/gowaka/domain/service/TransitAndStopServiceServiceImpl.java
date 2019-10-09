@@ -54,6 +54,12 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         return transitAndStopRepository.save(transitAndStop);
     }
 
+    @Override
+    public void deleteLocation(Long id) {
+        verifyCurrentAuthUser();
+        safeDelete(id);
+    }
+
     private User verifyCurrentAuthUser(){
         UserDTO authUser = userService.getCurrentAuthUser();
         // get user entity
@@ -79,6 +85,10 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         return location;
     }
 
+    private void safeDelete(Long id){
+        transitAndStopRepository.deleteById(journeyCheck(getTransitAndStop(id)));
+    }
+
     private TransitAndStop getTransitAndStop(Long id){
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
         if (!optionalTransitAndStop.isPresent()){
@@ -86,4 +96,13 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         }
         return optionalTransitAndStop.get();
     }
+
+    private Long journeyCheck(TransitAndStop transitAndStop){
+        if (!transitAndStop.getJourneys().isEmpty()){
+            logger.warn("Cannot delete record: \n <{}> \n has journeys", transitAndStop.toString());
+            throw new ApiException("Cannot delete record for any existing journey", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        return transitAndStop.getId();
+    }
+
 }
