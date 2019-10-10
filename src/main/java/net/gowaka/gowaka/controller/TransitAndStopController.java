@@ -10,6 +10,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 
+/**
+ * @author Nnouka Stephen
+ * @date 26 Sep 2019
+ */
 @RestController
 @RequestMapping("/api/protected")
 public class TransitAndStopController {

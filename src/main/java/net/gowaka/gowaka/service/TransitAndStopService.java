@@ -2,6 +2,9 @@ package net.gowaka.gowaka.service;
 
 import net.gowaka.gowaka.domain.model.TransitAndStop;
 import net.gowaka.gowaka.dto.LocationDTO;
+import net.gowaka.gowaka.dto.LocationResponseDTO;
+
+import java.util.List;
 
 /**
  * @author Nnouka Stephen
@@ -9,6 +12,7 @@ import net.gowaka.gowaka.dto.LocationDTO;
  */
 public interface TransitAndStopService {
     TransitAndStop addLocation(LocationDTO locationDTO);
-    TransitAndStop updateLocation(Long id, LocationDTO locationDTO);
+    void updateLocation(Long id, LocationDTO locationDTO);
     void deleteLocation(Long id);
+    List<LocationResponseDTO> getAllLocations();
 }

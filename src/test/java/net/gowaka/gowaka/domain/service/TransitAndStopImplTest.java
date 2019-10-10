@@ -7,6 +7,7 @@ import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.LocationDTO;
+import net.gowaka.gowaka.dto.LocationResponseDTO;
 import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
@@ -21,10 +22,12 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -205,5 +208,26 @@ public class TransitAndStopImplTest {
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         transitAndStopService.deleteLocation(transitAndStop.getId());
         verify(transitAndStopRepository).deleteById(transitAndStop.getId());
+    }
+
+    @Test
+    public void get_all_transit_and_stop_locations_should_throw_not_found_exception(){
+        when(transitAndStopRepository.findAll()).thenReturn(Collections.emptyList());
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        expectedException.expectMessage("No TransitAndStop Location found");
+        transitAndStopService.getAllLocations();
+    }
+    @Test
+    public void get_all_transit_and_stop_locations_should_return_location_list(){
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setState("SW");
+        transitAndStop.setLocation(location);
+        transitAndStop.setId(4L);
+        when(transitAndStopRepository.findAll()).thenReturn(Collections.singletonList(transitAndStop));
+        List<LocationResponseDTO> locationResponseDTOList = transitAndStopService.getAllLocations();
+        assertThat(locationResponseDTOList.get(0).getId(), is(transitAndStop.getId()));
+        assertThat(locationResponseDTOList.get(0).getState(), is(location.getState()));
     }
 }
