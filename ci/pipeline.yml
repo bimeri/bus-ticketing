@@ -94,6 +94,8 @@ jobs:
         APP_NAME: ((app_name))
         APP_CLIENT_ID: ((app_client_id))
         APP_CLIENT_SECRET: ((app_client_secret))
+        GW_DB_USER: ((gw_db_user))
+        GW_DB_PWD: ((gw_db_pwd))
 
 
 - name: major
