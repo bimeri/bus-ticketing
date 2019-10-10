@@ -2,16 +2,12 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.Location;
 import net.gowaka.gowaka.domain.model.TransitAndStop;
-import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
-import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.LocationDTO;
 import net.gowaka.gowaka.dto.LocationResponseDTO;
-import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.TransitAndStopService;
-import net.gowaka.gowaka.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,20 +27,15 @@ import java.util.stream.Collectors;
 public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
     private TransitAndStopRepository transitAndStopRepository;
-    private UserRepository userRepository;
-    private UserService userService;
 
 
     @Autowired
-    public TransitAndStopServiceServiceImpl(TransitAndStopRepository transitAndStopRepository, UserRepository userRepository, UserService userService) {
+    public TransitAndStopServiceServiceImpl(TransitAndStopRepository transitAndStopRepository) {
         this.transitAndStopRepository = transitAndStopRepository;
-        this.userRepository = userRepository;
-        this.userService = userService;
     }
 
     @Override
     public TransitAndStop addLocation(LocationDTO locationDTO) {
-        verifyCurrentAuthUser();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(verifyLocation(locationDTO));
         return transitAndStopRepository.save(transitAndStop);
@@ -52,7 +43,6 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
 
     @Override
     public void updateLocation(Long id, LocationDTO locationDTO) {
-        verifyCurrentAuthUser();
         TransitAndStop transitAndStop = getTransitAndStop(id);
         transitAndStop.setLocation(verifyLocation(locationDTO));
         transitAndStopRepository.save(transitAndStop);
@@ -60,7 +50,6 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
 
     @Override
     public void deleteLocation(Long id) {
-        verifyCurrentAuthUser();
         safeDelete(id);
     }
 
@@ -77,16 +66,6 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         return transitAndStopRepository.findByLocationCityIgnoreCase(city)
                 .stream().filter(transitAndStop -> transitAndStop.getLocation() != null)
                 .map(this::getLocationResponseDTO).collect(Collectors.toList());
-    }
-
-    private User verifyCurrentAuthUser(){
-        UserDTO authUser = userService.getCurrentAuthUser();
-        // get user entity
-        Optional<User> optionalUser = userRepository.findById(authUser.getId());
-        if (!optionalUser.isPresent()){
-            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        return optionalUser.get();
     }
 
     private Location verifyLocation(LocationDTO locationDTO){

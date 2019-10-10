@@ -8,7 +8,6 @@ import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.LocationDTO;
 import net.gowaka.gowaka.dto.LocationResponseDTO;
-import net.gowaka.gowaka.dto.UserDTO;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.TransitAndStopService;
@@ -57,18 +56,11 @@ public class TransitAndStopImplTest {
 
     @Before
     public void setup(){
-        transitAndStopService = new TransitAndStopServiceServiceImpl(transitAndStopRepository, mockUserRepository, mockUserService);
+        transitAndStopService = new TransitAndStopServiceServiceImpl(transitAndStopRepository);
     }
 
     @Test
     public void should_save_new_transit_and_stop_entity(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -82,13 +74,6 @@ public class TransitAndStopImplTest {
 
     @Test
     public void should_throw_transit_and_stop_already_in_use_api_exception(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -102,13 +87,6 @@ public class TransitAndStopImplTest {
     }
     @Test
     public void should_update_transit_and_stop(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -123,13 +101,6 @@ public class TransitAndStopImplTest {
     }
     @Test
     public void update_location_should_throw_transit_and_stop_not_found_api_exception(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         LocationDTO locationDTO = new LocationDTO();
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
         expectedException.expect(ApiException.class);
@@ -139,14 +110,7 @@ public class TransitAndStopImplTest {
     }
     @Test
     public void update_location_should_throw_transit_and_stop_already_in_use_exception(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
-        LocationDTO locationDTO = new LocationDTO();
+       LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
@@ -162,13 +126,6 @@ public class TransitAndStopImplTest {
 
     @Test
     public void delete_transit_should_throw_journey_exist_api_exception(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setJourneys(Collections.singletonList(new Journey()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
@@ -180,14 +137,7 @@ public class TransitAndStopImplTest {
 
     @Test
     public void delete_transit_should_throw_transit_not_found_exception(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
-        when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
+       when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
         expectedException.expect(ApiException.class);
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         expectedException.expectMessage("TransitAndStop not found");
@@ -195,13 +145,6 @@ public class TransitAndStopImplTest {
     }
     @Test
     public void delete_transit_should_call_delete_by_id(){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId("1");
-        user.setUserId("1");
-
-        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
-        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setId(1L);
 

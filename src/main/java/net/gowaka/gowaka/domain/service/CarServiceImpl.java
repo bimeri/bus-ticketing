@@ -98,7 +98,6 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void approve(ApproveCarDTO approveCarDTO, Long id) {
-        verifyCurrentAuthUser();
         Car car = getCarById(id);
         car.setIsCarApproved(approveCarDTO.isApprove());
         carRepository.save(car);
@@ -124,7 +123,6 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public CarDTO searchByLicensePlateNumber(String licensePlateNumber) {
-        verifyCurrentAuthUser();
         return getCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
     }
 
