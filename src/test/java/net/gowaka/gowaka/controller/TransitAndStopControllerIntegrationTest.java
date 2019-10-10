@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -260,6 +261,17 @@ public class TransitAndStopControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(new ObjectMapper()
                         .writeValueAsString(Arrays.asList(locationResponseDTO, locationResponseDTO1))))
+                .andReturn();
+    }
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    public void get_all_transit_and_stop_locations_should_return_empty_list() throws Exception {
+        RequestBuilder requestBuilder = get("/api/public/location/")
+                .header("Authorization", "Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper()
+                        .writeValueAsString(Collections.emptyList())))
                 .andReturn();
     }
 }

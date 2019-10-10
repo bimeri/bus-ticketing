@@ -211,14 +211,6 @@ public class TransitAndStopImplTest {
     }
 
     @Test
-    public void get_all_transit_and_stop_locations_should_throw_not_found_exception(){
-        when(transitAndStopRepository.findAll()).thenReturn(Collections.emptyList());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expectMessage("No TransitAndStop Location found");
-        transitAndStopService.getAllLocations();
-    }
-    @Test
     public void get_all_transit_and_stop_locations_should_return_location_list(){
         TransitAndStop transitAndStop = new TransitAndStop();
         Location location = new Location();

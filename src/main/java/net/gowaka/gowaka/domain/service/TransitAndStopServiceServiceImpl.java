@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -65,9 +66,10 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
 
     @Override
     public List<LocationResponseDTO> getAllLocations() {
-        return getTransitAndStopList().stream()
+        List<TransitAndStop> transitAndStopList = transitAndStopRepository.findAll();
+        return transitAndStopList != null ? transitAndStopList.stream()
                 .filter(transitAndStop -> transitAndStop.getLocation() != null)
-                .map(this::getLocationResponseDTO).collect(Collectors.toList());
+                .map(this::getLocationResponseDTO).collect(Collectors.toList()) : Collections.emptyList();
     }
 
     private User verifyCurrentAuthUser(){
@@ -113,13 +115,6 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
             throw new ApiException("Cannot delete record for any existing journey", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return transitAndStop.getId();
-    }
-    private List<TransitAndStop> getTransitAndStopList(){
-        List<TransitAndStop> transitAndStopList = transitAndStopRepository.findAll();
-        if (transitAndStopList.isEmpty()){
-            throw new ApiException("No TransitAndStop Location found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        return transitAndStopList;
     }
 
     private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
