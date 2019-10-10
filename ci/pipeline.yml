@@ -32,6 +32,8 @@ resources:
 
 jobs:
 - name: test-and-build
+  build_log_retention:
+    builds: 10
   public: true
   plan:
   - get: source-code-from-gitlab
@@ -55,15 +57,7 @@ jobs:
       - path: source-code-from-gitlab/.m2
       run:
         path: source-code-from-gitlab/ci/tasks/test-and-build.sh
-#      params:
-#        S_USERNAME: ((dev_server_username))
-#        S_PASSWORD: ((dev_server_password))
-#        S_HOST: ((dev_server_ip))
-#        M_ENDPOINT: ((minio_endpoint_url)) # work out how to configure this per-worker
-#        M_BUCKET: ((minio_bucket))
-#        M_KEY_ID: ((minio_access_key))
-#        M_SECRET_KEY: ((minio_secret_key))
-#        M_REGION_NAME: ((minio_region_name))
+
   - put: minio-s3
     params:
       file: jar-file/*.jar
@@ -71,6 +65,8 @@ jobs:
     params: { file: version/version }
 
 - name: deploy-dev
+  build_log_retention:
+    builds: 10
   public: true
   plan:
   - get: minio-s3
