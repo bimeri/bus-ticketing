@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.model.TransitAndStop;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -14,4 +15,5 @@ import java.util.Optional;
 @Repository
 public interface TransitAndStopRepository extends JpaRepository<TransitAndStop, Long> {
     Optional<TransitAndStop> findDistinctByLocation(Location location);
+    List<TransitAndStop> findByLocationCityIgnoreCase(String city);
 }

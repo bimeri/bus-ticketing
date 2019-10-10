@@ -15,4 +15,5 @@ public interface TransitAndStopService {
     void updateLocation(Long id, LocationDTO locationDTO);
     void deleteLocation(Long id);
     List<LocationResponseDTO> getAllLocations();
+    List<LocationResponseDTO> searchByCity(String city);
 }

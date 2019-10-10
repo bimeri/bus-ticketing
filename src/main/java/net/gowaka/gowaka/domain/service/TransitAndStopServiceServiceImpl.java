@@ -72,6 +72,13 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
                 .map(this::getLocationResponseDTO).collect(Collectors.toList()) : Collections.emptyList();
     }
 
+    @Override
+    public List<LocationResponseDTO> searchByCity(String city) {
+        return transitAndStopRepository.findByLocationCityIgnoreCase(city)
+                .stream().filter(transitAndStop -> transitAndStop.getLocation() != null)
+                .map(this::getLocationResponseDTO).collect(Collectors.toList());
+    }
+
     private User verifyCurrentAuthUser(){
         UserDTO authUser = userService.getCurrentAuthUser();
         // get user entity

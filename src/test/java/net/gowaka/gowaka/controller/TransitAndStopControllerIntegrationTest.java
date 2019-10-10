@@ -263,6 +263,7 @@ public class TransitAndStopControllerIntegrationTest {
                         .writeValueAsString(Arrays.asList(locationResponseDTO, locationResponseDTO1))))
                 .andReturn();
     }
+
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void get_all_transit_and_stop_locations_should_return_empty_list() throws Exception {
@@ -272,6 +273,61 @@ public class TransitAndStopControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(new ObjectMapper()
                         .writeValueAsString(Collections.emptyList())))
+                .andReturn();
+    }
+
+    @Test
+    public void search_transit_and_stop_by_location_should_return_empty_list() throws Exception {
+        Location location = new Location();
+        location.setAddress("Malingo");
+        location.setCity("Mamfe");
+        location.setState("SW");
+        location.setCountry("CMR");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        RequestBuilder requestBuilder = get("/api/public/location/search?city=ngkongsamba")
+                .header("Authorization", "Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper()
+                        .writeValueAsString(Collections.emptyList())))
+                .andReturn();
+    }
+
+    @Test
+    public void search_transit_and_stop_by_location_should_return_location_list() throws Exception {
+        Location location = new Location();
+        location.setAddress("Malingo");
+        location.setCity("Douala");
+        location.setState("SW");
+        location.setCountry("CMR");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
+        locationResponseDTO.setId(transitAndStop.getId());
+        locationResponseDTO.setCountry(location.getCountry());
+        locationResponseDTO.setCity(location.getCity());
+        locationResponseDTO.setAddress(location.getAddress());
+        locationResponseDTO.setState(location.getState());
+        location.setAddress("Bokova");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location);
+        transitAndStopRepository.save(transitAndStop1);
+        LocationResponseDTO locationResponseDTO1 = new LocationResponseDTO();
+        locationResponseDTO1.setCity(location.getCity());
+        locationResponseDTO1.setId(transitAndStop1.getId());
+        locationResponseDTO1.setCountry(location.getCountry());
+        locationResponseDTO1.setCity(location.getCity());
+        locationResponseDTO1.setAddress(location.getAddress());
+        locationResponseDTO1.setState(location.getState());
+        RequestBuilder requestBuilder = get("/api/public/location/search?city=DouAlA")
+                .header("Authorization", "Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper()
+                        .writeValueAsString(Arrays.asList(locationResponseDTO, locationResponseDTO1))))
                 .andReturn();
     }
 }

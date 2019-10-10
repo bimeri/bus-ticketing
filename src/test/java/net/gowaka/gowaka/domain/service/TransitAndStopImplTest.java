@@ -222,4 +222,19 @@ public class TransitAndStopImplTest {
         assertThat(locationResponseDTOList.get(0).getId(), is(transitAndStop.getId()));
         assertThat(locationResponseDTOList.get(0).getState(), is(location.getState()));
     }
+
+    @Test
+    public void search_transit_and_stop_by_city_should_return_location_list(){
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setState("SW");
+        location.setCity("Buea");
+        transitAndStop.setLocation(location);
+        transitAndStop.setId(4L);
+        when(transitAndStopRepository.findByLocationCityIgnoreCase(anyString()))
+                .thenReturn(Collections.singletonList(transitAndStop));
+        List<LocationResponseDTO> locationResponseDTOList = transitAndStopService.searchByCity("Buea");
+        assertThat(locationResponseDTOList.get(0).getId(), is(transitAndStop.getId()));
+        assertThat(locationResponseDTOList.get(0).getState(), is(location.getState()));
+    }
 }
