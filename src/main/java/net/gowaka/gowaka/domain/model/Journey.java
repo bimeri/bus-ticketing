@@ -20,6 +20,14 @@ public class Journey {
     @Embedded
     private Location destination;
     @Embedded
+    @AttributeOverrides(value = {
+            @AttributeOverride(name = "country", column = @Column(name = "departure_country")),
+            @AttributeOverride(name = "state", column = @Column(name = "departure_state")),
+            @AttributeOverride(name = "city", column = @Column(name = "departure_city")),
+            @AttributeOverride(name = "address", column = @Column(name = "departure_address")),
+    })
+    private Location departureLocation;
+    @Embedded
     private Driver driver;
 
     private LocalDateTime departureTime;
@@ -37,6 +45,8 @@ public class Journey {
             joinColumns = @JoinColumn(name = "journey_id"),
             inverseJoinColumns = @JoinColumn(name = "transit_stop_id"))
     private List<TransitAndStop> transitAndStops;
+    @ManyToOne
+    private Car car;
 
     public Journey() {
         this.transitAndStops = new ArrayList<>();

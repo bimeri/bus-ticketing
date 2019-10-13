@@ -26,5 +26,15 @@ public abstract class Car {
     private Boolean isCarApproved;
     private LocalDateTime timestamp;
 
+    @OneToMany(mappedBy = "car")
+    private List<Journey> journeys;
 
+    public Car() {
+        this.journeys = new ArrayList<>();
+    }
+
+    public void addJourney(Journey journey){
+        this.journeys.add(journey);
+        journey.setCar(this);
+    }
 }
