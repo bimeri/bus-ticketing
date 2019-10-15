@@ -26,25 +26,25 @@ public class CarController {
 
     @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN')")
     @PostMapping("/agency/car")
-    public ResponseEntity<ResponseBusDTO> addAgencyBus(@Valid @RequestBody BusDTO busDTO){
+    public ResponseEntity<BusResponseDTO> addAgencyBus(@Valid @RequestBody BusDTO busDTO){
         return ResponseEntity.ok(carService.addOfficialAgencyBus(busDTO));
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/users/car")
-    public ResponseEntity<ResponseSharedRideDTO> addSharedRide(@Valid @RequestBody SharedRideDTO sharedRideDTO){
+    public ResponseEntity<SharedRideResponseDTO> addSharedRide(@Valid @RequestBody SharedRideDTO sharedRideDTO){
         return ResponseEntity.ok(carService.addSharedRide(sharedRideDTO));
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN')")
     @GetMapping("/agency/car")
-    public ResponseEntity<List<ResponseBusDTO>> getAllOfficialAgencyBuses(){
+    public ResponseEntity<List<BusResponseDTO>> getAllOfficialAgencyBuses(){
         return ResponseEntity.ok(carService.getAllOfficialAgencyBuses());
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/users/car")
-    public ResponseEntity<List<ResponseSharedRideDTO>> getSharedRides() {
+    public ResponseEntity<List<SharedRideResponseDTO>> getSharedRides() {
         return ResponseEntity.ok(carService.getAllSharedRides());
     }
 
@@ -66,5 +66,13 @@ public class CarController {
     public ResponseEntity<CarDTO> searchByLicensePlateNumber(
             @RequestParam("licensePlateNumber") String licensePlateNumber){
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PostMapping("/agency/journeys/cars/{carId}")
+    public ResponseEntity<JourneyResponseDTO> addJourney(
+            @Valid @RequestBody JourneyDTO journeyDTO,
+            @PathVariable("carId") String carId){
+        return ResponseEntity.ok(carService.addJourney(journeyDTO, Long.parseLong(carId)));
     }
 }

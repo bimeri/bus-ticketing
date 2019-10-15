@@ -2,6 +2,7 @@ package net.gowaka.gowaka.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
@@ -79,5 +80,19 @@ public class GlobalExceptionHandler {
         validationErrorResponse.setMessage(message.toString());
 
         return new ResponseEntity<>(validationErrorResponse, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(value = {HttpMessageNotReadableException.class})
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex,
+                                                                               HttpServletRequest request){
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(INVALID_FORMAT.toString());
+        String dev_message = ex.getMessage();
+        String message = null;
+        if (dev_message != null ){
+            message = dev_message.substring(dev_message.indexOf("expected format"), dev_message.indexOf(';'));
+        }
+        errorResponse.setMessage(message);
+        errorResponse.setEndpoint(request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 }

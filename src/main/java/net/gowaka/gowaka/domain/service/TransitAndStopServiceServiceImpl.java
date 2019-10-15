@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,15 +49,14 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
 
     @Override
     public void deleteLocation(Long id) {
-        safeDelete(id);
+        transitAndStopRepository.deleteById(journeyCheck(getTransitAndStop(id)));
     }
 
     @Override
     public List<LocationResponseDTO> getAllLocations() {
-        List<TransitAndStop> transitAndStopList = transitAndStopRepository.findAll();
-        return transitAndStopList != null ? transitAndStopList.stream()
+        return transitAndStopRepository.findAll().stream()
                 .filter(transitAndStop -> transitAndStop.getLocation() != null)
-                .map(this::getLocationResponseDTO).collect(Collectors.toList()) : Collections.emptyList();
+                .map(this::getLocationResponseDTO).collect(Collectors.toList());
     }
 
     @Override
@@ -82,11 +80,6 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         }
         return location;
     }
-
-    private void safeDelete(Long id){
-        transitAndStopRepository.deleteById(journeyCheck(getTransitAndStop(id)));
-    }
-
     private TransitAndStop getTransitAndStop(Long id){
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
         if (!optionalTransitAndStop.isPresent()){

@@ -2,6 +2,8 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.JourneyRepository;
+import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -16,10 +18,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
@@ -41,6 +42,10 @@ public class CarServiceImplTest {
      private UserRepository mockUserRepository;
      @Mock
      private User user;
+     @Mock
+     private TransitAndStopRepository mockTransitAndStopRepository;
+     @Mock
+     private JourneyRepository mockJourneyRepository;
 
      private CarService carService;
 
@@ -143,11 +148,11 @@ public class CarServiceImplTest {
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         when(mockOfficialAgency.getBuses()).thenReturn(new ArrayList<>(Arrays.asList(bus, bus1)));
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
-        List<ResponseBusDTO> responseBusDTOS = carService.getAllOfficialAgencyBuses();
-        assertThat(responseBusDTOS.get(0).getId(), is(bus.getId()));
-        assertThat(responseBusDTOS.get(0).getName(), is(bus.getName()));
-        assertThat(responseBusDTOS.get(1).getId(), both(not(bus.getId())).and(is(bus1.getId())));
-        assertThat(responseBusDTOS.get(1).getName(), is(bus1.getName()));
+        List<BusResponseDTO> busResponseDTOS = carService.getAllOfficialAgencyBuses();
+        assertThat(busResponseDTOS.get(0).getId(), is(bus.getId()));
+        assertThat(busResponseDTOS.get(0).getName(), is(bus.getName()));
+        assertThat(busResponseDTOS.get(1).getId(), both(not(bus.getId())).and(is(bus1.getId())));
+        assertThat(busResponseDTOS.get(1).getName(), is(bus1.getName()));
     }
 
     @Test
@@ -186,9 +191,9 @@ public class CarServiceImplTest {
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         when(mockPersonalAgency.getSharedRides()).thenReturn(new ArrayList<>(Arrays.asList(sharedRide, sharedRide1)));
-        List<ResponseSharedRideDTO> responseSharedRideDTOS = carService.getAllSharedRides();
-        assertThat(responseSharedRideDTOS.get(0).getId(), is(equalTo(sharedRide.getId())));
-        assertThat(responseSharedRideDTOS.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
+        List<SharedRideResponseDTO> sharedRideResponseDTOS = carService.getAllSharedRides();
+        assertThat(sharedRideResponseDTOS.get(0).getId(), is(equalTo(sharedRide.getId())));
+        assertThat(sharedRideResponseDTOS.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
                 .and(is(equalTo(sharedRide1.getName())))));
     }
      @Test
@@ -314,4 +319,87 @@ public class CarServiceImplTest {
          assertThat(carService.searchByLicensePlateNumber(car.getLicensePlateNumber()).getId(), is(equalTo(car.getId())));
      }
 
+     @Test
+     public void add_journey_should_throw_car_resource_not_found_api_exception(){
+         user.setUserId("1");
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("Car not found");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+         carService.addJourney(new JourneyDTO(), 1L);
+     }
+
+     @Test
+     public void add_location_should_throw_transit_and_stop_not_found_api_exception(){
+         user.setUserId("1");
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         Bus bus = new Bus();
+         bus.setId(1L);
+         bus.setName("Township king");
+         Bus bus1 = new Bus();
+         bus1.setId(2L);
+         bus1.setName("Contriman saga");
+         CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+         carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         when(mockOfficialAgency.getBuses()).thenReturn(new ArrayList<>(Arrays.asList(bus, bus1)));
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("TransitAndStop not found");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+         carServiceImpl.addJourney(new JourneyDTO(), 1L);
+     }
+
+     @Test
+     public void add_location_should_add_and_return_journey_response_dto(){
+         user.setUserId("1");
+         UserDTO userDTO = new UserDTO();
+         userDTO.setId("1");
+         Bus bus = new Bus();
+         bus.setId(1L);
+         bus.setName("Township king");
+         Bus bus1 = new Bus();
+         bus1.setId(2L);
+         bus1.setName("Contriman saga");
+
+         TransitAndStop transitAndStop = new TransitAndStop();
+         Location location = new Location();
+         location.setCity("Babanki");
+         transitAndStop.setLocation(location);
+         transitAndStop.setId(2L);
+         JourneyDTO journeyDTO = new JourneyDTO();
+         journeyDTO.setDepartureLocation(2L);
+         journeyDTO.setDepartureTime(Date.from(
+                 LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+         journeyDTO.setDestination(2L);
+         journeyDTO.setTransitAndStops(Collections.singletonList(2L));
+
+         Journey journey = new Journey();
+         journey.setId(3L);
+
+         CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+         carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+         carServiceImpl.setJourneyRepository(mockJourneyRepository);
+         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         when(mockOfficialAgency.getBuses()).thenReturn(new ArrayList<>(Arrays.asList(bus, bus1)));
+         when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
+         when(mockJourneyRepository.save(any(Journey.class))).thenReturn(journey);
+
+         JourneyResponseDTO journeyResponseDTO = carServiceImpl.addJourney(journeyDTO, 1L);
+         verify(mockTransitAndStopRepository, times(3)).findById(2L);
+         assertThat(journeyResponseDTO.getArrivalIndicator(), is(false));
+         assertThat(journeyResponseDTO.getDepartureIndicator(), is(false));
+         assertThat(journeyResponseDTO.getDepartureTime(), is(journeyDTO.getDepartureTime()));
+         assertThat(journeyResponseDTO.getDepartureLocation().getId(), is(transitAndStop.getId()));
+         assertThat(journeyResponseDTO.getTransitAndStops().get(0).getId(), is(transitAndStop.getId()));
+         assertThat(journeyResponseDTO.getDestination().getCity(), is(location.getCity()));
+     }
 }

@@ -3,6 +3,8 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.JourneyRepository;
+import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -14,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +31,8 @@ public class CarServiceImpl implements CarService {
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
+    private TransitAndStopRepository transitAndStopRepository;
+    private JourneyRepository journeyRepository;
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
@@ -35,8 +41,18 @@ public class CarServiceImpl implements CarService {
         this.userRepository = userRepository;
     }
 
+    @Autowired
+    public void setTransitAndStopRepository(TransitAndStopRepository transitAndStopRepository) {
+        this.transitAndStopRepository = transitAndStopRepository;
+    }
+
+    @Autowired
+    public void setJourneyRepository(JourneyRepository journeyRepository) {
+        this.journeyRepository = journeyRepository;
+    }
+
     @Override
-    public ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO) {
+    public BusResponseDTO addOfficialAgencyBus(BusDTO busDTO) {
         OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
         String licensePlateNumber = busDTO.getLicensePlateNumber();
         verifyCarLicensePlateNumber(licensePlateNumber);
@@ -60,11 +76,11 @@ public class CarServiceImpl implements CarService {
             }
         }
         Bus savedbus = carRepository.save(bus);
-        return getResponseBusDTO(savedbus);
+        return getBusResponseDTO(savedbus);
     }
 
     @Override
-    public ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO) {
+    public SharedRideResponseDTO addSharedRide(SharedRideDTO sharedRideDTO) {
         PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
         String licensePlateNumber = sharedRideDTO.getLicensePlateNumber();
         verifyCarLicensePlateNumber(licensePlateNumber);
@@ -79,20 +95,20 @@ public class CarServiceImpl implements CarService {
         sharedRide.setTimestamp(LocalDateTime.now());
         sharedRide.setPersonalAgency(personalAgency);
         SharedRide savedRide = carRepository.save(sharedRide);
-        return getResponseSharedRideDTO(savedRide);
+        return getSharedRideResponseDTO(savedRide);
     }
 
     @Override
-    public List<ResponseBusDTO> getAllOfficialAgencyBuses() {
+    public List<BusResponseDTO> getAllOfficialAgencyBuses() {
         return getBuses(getOfficialAgency(verifyCurrentAuthUser())).stream().map(
-                this::getResponseBusDTO
+                this::getBusResponseDTO
         ).collect(Collectors.toList());
     }
 
     @Override
-    public List<ResponseSharedRideDTO> getAllSharedRides() {
+    public List<SharedRideResponseDTO> getAllSharedRides() {
         return getSharedRides(getPersonalAgency(verifyCurrentAuthUser())).stream().map(
-                this::getResponseSharedRideDTO
+                this::getSharedRideResponseDTO
         ).collect(Collectors.toList());
     }
 
@@ -124,6 +140,11 @@ public class CarServiceImpl implements CarService {
     @Override
     public CarDTO searchByLicensePlateNumber(String licensePlateNumber) {
         return getCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
+    }
+
+    @Override
+    public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
+        return mapSaveAndGetJourneyResponseDTO(journey, getOfficialAgencyCarById(carId));
     }
 
     private User verifyCurrentAuthUser(){
@@ -190,25 +211,25 @@ public class CarServiceImpl implements CarService {
         return optionalCar.get();
     }
 
-    private ResponseSharedRideDTO getResponseSharedRideDTO(SharedRide sharedRide) {
-        ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
-        responseSharedRideDTO.setId(sharedRide.getId());
-        responseSharedRideDTO.setName(sharedRide.getName());
-        responseSharedRideDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
-        responseSharedRideDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
-        responseSharedRideDTO.setCarOwnerName(sharedRide.getCarOwnerName());
-        responseSharedRideDTO.setIsCarApproved(sharedRide.getIsCarApproved());
-        return responseSharedRideDTO;
+    private SharedRideResponseDTO getSharedRideResponseDTO(SharedRide sharedRide) {
+        SharedRideResponseDTO sharedRideResponseDTO = new SharedRideResponseDTO();
+        sharedRideResponseDTO.setId(sharedRide.getId());
+        sharedRideResponseDTO.setName(sharedRide.getName());
+        sharedRideResponseDTO.setLicensePlateNumber(sharedRide.getLicensePlateNumber());
+        sharedRideResponseDTO.setCarOwnerIdNumber(sharedRide.getCarOwnerIdNumber());
+        sharedRideResponseDTO.setCarOwnerName(sharedRide.getCarOwnerName());
+        sharedRideResponseDTO.setIsCarApproved(sharedRide.getIsCarApproved());
+        return sharedRideResponseDTO;
     }
 
-    private ResponseBusDTO getResponseBusDTO(Bus bus){
-        ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-        responseBusDTO.setId(bus.getId());
-        responseBusDTO.setNumberOfSeats(bus.getNumberOfSeats());
-        responseBusDTO.setName(bus.getName());
-        responseBusDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
-        responseBusDTO.setIsCarApproved(bus.getIsCarApproved());
-        return responseBusDTO;
+    private BusResponseDTO getBusResponseDTO(Bus bus){
+        BusResponseDTO busResponseDTO = new BusResponseDTO();
+        busResponseDTO.setId(bus.getId());
+        busResponseDTO.setNumberOfSeats(bus.getNumberOfSeats());
+        busResponseDTO.setName(bus.getName());
+        busResponseDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
+        busResponseDTO.setIsCarApproved(bus.getIsCarApproved());
+        return busResponseDTO;
     }
 
     private CarDTO getCarDTO(Car car){
@@ -222,5 +243,91 @@ public class CarServiceImpl implements CarService {
         return carDTO;
     }
 
+    private Car getOfficialAgencyCarById(Long carId){
+       List<Car> cars = getOfficialAgency(verifyCurrentAuthUser()).getBuses()
+                .stream().filter(bus -> bus.getId().equals(carId)).collect(Collectors.toList());
+       if (cars.isEmpty()){
+           throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+       }
+       return cars.get(0);
+    }
+    private TransitAndStop getTransitAndStop(Long id){
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
+        if (!optionalTransitAndStop.isPresent()){
+            throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalTransitAndStop.get();
+    }
+
+    private TransitAndStop getTransitAndStopCanAppendErrMsg(Long id, String errMsg){
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
+        if (!optionalTransitAndStop.isPresent()){
+            throw new ApiException(errMsg + " TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalTransitAndStop.get();
+    }
+
+    private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Car car){
+        Journey journey = new Journey();
+        journey.setCar(car);
+        TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDestination(), "Destination");
+        journey.setDestination(destinationTransitAndStop.getLocation());
+        TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
+        journey.setDepartureLocation(departureTransitAndStop.getLocation());
+        List<TransitAndStop> transitAndStops = journeyDTO.getTransitAndStops().stream()
+                .map(this::getTransitAndStop).collect(Collectors.toList());
+        journey.setTransitAndStops(transitAndStops);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setTimestamp(LocalDateTime.now());
+        journey.setDriver(journeyDTO.getDriver());
+        journey.setEstimatedArrivalTime(journeyDTO.getEstimatedArrivalTime() == null ? null :
+                journeyDTO.getEstimatedArrivalTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        journey.setDepartureTime(journeyDTO.getDepartureTime() == null ? null :
+                journeyDTO.getDepartureTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+
+        JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
+        journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
+        journeyResponseDTO.setCar(getCarDTO(journey.getCar()));
+        journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(departureTransitAndStop));
+        journeyResponseDTO.setDepartureTime(journeyDTO.getDepartureTime());
+        journeyResponseDTO.setDestination(getLocationResponseDTO(destinationTransitAndStop));
+        journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
+        journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
+                Date.from(journey.getEstimatedArrivalTime().atZone(ZoneId.systemDefault()).toInstant()));
+        journeyResponseDTO.setTransitAndStops(
+                journey.getTransitAndStops().stream().map(
+                        this::getLocationResponseDTO
+                ).collect(Collectors.toList())
+        );
+        journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
+                Date.from(journey.getTimestamp().atZone(ZoneId.systemDefault()).toInstant()));
+
+        journeyResponseDTO.setId(journeyRepository.save(journey).getId());
+
+        return journeyResponseDTO;
+    }
+
+    private DriverDTO getDriverDTO(Driver driver) {
+        DriverDTO driverDTO = new DriverDTO();
+        if (driver == null){
+            return null;
+        }
+        driverDTO.setDriverName(driver.getDriverName());
+        driverDTO.setDriverLicenseNumber(driver.getDriverLicenseNumber());
+        return driverDTO;
+    }
+
+    private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
+        Location location = transitAndStop.getLocation();
+        LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
+        locationResponseDTO.setId(transitAndStop.getId());
+        locationResponseDTO.setAddress(location.getAddress());
+        locationResponseDTO.setCity(location.getCity());
+        locationResponseDTO.setState(location.getState());
+        locationResponseDTO.setCountry(location.getCountry());
+        return locationResponseDTO;
+    }
 
 }

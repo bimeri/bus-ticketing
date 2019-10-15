@@ -10,10 +10,12 @@ import java.util.List;
  */
 public interface CarService {
     void approve(ApproveCarDTO approveCarDTO, Long id);
-    ResponseBusDTO addOfficialAgencyBus(BusDTO busDTO);
-    ResponseSharedRideDTO addSharedRide(SharedRideDTO sharedRideDTO);
-    List<ResponseBusDTO> getAllOfficialAgencyBuses();
-    List<ResponseSharedRideDTO> getAllSharedRides();
+    BusResponseDTO addOfficialAgencyBus(BusDTO busDTO);
+    SharedRideResponseDTO addSharedRide(SharedRideDTO sharedRideDTO);
+    List<BusResponseDTO> getAllOfficialAgencyBuses();
+    List<SharedRideResponseDTO> getAllSharedRides();
     List<CarDTO> getAllUnapprovedCars();
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
+    JourneyResponseDTO addJourney(JourneyDTO journey, Long carId);
+
 }

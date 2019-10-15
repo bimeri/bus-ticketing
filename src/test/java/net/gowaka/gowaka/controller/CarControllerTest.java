@@ -68,20 +68,20 @@ public class CarControllerTest {
         busDTO.setNumberOfSeats(5);
         busDTO.setLicensePlateNumber("1234LT");
 
-        when(mockCarService.addOfficialAgencyBus(busDTO)).thenAnswer(new Answer<ResponseBusDTO>() {
-            public ResponseBusDTO answer(InvocationOnMock invocation) throws Throwable {
-                ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-                responseBusDTO.setName(busDTO.getName());
-                responseBusDTO.setLicensePlateNumber(busDTO.getLicensePlateNumber());
-                responseBusDTO.setNumberOfSeats(busDTO.getNumberOfSeats());
-                responseBusDTO.setId(1L);
-                return responseBusDTO;
+        when(mockCarService.addOfficialAgencyBus(busDTO)).thenAnswer(new Answer<BusResponseDTO>() {
+            public BusResponseDTO answer(InvocationOnMock invocation) throws Throwable {
+                BusResponseDTO busResponseDTO = new BusResponseDTO();
+                busResponseDTO.setName(busDTO.getName());
+                busResponseDTO.setLicensePlateNumber(busDTO.getLicensePlateNumber());
+                busResponseDTO.setNumberOfSeats(busDTO.getNumberOfSeats());
+                busResponseDTO.setId(1L);
+                return busResponseDTO;
             }
         });
         ReflectionTestUtils.setField(carController, "carService", mockCarService);
-        ResponseEntity<ResponseBusDTO> response = carController.addAgencyBus(busDTO);
+        ResponseEntity<BusResponseDTO> response = carController.addAgencyBus(busDTO);
         verify(mockCarService).addOfficialAgencyBus(busDTO);
-        ResponseBusDTO responseBody = response.getBody();
+        BusResponseDTO responseBody = response.getBody();
         assertThat(responseBody.getId(), is(equalTo(1L)));
         assertThat(responseBody.getName(), is(equalTo(busDTO.getName())));
         assertThat(responseBody.getNumberOfSeats(), is(equalTo(busDTO.getNumberOfSeats())));
@@ -103,21 +103,21 @@ public class CarControllerTest {
         sharedRideDTO.setName("Danfo Driver");
         sharedRideDTO.setCarOwnerName("Ndifor Fuh");
         sharedRideDTO.setLicensePlateNumber("1245NW");
-        when(mockCarService.addSharedRide(sharedRideDTO)).thenAnswer(new Answer<ResponseSharedRideDTO>() {
-            public ResponseSharedRideDTO answer(InvocationOnMock invocation) throws Throwable {
-                ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
-                responseSharedRideDTO.setCarOwnerName(sharedRideDTO.getCarOwnerName());
-                responseSharedRideDTO.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
-                responseSharedRideDTO.setLicensePlateNumber(sharedRideDTO.getLicensePlateNumber());
-                responseSharedRideDTO.setName(sharedRideDTO.getName());
-                responseSharedRideDTO.setId(1L);
-                return responseSharedRideDTO;
+        when(mockCarService.addSharedRide(sharedRideDTO)).thenAnswer(new Answer<SharedRideResponseDTO>() {
+            public SharedRideResponseDTO answer(InvocationOnMock invocation) throws Throwable {
+                SharedRideResponseDTO sharedRideResponseDTO = new SharedRideResponseDTO();
+                sharedRideResponseDTO.setCarOwnerName(sharedRideDTO.getCarOwnerName());
+                sharedRideResponseDTO.setCarOwnerIdNumber(sharedRideDTO.getCarOwnerIdNumber());
+                sharedRideResponseDTO.setLicensePlateNumber(sharedRideDTO.getLicensePlateNumber());
+                sharedRideResponseDTO.setName(sharedRideDTO.getName());
+                sharedRideResponseDTO.setId(1L);
+                return sharedRideResponseDTO;
             }
         });
         ReflectionTestUtils.setField(carController, "carService", mockCarService);
-        ResponseEntity<ResponseSharedRideDTO> response = carController.addSharedRide(sharedRideDTO);
+        ResponseEntity<SharedRideResponseDTO> response = carController.addSharedRide(sharedRideDTO);
         verify(mockCarService).addSharedRide(sharedRideDTO);
-        ResponseSharedRideDTO responseBody = response.getBody();
+        SharedRideResponseDTO responseBody = response.getBody();
         assertNotNull(responseBody);
         assertThat(responseBody.getName(), is(equalTo(sharedRideDTO.getName())));
         assertThat(responseBody.getCarOwnerIdNumber(), is(equalTo(sharedRideDTO.getCarOwnerIdNumber())));
@@ -140,21 +140,21 @@ public class CarControllerTest {
         Bus bus1 = new Bus();
         bus1.setId(2L);
         bus1.setName("Angry");
-        when(mockCarService.getAllOfficialAgencyBuses()).thenAnswer(new Answer<List<ResponseBusDTO>>() {
-            public List<ResponseBusDTO> answer(InvocationOnMock invocation) throws Throwable {
-              ResponseBusDTO responseBusDTO = new ResponseBusDTO();
-              responseBusDTO.setId(bus.getId());
-              responseBusDTO.setName(bus.getName());
-              ResponseBusDTO responseBusDTO1 = new ResponseBusDTO();
-              responseBusDTO1.setId(bus1.getId());
-              responseBusDTO1.setName(bus1.getName());
-              return new ArrayList<>(Arrays.asList(responseBusDTO, responseBusDTO1));
+        when(mockCarService.getAllOfficialAgencyBuses()).thenAnswer(new Answer<List<BusResponseDTO>>() {
+            public List<BusResponseDTO> answer(InvocationOnMock invocation) throws Throwable {
+              BusResponseDTO busResponseDTO = new BusResponseDTO();
+              busResponseDTO.setId(bus.getId());
+              busResponseDTO.setName(bus.getName());
+              BusResponseDTO busResponseDTO1 = new BusResponseDTO();
+              busResponseDTO1.setId(bus1.getId());
+              busResponseDTO1.setName(bus1.getName());
+              return new ArrayList<>(Arrays.asList(busResponseDTO, busResponseDTO1));
             }
         });
         ReflectionTestUtils.setField(carController, "carService", mockCarService);
-        ResponseEntity<List<ResponseBusDTO>> response = carController.getAllOfficialAgencyBuses();
+        ResponseEntity<List<BusResponseDTO>> response = carController.getAllOfficialAgencyBuses();
         verify(mockCarService).getAllOfficialAgencyBuses();
-        List<ResponseBusDTO> responseBody = response.getBody();
+        List<BusResponseDTO> responseBody = response.getBody();
         assertNotNull(responseBody);
         assertThat(responseBody.get(1).getId(), both(is(not(bus.getId()))).and(is(bus1.getId())));
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.OK)));
@@ -174,21 +174,21 @@ public class CarControllerTest {
         SharedRide sharedRide1 = new SharedRide();
         sharedRide1.setId(2L);
         sharedRide1.setName("UH");
-        when(mockCarService.getAllSharedRides()).thenAnswer(new Answer<List<ResponseSharedRideDTO>>() {
-            public List<ResponseSharedRideDTO> answer(InvocationOnMock invocation) throws Throwable {
-                ResponseSharedRideDTO responseSharedRideDTO = new ResponseSharedRideDTO();
-                responseSharedRideDTO.setId(sharedRide.getId());
-                responseSharedRideDTO.setName(sharedRide.getName());
-                ResponseSharedRideDTO responseSharedRideDTO1 = new ResponseSharedRideDTO();
-                responseSharedRideDTO1.setId(sharedRide1.getId());
-                responseSharedRideDTO1.setName(sharedRide1.getName());
-                return new ArrayList<>(Arrays.asList(responseSharedRideDTO, responseSharedRideDTO1));
+        when(mockCarService.getAllSharedRides()).thenAnswer(new Answer<List<SharedRideResponseDTO>>() {
+            public List<SharedRideResponseDTO> answer(InvocationOnMock invocation) throws Throwable {
+                SharedRideResponseDTO sharedRideResponseDTO = new SharedRideResponseDTO();
+                sharedRideResponseDTO.setId(sharedRide.getId());
+                sharedRideResponseDTO.setName(sharedRide.getName());
+                SharedRideResponseDTO sharedRideResponseDTO1 = new SharedRideResponseDTO();
+                sharedRideResponseDTO1.setId(sharedRide1.getId());
+                sharedRideResponseDTO1.setName(sharedRide1.getName());
+                return new ArrayList<>(Arrays.asList(sharedRideResponseDTO, sharedRideResponseDTO1));
             }
         });
         ReflectionTestUtils.setField(carController, "carService", mockCarService);
-        ResponseEntity<List<ResponseSharedRideDTO>> responseEntity = carController.getSharedRides();
+        ResponseEntity<List<SharedRideResponseDTO>> responseEntity = carController.getSharedRides();
         assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.OK)));
-        List<ResponseSharedRideDTO> responseBody = responseEntity.getBody();
+        List<SharedRideResponseDTO> responseBody = responseEntity.getBody();
         assertNotNull(responseBody);
         assertThat(responseBody.get(1).getName(), is(both(not(equalTo(sharedRide.getName())))
                 .and(equalTo(sharedRide1.getName()))));
@@ -226,5 +226,12 @@ public class CarControllerTest {
     public void getAllUnapprovedCars_calls_carService() {
         carController.getAllUnapprovedCars();
         verify(mockCarService).getAllUnapprovedCars();
+    }
+
+    @Test
+    public void add_journey_should_call_car_service_add_location(){
+        JourneyDTO journeyDTO = new JourneyDTO();
+        carController.addJourney(journeyDTO, "1");
+        verify(mockCarService).addJourney(journeyDTO, 1L);
     }
 }

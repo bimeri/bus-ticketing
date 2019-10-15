@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ResponseSharedRideXDTO extends ResponseSharedRideDTO {
+public class SharedRideResponseXDTO extends SharedRideResponseDTO {
     LocalDateTime timestamp;
     Boolean isOfficialAgencyIndicator;
     String personalAgency;
