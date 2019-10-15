@@ -17,5 +17,5 @@ public interface CarService {
     List<CarDTO> getAllUnapprovedCars();
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
     JourneyResponseDTO addJourney(JourneyDTO journey, Long carId);
-
+    JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId);
 }

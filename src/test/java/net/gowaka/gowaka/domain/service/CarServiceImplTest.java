@@ -402,4 +402,43 @@ public class CarServiceImplTest {
          assertThat(journeyResponseDTO.getTransitAndStops().get(0).getId(), is(transitAndStop.getId()));
          assertThat(journeyResponseDTO.getDestination().getCity(), is(location.getCity()));
      }
+
+    /**
+     * Scenario 1 journeyId does not exist
+     */
+     @Test
+     public void update_location_should_throw_journey_not_found_api_exception(){
+         CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+         carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+         carServiceImpl.setJourneyRepository(mockJourneyRepository);
+         expectedException.expect(ApiException.class);
+         expectedException.expectMessage("Journey not found");
+         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+         carServiceImpl.updateJourney(new JourneyDTO(), 1L, 1L);
+     }
+
+    /**
+     * scenario 2. carId not found in user's Official agency
+     */
+    @Test
+    public void update_location_should_throw_car_not_found_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.emptyList());
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(new Journey()));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Car not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.updateJourney(new JourneyDTO(), 1L, 1L);
+     }
 }

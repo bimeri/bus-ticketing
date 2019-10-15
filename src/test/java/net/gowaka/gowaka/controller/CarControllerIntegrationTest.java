@@ -2,10 +2,12 @@ package net.gowaka.gowaka.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gowaka.gowaka.TimeProviderTestUtil;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ErrorCodes;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,10 +27,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
@@ -62,6 +64,9 @@ public class CarControllerIntegrationTest {
     private TransitAndStopRepository transitAndStopRepository;
 
     @Autowired
+    private JourneyRepository journeyRepository;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Qualifier("apiSecurityRestTemplate")
@@ -93,6 +98,11 @@ public class CarControllerIntegrationTest {
         this.user = userRepository.save(newUser);
 
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        TimeProviderTestUtil.useSystemClock();
     }
 
     @Test
@@ -322,6 +332,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void add_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
@@ -360,13 +371,12 @@ public class CarControllerIntegrationTest {
         transitAndStop3.setLocation(location);
         transitAndStopRepository.save(transitAndStop3);
 
-        LocalDateTime localDateTime = LocalDateTime.now();
-        String currentDateTime = localDateTime.minusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss"));
-        String timestamp = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        bus.setTimestamp(LocalDateTime.now());
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        bus.setTimestamp(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
-        Date dateTime = Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
         String expectedResponse = "{\"id\":1,\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
                 "\"departureIndicator\":false," +
@@ -412,7 +422,7 @@ public class CarControllerIntegrationTest {
                 "\"licensePlateNumber\":\"123454387\"," +
                 "\"isOfficialAgencyIndicator\":true," +
                 "\"isCarApproved\":true," +
-                "\"timestamp\":\"" + timestamp + "\"" +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
                 "}}";
         String reqBody = "{\n" +
                 "  \"departureTime\": \"" + currentDateTime + "\",\n" +
@@ -432,6 +442,7 @@ public class CarControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
 
@@ -450,7 +461,7 @@ public class CarControllerIntegrationTest {
                 "  \"destination\": 1,\n" +
                 "  \"transitAndStops\": [1]\n" +
                 "}\n";
-        String expectedResponse = "{\"code\":\"INVALID_FORMAT\",\"message\":\"expected format \\\"yyyy-MM-dd hh:mm:ss\\\"\",\"endpoint\":\"/api/protected/agency/journeys/cars/1\"}";
+        String expectedResponse = "{\"code\":\"INVALID_FORMAT\",\"message\":\"expected format \\\"yyyy-MM-dd HH:mm:ss\\\"\",\"endpoint\":\"/api/protected/agency/journeys/cars/1\"}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/cars/1")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -458,6 +469,169 @@ public class CarControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    /**
+     * Scenario 3. Invalid input object
+     */
+    @Test
+    public void update_journey_should_throw_invalid_date_format_error_response() throws Exception {
+        String reqBody = "{\n" +
+                "  \"departureTime\": \" 27-02-29 \",\n" +
+                "  \"estimatedArrivalTime\": \" 27-0-20 \",\n" +
+                "  \"driver\": {\n" +
+                "    \"driverName\": \"John Doe\",\n" +
+                "    \"driverLicenseNumber\": \"1234567899\"\n" +
+                "  },\n" +
+                "  \"departureLocation\": 1,\n" +
+                "  \"destination\": 1,\n" +
+                "  \"transitAndStops\": [1]\n" +
+                "}\n";
+        String expectedResponse = "{\"code\":\"INVALID_FORMAT\",\"message\":\"expected format \\\"yyyy-MM-dd HH:mm:ss\\\"\",\"endpoint\":\"/api/protected/agency/journeys/1/cars/1\"}";
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/1/cars/1")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    /**
+     * Scenario 5 valid request
+     * @throws Exception
+     */
+    @Test
+    public void update_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Mile 17 Motto Park");
+        location.setCity("Buea");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        location.setCity("Kumba");
+        location.setAddress("Buea Road Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location);
+        transitAndStopRepository.save(transitAndStop1);
+        location.setCity("Muyuka");
+        location.setAddress("Muyuka Main Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location);
+        transitAndStopRepository.save(transitAndStop2);
+        location.setCity("Ekona");
+        location.setAddress("Ekona Main Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String updatedDateTime = localDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop.getLocation());
+        journey.setDestination(transitAndStop1.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(bus);
+        journeyRepository.save(journey);
+        String expectedResponse = "{\"id\":1,\"departureTime\":\"" + updatedDateTime + "\"," +
+                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
+                "\"departureIndicator\":false," +
+                "\"arrivalIndicator\":false," +
+                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"driver\":{" +
+                "\"driverName\":\"John Doe\"," +
+                "\"driverLicenseNumber\":\"1234567899\"" +
+                "}," +
+                "\"departureLocation\":{" +
+                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Kumba\"," +
+                "\"address\":\"Buea Road Motor Park\"" +
+                "}," +
+                "\"destination\":{" +
+                "\"id\":" + transitAndStop.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Buea\"," +
+                "\"address\":\"Mile 17 Motto Park\"" +
+                "}," +
+                "\"transitAndStops\":[" +
+                "{" +
+                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\": \"South West\"," +
+                "\"city\":\"Ekona\"," +
+                "\"address\":\"Ekona Main Park\"" +
+                "}," +
+                "{" +
+                "\"id\":" + transitAndStop2.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Muyuka\"," +
+                "\"address\":\"Muyuka Main Park\"" +
+                "}" +
+                "]," +
+                "\"car\":{" +
+                "\"id\":" + bus.getId() + "," +
+                "\"name\":\"Kumba One Chances\"," +
+                "\"licensePlateNumber\":\"123454387\"," +
+                "\"isOfficialAgencyIndicator\":true," +
+                "\"isCarApproved\":true," +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "}}";
+        String reqBody = "{\n" +
+                "  \"departureTime\": \"" + updatedDateTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \"" + currentDateTime + "\",\n" +
+                "  \"driver\": {\n" +
+                "    \"driverName\": \"John Doe\",\n" +
+                "    \"driverLicenseNumber\": \"1234567899\"\n" +
+                "  },\n" +
+                "  \"departureLocation\": " + transitAndStop1.getId() + ",\n" +
+                "  \"destination\": " + transitAndStop.getId() + ",\n" +
+                "  \"transitAndStops\": [" + transitAndStop3.getId()+", " + transitAndStop2.getId()+"]\n" +
+                "}\n";
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/"+ journey.getId() + "/cars/" + bus.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }

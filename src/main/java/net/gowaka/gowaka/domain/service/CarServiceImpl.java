@@ -6,6 +6,7 @@ import net.gowaka.gowaka.domain.repository.CarRepository;
 import net.gowaka.gowaka.domain.repository.JourneyRepository;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
+import net.gowaka.gowaka.domain.service.utilities.TimeProvider;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
@@ -144,9 +145,18 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
-        return mapSaveAndGetJourneyResponseDTO(journey, getOfficialAgencyCarById(carId));
+        return mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
     }
 
+    @Override
+    public JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId) {
+        return mapSaveAndGetJourneyResponseDTO(journey, getJourney(journeyId), getOfficialAgencyCarById(carId));
+    }
+
+    /**
+     * verify and return the current user in cases where user id is relevant
+     * @return user
+     */
     private User verifyCurrentAuthUser(){
         UserDTO authUser = userService.getCurrentAuthUser();
         // get user entity
@@ -157,6 +167,11 @@ public class CarServiceImpl implements CarService {
         return optionalUser.get();
     }
 
+    /**
+     * Get the personal agency of user or throw api exception if agency is not found
+     * @param user
+     * @return personalAgency
+     */
     private PersonalAgency getPersonalAgency(User user) {
         PersonalAgency personalAgency = user.getPersonalAgency();
         if (personalAgency == null) {
@@ -165,6 +180,11 @@ public class CarServiceImpl implements CarService {
         return personalAgency;
     }
 
+    /**
+     * Get the personal agency of user or throw api exception if agency is not found
+     * @param user
+     * @return officialAgency
+     */
     private OfficialAgency getOfficialAgency(User user) {
         OfficialAgency officialAgency = user.getOfficialAgency();
         if (officialAgency == null){
@@ -173,6 +193,11 @@ public class CarServiceImpl implements CarService {
         return officialAgency;
     }
 
+    /**
+     * Get buses of official agency or throw api exception if agency is empty
+     * @param officialAgency
+     * @return List: bus
+     */
     private List<Bus> getBuses(OfficialAgency officialAgency){
         List<Bus> buses = officialAgency.getBuses();
         if (buses.isEmpty()){
@@ -181,6 +206,11 @@ public class CarServiceImpl implements CarService {
         return buses;
     }
 
+    /**
+     * Get sharedRides of Agency or throw api exception if agency is empty
+     * @param personalAgency
+     * @return sharedRides
+     */
     private List<SharedRide> getSharedRides(PersonalAgency personalAgency){
         List<SharedRide> sharedRides = personalAgency.getSharedRides();
         if (sharedRides.isEmpty()){
@@ -189,6 +219,10 @@ public class CarServiceImpl implements CarService {
         return sharedRides;
     }
 
+    /**
+     * throws license plate already in use api exception
+     * @param licensePlateNumber
+     */
     private void verifyCarLicensePlateNumber(String licensePlateNumber){
         if (licensePlateNumber != null && carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber.trim()).isPresent()){
             throw new ApiException("License plate number already in use",
@@ -196,6 +230,11 @@ public class CarServiceImpl implements CarService {
         }
     }
 
+    /**
+     *
+     * @param id
+     * @return Car
+     */
     private Car getCarById(Long id){
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()){
@@ -243,6 +282,11 @@ public class CarServiceImpl implements CarService {
         return carDTO;
     }
 
+    /**
+     * Gets car in user's official agency. if car not found, throw car not found api exception
+     * @param carId
+     * @return Car
+     */
     private Car getOfficialAgencyCarById(Long carId){
        List<Car> cars = getOfficialAgency(verifyCurrentAuthUser()).getBuses()
                 .stream().filter(bus -> bus.getId().equals(carId)).collect(Collectors.toList());
@@ -267,8 +311,7 @@ public class CarServiceImpl implements CarService {
         return optionalTransitAndStop.get();
     }
 
-    private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Car car){
-        Journey journey = new Journey();
+    private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car){
         journey.setCar(car);
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDestination(), "Destination");
         journey.setDestination(destinationTransitAndStop.getLocation());
@@ -279,30 +322,38 @@ public class CarServiceImpl implements CarService {
         journey.setTransitAndStops(transitAndStops);
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTimestamp(LocalDateTime.now());
-        journey.setDriver(journeyDTO.getDriver());
+        journey.setTimestamp(TimeProvider.now());
+
+        Driver driver = new Driver();
+        if (journeyDTO.getDriver() != null) {
+            driver.setDriverLicenseNumber(journeyDTO.getDriver().getDriverLicenseNumber());
+            driver.setDriverName(journeyDTO.getDriver().getDriverName());
+        }
+        journey.setDriver(driver);
+
         journey.setEstimatedArrivalTime(journeyDTO.getEstimatedArrivalTime() == null ? null :
-                journeyDTO.getEstimatedArrivalTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+                journeyDTO.getEstimatedArrivalTime().toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime());
         journey.setDepartureTime(journeyDTO.getDepartureTime() == null ? null :
-                journeyDTO.getDepartureTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+                journeyDTO.getDepartureTime().toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime());
+
 
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
-        journeyResponseDTO.setCar(getCarDTO(journey.getCar()));
+        journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
         journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(departureTransitAndStop));
         journeyResponseDTO.setDepartureTime(journeyDTO.getDepartureTime());
         journeyResponseDTO.setDestination(getLocationResponseDTO(destinationTransitAndStop));
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
         journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
-                Date.from(journey.getEstimatedArrivalTime().atZone(ZoneId.systemDefault()).toInstant()));
+                Date.from(journey.getEstimatedArrivalTime().atZone(ZoneId.of("GMT")).toInstant()));
         journeyResponseDTO.setTransitAndStops(
                 journey.getTransitAndStops().stream().map(
                         this::getLocationResponseDTO
                 ).collect(Collectors.toList())
         );
         journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
-                Date.from(journey.getTimestamp().atZone(ZoneId.systemDefault()).toInstant()));
+                Date.from(journey.getTimestamp().atZone(ZoneId.of("GMT")).toInstant()));
 
         journeyResponseDTO.setId(journeyRepository.save(journey).getId());
 
@@ -328,6 +379,31 @@ public class CarServiceImpl implements CarService {
         locationResponseDTO.setState(location.getState());
         locationResponseDTO.setCountry(location.getCountry());
         return locationResponseDTO;
+    }
+
+    /**
+     * gets the journey by journey id, throws api exception if journey not found
+     * @param id
+     * @return Journey
+     */
+    private Journey getJourney(Long id){
+        Optional<Journey> journeyOptional = journeyRepository.findById(id);
+        if (!journeyOptional.isPresent()){
+            throw new ApiException("Journey not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return journeyOptional.get();
+    }
+
+    private CarResponseDTO getCarResponseDTO(Car car){
+        CarResponseDTO carDTO = new CarResponseDTO();
+        carDTO.setId(car.getId());
+        carDTO.setName(car.getName());
+        carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
+        carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
+        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+        carDTO.setTimestamp(car.getTimestamp() == null ? null :
+                Date.from(car.getTimestamp().atZone(ZoneId.of("GMT")).toInstant()));
+        return carDTO;
     }
 
 }
