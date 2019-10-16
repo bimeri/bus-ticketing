@@ -84,4 +84,9 @@ public class CarController {
             @PathVariable("carId") String carId){
         return ResponseEntity.ok(carService.updateJourney(journeyDTO, Long.parseLong(journeyId), Long.parseLong(carId)));
     }
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
+    @GetMapping("/agency/journeys")
+    public ResponseEntity<List<JourneyResponseDTO>> getAllOfficialAgencyJourneys(){
+        return ResponseEntity.ok(carService.getAllOfficialAgencyJourneys());
+    }
 }

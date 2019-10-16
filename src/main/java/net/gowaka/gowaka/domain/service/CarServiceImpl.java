@@ -34,6 +34,7 @@ public class CarServiceImpl implements CarService {
     private UserRepository userRepository;
     private TransitAndStopRepository transitAndStopRepository;
     private JourneyRepository journeyRepository;
+    private ZoneId zoneId = ZoneId.of("GMT");
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
@@ -151,6 +152,19 @@ public class CarServiceImpl implements CarService {
     @Override
     public JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId) {
         return mapSaveAndGetJourneyResponseDTO(journey, getJourney(journeyId), getOfficialAgencyCarById(carId));
+    }
+
+    @Override
+    public List<JourneyResponseDTO> getAllOfficialAgencyJourneys() {
+        OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
+        return journeyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc().stream()
+                .filter(journey -> {
+                    Car car = journey.getCar();
+                    if (car instanceof Bus){
+                     return ((Bus) car).getOfficialAgency().equals(officialAgency);
+                    }
+                    return false;
+                }).map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
     }
 
     /**
@@ -332,9 +346,9 @@ public class CarServiceImpl implements CarService {
         journey.setDriver(driver);
 
         journey.setEstimatedArrivalTime(journeyDTO.getEstimatedArrivalTime() == null ? null :
-                journeyDTO.getEstimatedArrivalTime().toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime());
+                journeyDTO.getEstimatedArrivalTime().toInstant().atZone(zoneId).toLocalDateTime());
         journey.setDepartureTime(journeyDTO.getDepartureTime() == null ? null :
-                journeyDTO.getDepartureTime().toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime());
+                journeyDTO.getDepartureTime().toInstant().atZone(zoneId).toLocalDateTime());
 
 
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
@@ -345,15 +359,14 @@ public class CarServiceImpl implements CarService {
         journeyResponseDTO.setDepartureTime(journeyDTO.getDepartureTime());
         journeyResponseDTO.setDestination(getLocationResponseDTO(destinationTransitAndStop));
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
-        journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
-                Date.from(journey.getEstimatedArrivalTime().atZone(ZoneId.of("GMT")).toInstant()));
+        journeyResponseDTO.setEstimatedArrivalTime(journeyDTO.getEstimatedArrivalTime());
         journeyResponseDTO.setTransitAndStops(
                 journey.getTransitAndStops().stream().map(
                         this::getLocationResponseDTO
                 ).collect(Collectors.toList())
         );
         journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
-                Date.from(journey.getTimestamp().atZone(ZoneId.of("GMT")).toInstant()));
+                Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
 
         journeyResponseDTO.setId(journeyRepository.save(journey).getId());
 
@@ -371,7 +384,10 @@ public class CarServiceImpl implements CarService {
     }
 
     private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
-        Location location = transitAndStop.getLocation();
+        Location location = new Location();
+        if (transitAndStop.getLocation() != null){
+            location = transitAndStop.getLocation();
+        }
         LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
         locationResponseDTO.setId(transitAndStop.getId());
         locationResponseDTO.setAddress(location.getAddress());
@@ -402,8 +418,56 @@ public class CarServiceImpl implements CarService {
         carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
         carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
         carDTO.setTimestamp(car.getTimestamp() == null ? null :
-                Date.from(car.getTimestamp().atZone(ZoneId.of("GMT")).toInstant()));
+                Date.from(car.getTimestamp().atZone(zoneId).toInstant()));
         return carDTO;
     }
+
+    /**
+     * Maps journey to JourneyResponseDTO
+     * @param journey
+     * @return JourneyResponseDTO
+     */
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey){
+        JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
+        journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
+        journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
+        journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(
+                getTransitAndStopByLocation(journey.getDepartureLocation())
+        ));
+        journeyResponseDTO.setDepartureTime(
+                Date.from(journey.getDepartureTime() == null ? LocalDateTime.now().atZone(zoneId).toInstant() :
+                        journey.getDepartureTime().atZone(zoneId).toInstant())
+        );
+        journeyResponseDTO.setDestination(getLocationResponseDTO(
+                getTransitAndStopByLocation(journey.getDestination())
+                ));
+        journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
+        journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
+                Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
+        journeyResponseDTO.setTransitAndStops(
+                journey.getTransitAndStops().stream().map(
+                        this::getLocationResponseDTO
+                ).collect(Collectors.toList())
+        );
+        journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
+                Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
+
+        journeyResponseDTO.setId(journey.getId());
+        return journeyResponseDTO;
+    }
+
+    /**
+     * Gets the transitAndStop for a particular location
+     * @param location
+     * @return
+     */
+    private TransitAndStop getTransitAndStopByLocation(Location location){
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctByLocation(location);
+            if (!optionalTransitAndStop.isPresent()){
+                throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            }
+            return optionalTransitAndStop.get();
+        }
 
 }

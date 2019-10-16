@@ -18,4 +18,5 @@ public interface CarService {
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
     JourneyResponseDTO addJourney(JourneyDTO journey, Long carId);
     JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId);
+    List<JourneyResponseDTO> getAllOfficialAgencyJourneys();
 }

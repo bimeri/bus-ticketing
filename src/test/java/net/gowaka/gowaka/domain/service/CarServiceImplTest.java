@@ -441,4 +441,61 @@ public class CarServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         carServiceImpl.updateJourney(new JourneyDTO(), 1L, 1L);
      }
+
+    /**
+     * #169112516
+     * scenario 1 No journey found for user's Agency
+     */
+    @Test
+    public void get_all_journeys_should_return_empty_list_if_no_journey_found(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc())
+                .thenReturn(Collections.emptyList());
+        List<JourneyResponseDTO> journeyResponseDTOList = carServiceImpl.getAllOfficialAgencyJourneys();
+        assertTrue(journeyResponseDTOList.isEmpty());
+     }
+
+    /**
+     * #169112516
+     * scenario 2 Journeys found in user's Agency
+     */
+    @Test
+    public void get_all_journeys_should_return_list_of_journey_response_dtos(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc())
+                .thenReturn(Collections.singletonList(journey));
+        when(mockTransitAndStopRepository.findDistinctByLocation(any())).thenReturn(Optional.of(new TransitAndStop()));
+        List<JourneyResponseDTO> journeyResponseDTOList = carServiceImpl.getAllOfficialAgencyJourneys();
+        assertFalse(journeyResponseDTOList.isEmpty());
+        assertThat(journeyResponseDTOList.get(0).getCar(), is(instanceOf(CarResponseDTO.class)));
+        assertThat(journeyResponseDTOList.get(0).getCar().getName(), is(bus.getName()));
+     }
 }

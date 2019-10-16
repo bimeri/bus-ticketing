@@ -565,8 +565,8 @@ public class CarControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(bus);
-        journeyRepository.save(journey);
-        String expectedResponse = "{\"id\":1,\"departureTime\":\"" + updatedDateTime + "\"," +
+        journey = journeyRepository.save(journey);
+        String expectedResponse = "{\"id\":" + journey.getId() + ",\"departureTime\":\"" + updatedDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
@@ -632,6 +632,157 @@ public class CarControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    /**
+     * #169112516
+     * scenario 1 No journey found for user's Agency
+     */
+    @Test
+    public void get_all_journeys_should_return_empty_list_if_no_journey_found() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"))
+                .andReturn();
+    }
+
+    /**
+     * #169112516
+     * scenario 2 Journeys found in user's Agency
+     */
+    @Test
+    public void get_all_journeys_should_return_list_of_journey_response_dtos() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Malingo Major");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Mile 17 Motto Park");
+        location.setCity("Buea");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        Location location1 = new Location();
+        location1.setState("South West");
+        location1.setCountry("Cameroon");
+        location1.setCity("Kumba");
+        location1.setAddress("Buea Road Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
+        Location location2 = new Location();
+        location2.setState("South West");
+        location2.setCountry("Cameroon");
+        location2.setCity("Muyuka");
+        location2.setAddress("Muyuka Main Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location2);
+        transitAndStopRepository.save(transitAndStop2);
+        Location location3 = new Location();
+        location3.setState("South West");
+        location3.setCountry("Cameroon");
+        location3.setCity("Ekona");
+        location3.setAddress("Ekona Main Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location3);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        bus = carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop1.getLocation());
+        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(bus);
+        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journeyRepository.save(journey);
+        String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
+                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
+                "\"departureIndicator\":false," +
+                "\"arrivalIndicator\":false," +
+                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"driver\":{" +
+                "\"driverName\":\"John Doe\"," +
+                "\"driverLicenseNumber\":\"1234567899\"" +
+                "}," +
+                "\"departureLocation\":{" +
+                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Kumba\"," +
+                "\"address\":\"Buea Road Motor Park\"" +
+                "}," +
+                "\"destination\":{" +
+                "\"id\":" + transitAndStop.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Buea\"," +
+                "\"address\":\"Mile 17 Motto Park\"" +
+                "}," +
+                "\"transitAndStops\":[" +
+                "{" +
+                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\": \"South West\"," +
+                "\"city\":\"Ekona\"," +
+                "\"address\":\"Ekona Main Park\"" +
+                "}," +
+                "{" +
+                "\"id\":" + transitAndStop2.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Muyuka\"," +
+                "\"address\":\"Muyuka Main Park\"" +
+                "}" +
+                "]," +
+                "\"car\":{" +
+                "\"id\":" + bus.getId() + "," +
+                "\"name\":\"Kumba One Chances\"," +
+                "\"licensePlateNumber\":\"123454387\"," +
+                "\"isOfficialAgencyIndicator\":true," +
+                "\"isCarApproved\":true," +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "}}]";
+
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }

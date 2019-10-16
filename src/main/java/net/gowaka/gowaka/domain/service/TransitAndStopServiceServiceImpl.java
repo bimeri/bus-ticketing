@@ -97,7 +97,10 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
     }
 
     private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
-        Location location = transitAndStop.getLocation();
+        Location location = new Location();
+        if (transitAndStop.getLocation() != null){
+            location = transitAndStop.getLocation();
+        }
         LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
         locationResponseDTO.setId(transitAndStop.getId());
         locationResponseDTO.setAddress(location.getAddress());
