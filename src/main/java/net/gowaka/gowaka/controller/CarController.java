@@ -67,40 +67,4 @@ public class CarController {
             @RequestParam("licensePlateNumber") String licensePlateNumber){
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
     }
-
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
-    @PostMapping("/agency/journeys/cars/{carId}")
-    public ResponseEntity<JourneyResponseDTO> addJourney(
-            @Valid @RequestBody JourneyDTO journeyDTO,
-            @PathVariable("carId") String carId){
-        return ResponseEntity.ok(carService.addJourney(journeyDTO, Long.parseLong(carId)));
-    }
-
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
-    @PostMapping("/agency/journeys/{journeyId}/cars/{carId}")
-    public ResponseEntity<JourneyResponseDTO> updateJourney(
-            @Valid @RequestBody JourneyDTO journeyDTO,
-            @PathVariable("journeyId") String journeyId,
-            @PathVariable("carId") String carId){
-        return ResponseEntity.ok(carService.updateJourney(journeyDTO, Long.parseLong(journeyId), Long.parseLong(carId)));
-    }
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
-    @GetMapping("/agency/journeys")
-    public ResponseEntity<List<JourneyResponseDTO>> getAllOfficialAgencyJourneys(){
-        return ResponseEntity.ok(carService.getAllOfficialAgencyJourneys());
-    }
-
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
-    @GetMapping("/agency/journeys/{journeyId}")
-    public ResponseEntity<JourneyResponseDTO> getJourneyById(@PathVariable("journeyId") Long journeyId){
-        return ResponseEntity.ok(carService.getJourneyById(journeyId));
-    }
-
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
-    @PostMapping("/agency/journeys/{journeyId}/add_stops")
-    public ResponseEntity addStops(@PathVariable("journeyId") Long journeyId,
-                                   @Valid @RequestBody AddStopDTO addStopDTO ){
-        carService.addStop(journeyId, addStopDTO);
-        return ResponseEntity.noContent().build();
-    }
 }

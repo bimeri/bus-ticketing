@@ -228,10 +228,4 @@ public class CarControllerTest {
         verify(mockCarService).getAllUnapprovedCars();
     }
 
-    @Test
-    public void add_journey_should_call_car_service_add_location(){
-        JourneyDTO journeyDTO = new JourneyDTO();
-        carController.addJourney(journeyDTO, "1");
-        verify(mockCarService).addJourney(journeyDTO, 1L);
-    }
 }

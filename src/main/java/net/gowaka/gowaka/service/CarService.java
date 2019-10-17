@@ -1,5 +1,6 @@
 package net.gowaka.gowaka.service;
 
+
 import net.gowaka.gowaka.dto.*;
 
 import java.util.List;
@@ -16,9 +17,4 @@ public interface CarService {
     List<SharedRideResponseDTO> getAllSharedRides();
     List<CarDTO> getAllUnapprovedCars();
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
-    JourneyResponseDTO addJourney(JourneyDTO journey, Long carId);
-    JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId);
-    List<JourneyResponseDTO> getAllOfficialAgencyJourneys();
-    JourneyResponseDTO getJourneyById(Long journeyId);
-    void addStop(Long journeyId, AddStopDTO addStopDTO);
 }
