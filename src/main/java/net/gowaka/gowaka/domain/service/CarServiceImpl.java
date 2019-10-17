@@ -157,7 +157,7 @@ public class CarServiceImpl implements CarService {
     @Override
     public List<JourneyResponseDTO> getAllOfficialAgencyJourneys() {
         OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
-        return journeyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc().stream()
+        return journeyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc().stream()
                 .filter(journey -> {
                     Car car = journey.getCar();
                     if (car instanceof Bus){

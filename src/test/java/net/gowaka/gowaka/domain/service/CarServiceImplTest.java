@@ -460,7 +460,7 @@ public class CarServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockJourneyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc())
+        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
                 .thenReturn(Collections.emptyList());
         List<JourneyResponseDTO> journeyResponseDTOList = carServiceImpl.getAllOfficialAgencyJourneys();
         assertTrue(journeyResponseDTOList.isEmpty());
@@ -490,7 +490,7 @@ public class CarServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockJourneyRepository.findAllByOrderByArrivalIndicatorAscTimestampAsc())
+        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
                 .thenReturn(Collections.singletonList(journey));
         when(mockTransitAndStopRepository.findDistinctByLocation(any())).thenReturn(Optional.of(new TransitAndStop()));
         List<JourneyResponseDTO> journeyResponseDTOList = carServiceImpl.getAllOfficialAgencyJourneys();
