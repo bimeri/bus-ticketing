@@ -541,7 +541,7 @@ public class CarServiceImplTest {
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
         when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(new Bus()));
         expectedException.expect(ApiException.class);
-        expectedException.expectMessage("Car of Journey not in User Agency");
+        expectedException.expectMessage("Journey\'s car not in AuthUser\'s Agency");
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         carServiceImpl.getJourneyById(1L);
     }
@@ -576,5 +576,108 @@ public class CarServiceImplTest {
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
         when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
         carServiceImpl.getJourneyById(1L);
+    }
+
+    /**
+     * #169112805
+     * Scenario 1. Journey's arrivalIndicator is true
+     */
+    @Test
+    public void add_stops_should_throw_journey_already_terminated_api_exception(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(true);
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        carServiceImpl.addStop(1L, new AddStopDTO());
+    }
+
+    /**
+     * #169112805
+     * Scenario 2. Journey not found
+     */
+    @Test
+    public void add_stops_should_throw_journey_not_found_api_exception(){
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.addStop(1L, new AddStopDTO());
+    }
+
+    /**
+     * #169112805
+     * Scenario 3. Journey not in AuthUser Agency
+     */
+    @Test
+    public void add_stops_should_throw_journey_not_in_agency_api_exception() {
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s car not in AuthUser\'s Agency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.addStop(1L, new AddStopDTO());
+    }
+
+    /**
+     * #169112805
+     * Scenario 4. Transit and Stop not found
+     */
+    @Test
+    public void add_stops_should_throw_transit_and_stop_not_found_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("TransitAndStop not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.addStop(1L, new AddStopDTO());
     }
 }

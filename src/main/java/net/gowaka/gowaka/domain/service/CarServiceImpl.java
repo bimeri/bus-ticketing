@@ -174,9 +174,24 @@ public class CarServiceImpl implements CarService {
                 .getBuses().stream()
                 .filter(bus1 -> journey.getCar().equals(bus1)).collect(Collectors.toList());
         if (buses.isEmpty()){
-            throw new ApiException("Car of Journey not in User Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return mapToJourneyResponseDTO(journey);
+    }
+
+    @Override
+    public void addStop(Long journeyId, AddStopDTO addStopDTO) {
+        Journey journey = getJourney(journeyId);
+        if (journey.getArrivalIndicator()){
+            throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
+        }else {
+            List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
+                    .getBuses().stream().filter(bus -> journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
+            if (cars.isEmpty()) {
+                throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            }
+            journey.getTransitAndStops().add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
+        }
     }
 
     /**

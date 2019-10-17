@@ -95,4 +95,12 @@ public class CarController {
     public ResponseEntity<JourneyResponseDTO> getJourneyById(@PathVariable("journeyId") Long journeyId){
         return ResponseEntity.ok(carService.getJourneyById(journeyId));
     }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
+    @PostMapping("/agency/journeys/{journeyId}/add_stops")
+    public ResponseEntity addStops(@PathVariable("journeyId") Long journeyId,
+                                   @Valid @RequestBody AddStopDTO addStopDTO ){
+        carService.addStop(journeyId, addStopDTO);
+        return ResponseEntity.noContent().build();
+    }
 }
