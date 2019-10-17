@@ -89,4 +89,10 @@ public class CarController {
     public ResponseEntity<List<JourneyResponseDTO>> getAllOfficialAgencyJourneys(){
         return ResponseEntity.ok(carService.getAllOfficialAgencyJourneys());
     }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
+    @GetMapping("/agency/journeys/{journeyId}")
+    public ResponseEntity<JourneyResponseDTO> getJourneyById(@PathVariable("journeyId") Long journeyId){
+        return ResponseEntity.ok(carService.getJourneyById(journeyId));
+    }
 }

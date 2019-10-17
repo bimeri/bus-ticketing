@@ -167,6 +167,18 @@ public class CarServiceImpl implements CarService {
                 }).map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
     }
 
+    @Override
+    public JourneyResponseDTO getJourneyById(Long journeyId) {
+        Journey journey = getJourney(journeyId);
+        List<Bus> buses = getOfficialAgency(verifyCurrentAuthUser())
+                .getBuses().stream()
+                .filter(bus1 -> journey.getCar().equals(bus1)).collect(Collectors.toList());
+        if (buses.isEmpty()){
+            throw new ApiException("Car of Journey not in User Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return mapToJourneyResponseDTO(journey);
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
@@ -463,7 +475,7 @@ public class CarServiceImpl implements CarService {
      * @return
      */
     private TransitAndStop getTransitAndStopByLocation(Location location){
-        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctByLocation(location);
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
             if (!optionalTransitAndStop.isPresent()){
                 throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
             }

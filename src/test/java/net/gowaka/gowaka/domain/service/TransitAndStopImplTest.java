@@ -65,7 +65,7 @@ public class TransitAndStopImplTest {
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
-        when(transitAndStopRepository.findDistinctByLocation(location))
+        when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.empty());
         when(transitAndStopRepository.save(any())).thenReturn(new TransitAndStop());
         transitAndStopService.addLocation(locationDTO);
@@ -78,7 +78,7 @@ public class TransitAndStopImplTest {
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
-        when(transitAndStopRepository.findDistinctByLocation(location))
+        when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.of(transitAndStop));
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("TransitAndStop already Exists");
@@ -92,7 +92,7 @@ public class TransitAndStopImplTest {
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStop.setId(1L);
-        when(transitAndStopRepository.findDistinctByLocation(location))
+        when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.empty());
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         when(transitAndStopRepository.save(any())).thenReturn(new TransitAndStop());
@@ -115,7 +115,7 @@ public class TransitAndStopImplTest {
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStop.setId(1L);
-        when(transitAndStopRepository.findDistinctByLocation(location))
+        when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.of(transitAndStop));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         expectedException.expect(ApiException.class);

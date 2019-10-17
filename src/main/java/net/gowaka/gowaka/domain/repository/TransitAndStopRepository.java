@@ -14,6 +14,6 @@ import java.util.Optional;
  */
 @Repository
 public interface TransitAndStopRepository extends JpaRepository<TransitAndStop, Long> {
-    Optional<TransitAndStop> findDistinctByLocation(Location location);
+    Optional<TransitAndStop> findDistinctFirstByLocation(Location location);
     List<TransitAndStop> findByLocationCityIgnoreCase(String city);
 }

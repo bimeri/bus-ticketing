@@ -492,10 +492,89 @@ public class CarServiceImplTest {
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
                 .thenReturn(Collections.singletonList(journey));
-        when(mockTransitAndStopRepository.findDistinctByLocation(any())).thenReturn(Optional.of(new TransitAndStop()));
+        when(mockTransitAndStopRepository.findDistinctFirstByLocation(any())).thenReturn(Optional.of(new TransitAndStop()));
         List<JourneyResponseDTO> journeyResponseDTOList = carServiceImpl.getAllOfficialAgencyJourneys();
         assertFalse(journeyResponseDTOList.isEmpty());
         assertThat(journeyResponseDTOList.get(0).getCar(), is(instanceOf(CarResponseDTO.class)));
         assertThat(journeyResponseDTOList.get(0).getCar().getName(), is(bus.getName()));
      }
+
+    /**
+     * #169114688
+     * Scenario 1. Journey not exist
+     */
+     @Test
+     public void get_journey_by_id_should_throw_journey_not_found_api_exception(){
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.getJourneyById(1L);
+     }
+
+    /**
+     * #169114688
+     * Scenario 2. Journey' car not in authUser's agency
+     */
+    @Test
+    public void get_journey_by_id_should_throw_car_not_found_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(new Bus()));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Car of Journey not in User Agency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carServiceImpl.getJourneyById(1L);
+    }
+
+    /**
+     * #169114688
+     * Scenario 3. Journey Success
+     */
+    @Test
+    public void get_journey_by_id_should_return_journey_response_dto(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setId(2L);
+
+        CarServiceImpl carServiceImpl = (CarServiceImpl) carService;
+        carServiceImpl.setTransitAndStopRepository(mockTransitAndStopRepository);
+        carServiceImpl.setJourneyRepository(mockJourneyRepository);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockTransitAndStopRepository.findDistinctFirstByLocation(any())).thenReturn(Optional.of(transitAndStop));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
+        carServiceImpl.getJourneyById(1L);
+    }
 }

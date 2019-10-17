@@ -19,4 +19,5 @@ public interface CarService {
     JourneyResponseDTO addJourney(JourneyDTO journey, Long carId);
     JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId);
     List<JourneyResponseDTO> getAllOfficialAgencyJourneys();
+    JourneyResponseDTO getJourneyById(Long journeyId);
 }

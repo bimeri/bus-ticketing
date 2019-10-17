@@ -72,7 +72,7 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         location.setCity(locationDTO.getCity());
         location.setState(locationDTO.getState());
         location.setCountry(locationDTO.getCountry());
-        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctByLocation(location);
+        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
         if (optionalTransitAndStop.isPresent()){
             logger.info("Search: {}", location.toString() );
             logger.info("Found: {}", optionalTransitAndStop.get().getLocation().toString());
