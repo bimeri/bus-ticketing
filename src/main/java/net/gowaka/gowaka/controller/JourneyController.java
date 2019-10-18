@@ -54,7 +54,7 @@ public class JourneyController {
         return ResponseEntity.ok(journeyService.getJourneyById(journeyId));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/add_stops")
     public ResponseEntity addStops(@PathVariable("journeyId") Long journeyId,
                                    @Valid @RequestBody AddStopDTO addStopDTO ){

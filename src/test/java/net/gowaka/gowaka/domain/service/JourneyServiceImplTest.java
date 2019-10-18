@@ -387,4 +387,38 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.addStop(1L, new AddStopDTO());
     }
+
+    /**
+     * #169112805
+     * Scenario 5. Success
+     */
+    @Test
+    public void add_stops_should_add_and_save_journey(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setId(2L);
+        AddStopDTO addStopDTO = new AddStopDTO();
+        addStopDTO.setTransitAndStopId(3L);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
+        when(mockJourneyRepository.save(journey)).thenReturn(journey);
+        when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
+        journeyService.addStop(1L, addStopDTO);
+        verify(mockJourneyRepository).save(journey);
+    }
 }
