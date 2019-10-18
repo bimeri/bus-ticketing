@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class PersonalAgencyControllerIntegrationTest {
 
 
-    @Value("${security.jwt.token.secretKey}")
+    @Value("${security.jwt.token.privateKey}")
     private String secretKey = "";
 
     @Autowired

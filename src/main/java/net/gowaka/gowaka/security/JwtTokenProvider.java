@@ -18,7 +18,11 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,8 +35,10 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-  @Value("${security.jwt.token.secretKey:secret-key}")
-  private String secretKey;
+  @Value("${security.jwt.token.publicKey:secret-key}")
+  private String publicKeyEncoded;
+
+  private PublicKey publicKey;
 
   @Value("${security.jwt.token.expireLength:3600000}")
   private long validityInMilliseconds = 3600000;
@@ -41,7 +47,15 @@ public class JwtTokenProvider {
 
   @PostConstruct
   protected void init() {
-    secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
+    X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyEncoded));
+    try {
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    } catch (InvalidKeySpecException e) {
+      e.printStackTrace();
+    }
   }
 
   public Authentication getAuthentication(String token) {
@@ -59,7 +73,7 @@ public class JwtTokenProvider {
 
   public boolean validateToken(String token) {
     try {
-      Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+      Jwts.parser().setSigningKey(publicKey).parseClaimsJws(token);
       return true;
     } catch (JwtException | IllegalArgumentException e) {
       throw new AuthorizationException("Expired or invalid JWT token");
@@ -67,7 +81,7 @@ public class JwtTokenProvider {
   }
 
   public UserDetailsImpl getUserDetails(String token) {
-    Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+    Claims claims = Jwts.parser().setSigningKey(publicKey).parseClaimsJws(token).getBody();
 
     String username = claims.getSubject();
     String userId = claims.get("id").toString();
