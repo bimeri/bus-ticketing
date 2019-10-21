@@ -88,9 +88,14 @@ public class JourneyServiceImpl implements JourneyService {
                 throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
             }
             List<TransitAndStop> transitAndStops = journey.getTransitAndStops();
-            transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
-            journey.setTransitAndStops(transitAndStops);
-            journeyRepository.save(journey);
+            // save only if transit and stop does not already exist
+            if (transitAndStops.stream()
+                    .noneMatch(transitAndStop -> transitAndStop.getId()
+                            .equals(addStopDTO.getTransitAndStopId()))){
+                transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
+                journey.setTransitAndStops(transitAndStops);
+                journeyRepository.save(journey);
+            }
         }
     }
 
