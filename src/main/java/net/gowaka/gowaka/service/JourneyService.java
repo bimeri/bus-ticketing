@@ -2,6 +2,7 @@ package net.gowaka.gowaka.service;
 
 import net.gowaka.gowaka.dto.AddStopDTO;
 import net.gowaka.gowaka.dto.JourneyDTO;
+import net.gowaka.gowaka.dto.JourneyDepartureIndicatorDTO;
 import net.gowaka.gowaka.dto.JourneyResponseDTO;
 
 import java.util.List;
@@ -17,4 +18,5 @@ public interface JourneyService {
     JourneyResponseDTO getJourneyById(Long journeyId);
     void addStop(Long journeyId, AddStopDTO addStopDTO);
     void deleteNonBookedJourney(Long journeyId);
+    void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator);
 }

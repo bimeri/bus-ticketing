@@ -79,14 +79,8 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void addStop(Long journeyId, AddStopDTO addStopDTO) {
         Journey journey = getJourney(journeyId);
-        if (journey.getArrivalIndicator()){
-            throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
-        }else {
-            List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
-                    .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
-            if (cars.isEmpty()) {
-                throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-            }
+        if (journeyTerminationFilter(journey)){
+            checkJourneyCarInOfficialAgency(journey);
             List<TransitAndStop> transitAndStops = journey.getTransitAndStops();
             // save only if transit and stop does not already exist
             if (transitAndStops.stream()
@@ -102,15 +96,19 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void deleteNonBookedJourney(Long journeyId) {
         Journey journey = getJourney(journeyId);
-        if (journey.getArrivalIndicator()){
-            throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
-        } else {
-            List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
-                    .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
-            if (cars.isEmpty()) {
-                throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-            }
+        if (journeyTerminationFilter(journey)){
+            checkJourneyCarInOfficialAgency(journey);
             journeyRepository.delete(journey);
+        }
+    }
+
+    @Override
+    public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
+        Journey journey = getJourney(journeyId);
+        if(journeyTerminationFilter(journey)){
+            checkJourneyCarInOfficialAgency(journey);
+            journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
+            journeyRepository.save(journey);
         }
     }
 
@@ -154,6 +152,12 @@ public class JourneyServiceImpl implements JourneyService {
         }
         return cars.get(0);
     }
+
+    /**
+     * throws exception if transitAndStop is not found
+     * @param id
+     * @return transitAndStop
+     */
     private TransitAndStop getTransitAndStop(Long id){
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
         if (!optionalTransitAndStop.isPresent()){
@@ -162,6 +166,13 @@ public class JourneyServiceImpl implements JourneyService {
         return optionalTransitAndStop.get();
     }
 
+    /**
+     * Throws exception if transitAndStop is not found but appends message to indicate the category
+     * of the transitAndStop
+     * @param id
+     * @param errMsg
+     * @return transitAndStop
+     */
     private TransitAndStop getTransitAndStopCanAppendErrMsg(Long id, String errMsg){
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
         if (!optionalTransitAndStop.isPresent()){
@@ -314,4 +325,30 @@ public class JourneyServiceImpl implements JourneyService {
         }
         return optionalTransitAndStop.get();
     }
+
+    /**
+     * throw exception of journey is terminated
+     * @param journey
+     * @return boolean
+     */
+    private boolean journeyTerminationFilter(Journey journey){
+        if (journey.getArrivalIndicator()){
+            throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
+        }
+        return true;
+    }
+
+    /**
+     * throw exception if journey car is not in official agency
+     * @param journey
+     */
+    private void checkJourneyCarInOfficialAgency(Journey journey) {
+        List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
+                .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
+        if (cars.isEmpty()) {
+            throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+
 }

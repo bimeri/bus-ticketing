@@ -694,71 +694,27 @@ public class JourneyControllerIntegrationTest {
     @Test
     public void add_stops_should_return_204_no_content() throws Exception{
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setAgencyName("Malingo Major");
         officialAgencyRepository.save(officialAgency);
         Bus bus = new Bus();
-        bus.setName("Kumba One Chances");
-        bus.setNumberOfSeats(3);
-        bus.setIsCarApproved(true);
-        bus.setIsOfficialAgencyIndicator(true);
-        bus.setLicensePlateNumber("123454387");
 
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
         Location location = new Location();
-        location.setAddress("Tole Park");
-        location.setCity("Buea");
-        location.setState("South West");
-        location.setCountry("Cameroon");
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
         Location location1 = new Location();
-        location1.setState("South West");
-        location1.setCountry("Cameroon");
-        location1.setCity("Kumba");
-        location1.setAddress("Fiango Motor Park");
         TransitAndStop transitAndStop1 = new TransitAndStop();
         transitAndStop1.setLocation(location1);
         transitAndStopRepository.save(transitAndStop1);
-        Location location2 = new Location();
-        location2.setState("South West");
-        location2.setCountry("Cameroon");
-        location2.setCity("Muyuka");
-        location2.setAddress("Munyenge Park");
-        TransitAndStop transitAndStop2 = new TransitAndStop();
-        transitAndStop2.setLocation(location2);
-        transitAndStopRepository.save(transitAndStop2);
-        Location location3 = new Location();
-        location3.setState("South West");
-        location3.setCountry("Cameroon");
-        location3.setCity("Ekona");
-        location3.setAddress("Small Park");
-        TransitAndStop transitAndStop3 = new TransitAndStop();
-        transitAndStop3.setLocation(location3);
-        transitAndStopRepository.save(transitAndStop3);
-
-
-        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
-        bus = carRepository.save(bus);
+        carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
-        journey.setDepartureTime(localDateTime.toLocalDateTime());
-        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
-        journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
-        Driver driver = new Driver();
-        driver.setDriverName("John Doe");
-        driver.setDriverLicenseNumber("1234567899");
-        journey.setDriver(driver);
+        journey.setTransitAndStops(Collections.singletonList(transitAndStop1));
         journey.setCar(bus);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + "}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/add_stops")
@@ -778,40 +734,23 @@ public class JourneyControllerIntegrationTest {
     @Test
     public void delete_journey_should_delete_journey_successfully() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setAgencyName("Malingo Major");
         officialAgencyRepository.save(officialAgency);
         Bus bus = new Bus();
-        bus.setName("Kumba One Chances");
-        bus.setNumberOfSeats(3);
-        bus.setIsCarApproved(true);
-        bus.setIsOfficialAgencyIndicator(true);
-        bus.setLicensePlateNumber("123454387");
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
         Location location = new Location();
-        location.setAddress("Tole Park");
-        location.setCity("Buea");
-        location.setState("South West");
-        location.setCountry("Cameroon");
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
 
 
-        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
-        journey.setDepartureTime(localDateTime.toLocalDateTime());
-        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Collections.singletonList(transitAndStop));
         journey.setCar(bus);
         journeyRepository.save(journey);
         RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() )
@@ -821,4 +760,41 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
+    /**
+     * #169114980
+     * Scenario: 4. change Journey departureIndicator state
+     */
+    @Test
+    public void set_journey_departure_indicator_should_throw_journey_already_terminated_api_exception() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+
+
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+        journeyRepository.save(journey);
+        String reqBody = "{\"departureIndicator\": true}";
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure" )
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
 }

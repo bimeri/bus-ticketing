@@ -482,4 +482,64 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.deleteNonBookedJourney(1L);
     }
+
+    /**
+     * #169114980
+     * Scenario: 1. Journey not exist
+     */
+    @Test
+    public void set_journey_departure_indicator_should_throw_journey_not_exist_api_exception(){
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.updateJourneyDepartureIndicator(1L, new JourneyDepartureIndicatorDTO());
+    }
+
+    /**
+     * #169114980
+     * Scenario: 2. Journey already terminated
+     */
+    @Test
+    public void set_journey_departure_indicator_should_throw_journey_already_terminated_api_exception(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(true);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        journeyService.updateJourneyDepartureIndicator(1L, new JourneyDepartureIndicatorDTO());
+    }
+
+    /**
+     * #169114980
+     * Scenario: 3 Journey's car is not in AuthUser Agency
+     */
+    @Test
+    public void set_journey_departure_indicator_should_throw_journey_not_in_auth_user_agency_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s car not in AuthUser\'s Agency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.updateJourneyDepartureIndicator(4L, new JourneyDepartureIndicatorDTO());
+    }
 }

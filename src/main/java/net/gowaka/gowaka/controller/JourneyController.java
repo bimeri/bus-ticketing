@@ -2,6 +2,7 @@ package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.AddStopDTO;
 import net.gowaka.gowaka.dto.JourneyDTO;
+import net.gowaka.gowaka.dto.JourneyDepartureIndicatorDTO;
 import net.gowaka.gowaka.dto.JourneyResponseDTO;
 import net.gowaka.gowaka.service.JourneyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,15 @@ public class JourneyController {
     @DeleteMapping("/agency/journeys/{journeyId}")
     public ResponseEntity deleteJourney(@PathVariable("journeyId") Long journeyId){
         journeyService.deleteNonBookedJourney(journeyId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PostMapping("/agency/journeys/{journeyId}/departure")
+    public ResponseEntity updateJourneyDepartureIndicator(
+            @RequestBody JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO,
+            @PathVariable("journeyId") Long journeyId){
+        journeyService.updateJourneyDepartureIndicator(journeyId, journeyDepartureIndicatorDTO);
         return ResponseEntity.noContent().build();
     }
 }
