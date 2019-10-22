@@ -765,7 +765,7 @@ public class JourneyControllerIntegrationTest {
      * Scenario: 4. change Journey departureIndicator state
      */
     @Test
-    public void set_journey_departure_indicator_should_throw_journey_already_terminated_api_exception() throws Exception {
+    public void set_journey_departure_indicator_should_update_and_return_no_content() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgencyRepository.save(officialAgency);
         Bus bus = new Bus();
@@ -788,6 +788,43 @@ public class JourneyControllerIntegrationTest {
         journeyRepository.save(journey);
         String reqBody = "{\"departureIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure" )
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    /**
+     * #169114979
+     * Scenario: 4. change Journey arrivalIndicator state
+     */
+    @Test
+    public void update_journey_arrival_indicator_should_update_and_return_no_content() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+
+
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+        journeyRepository.save(journey);
+        String reqBody = "{\"arrivalIndicator\": true}";
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/arrival" )
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)

@@ -112,6 +112,16 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    @Override
+    public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
+        Journey journey = getJourney(journeyId);
+        if (journeyArrivalFilter(journey)){
+            checkJourneyCarInOfficialAgency(journey);
+            journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
+            journeyRepository.save(journey);
+        }
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
@@ -348,6 +358,18 @@ public class JourneyServiceImpl implements JourneyService {
         if (cars.isEmpty()) {
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    /**
+     * throw exception of journey is not started
+     * @param journey
+     * @return boolean
+     */
+    private boolean journeyArrivalFilter(Journey journey){
+        if (journey.getDepartureIndicator()){
+            throw new ApiException("Journey not started", ErrorCodes.JOURNEY_NOT_STARTED.toString(), HttpStatus.CONFLICT);
+        }
+        return true;
     }
 
 
