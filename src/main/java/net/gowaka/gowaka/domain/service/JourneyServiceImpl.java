@@ -83,7 +83,7 @@ public class JourneyServiceImpl implements JourneyService {
             throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
         }else {
             List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
-                    .getBuses().stream().filter(bus -> journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
+                    .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
             if (cars.isEmpty()) {
                 throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
             }
@@ -99,6 +99,20 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    @Override
+    public void deleteNonBookedJourney(Long journeyId) {
+        Journey journey = getJourney(journeyId);
+        if (journey.getArrivalIndicator()){
+            throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
+        } else {
+            List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
+                    .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
+            if (cars.isEmpty()) {
+                throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            }
+            journeyRepository.delete(journey);
+        }
+    }
 
     /**
      * verify and return the current user in cases where user id is relevant

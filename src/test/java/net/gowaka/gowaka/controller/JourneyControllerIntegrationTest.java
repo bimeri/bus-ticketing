@@ -27,10 +27,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -765,6 +765,57 @@ public class JourneyControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    /**
+     * #169112562
+     * Scenario: 4 Delete Journey Success
+     */
+    @Test
+    public void delete_journey_should_delete_journey_successfully() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Malingo Major");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Tole Park");
+        location.setCity("Buea");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+
+
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop.getLocation());
+        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setTransitAndStops(Collections.singletonList(transitAndStop));
+        journey.setCar(bus);
+        journeyRepository.save(journey);
+        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() )
+                .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())

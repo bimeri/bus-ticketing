@@ -61,4 +61,10 @@ public class JourneyController {
         journeyService.addStop(journeyId, addStopDTO);
         return ResponseEntity.noContent().build();
     }
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @DeleteMapping("/agency/journeys/{journeyId}")
+    public ResponseEntity deleteJourney(@PathVariable("journeyId") Long journeyId){
+        journeyService.deleteNonBookedJourney(journeyId);
+        return ResponseEntity.noContent().build();
+    }
 }
