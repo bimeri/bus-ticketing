@@ -24,6 +24,7 @@ public class TransitAndStop {
 
     @OneToMany(mappedBy = "destination")
     private List<BookedJourney> bookedJourneys;
+    private double amount;
 
     public TransitAndStop() {
         this.journeys = new ArrayList<>();

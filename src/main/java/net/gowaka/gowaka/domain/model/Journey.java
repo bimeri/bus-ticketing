@@ -19,6 +19,7 @@ public class Journey {
     private Long id;
     @Embedded
     private Location destination;
+    private double amount;
     @Embedded
     @AttributeOverrides(value = {
             @AttributeOverride(name = "country", column = @Column(name = "departure_country")),

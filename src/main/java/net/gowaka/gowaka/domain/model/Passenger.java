@@ -14,5 +14,6 @@ public class Passenger {
 
     private String passengerName;
     private String passengerIdNumber;
+    private String seatNumber;
 
 }
