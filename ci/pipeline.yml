@@ -55,8 +55,8 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: java
-          tag: 8
+          repository: cschockaert/docker-npm-maven
+          tag: latest
       inputs:
       - name: source-code-from-gitlab
       - name: ui-source-code-from-gitlab

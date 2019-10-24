@@ -8,7 +8,7 @@ pwd
 ls
 
 cd source-code-from-gitlab/
-npm install @angular/cli
+npm install @angular/cli -n
 ng build --output-path gw_ui
 mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
 
