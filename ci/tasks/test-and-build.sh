@@ -6,7 +6,13 @@ version=$(cat version/version)
 echo $version
 pwd
 ls
+
 cd source-code-from-gitlab/
+npm install @angular/cli
+ng build --output-path gw_ui
+mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
+
+cd ../source-code-from-gitlab/
 echo "Current directory ..."
 ls
 echo "Packaging jar file"
