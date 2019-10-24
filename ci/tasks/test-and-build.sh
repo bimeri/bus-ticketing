@@ -7,8 +7,9 @@ echo $version
 pwd
 ls
 
+export NG_CLI_ANALYTICS=ci
 cd source-code-from-gitlab/
-npm install @angular/cli -n
+npm install @angular/cli
 ng build --output-path gw_ui
 mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
 
