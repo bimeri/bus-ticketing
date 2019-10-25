@@ -1,3 +1,4 @@
+!/usr/bin/env bash
 
 set -e
 ls -l version/version
@@ -8,7 +9,6 @@ ls
 
 export NG_CLI_ANALYTICS=ci
 cd ui-source-code-from-gitlab/
-npm config set unsafe-perm true
 npm install -g @angular/cli
 ng build --output-path gw_ui
 mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
