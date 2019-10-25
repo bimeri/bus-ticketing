@@ -55,7 +55,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: timbru31/java-node
+          repository: eddytnk/java-node
           tag: latest
       inputs:
       - name: source-code-from-gitlab
