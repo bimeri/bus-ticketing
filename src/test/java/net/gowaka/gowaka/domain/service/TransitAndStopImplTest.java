@@ -1,6 +1,6 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.domain.model.Journey;
+import net.gowaka.gowaka.domain.model.JourneyStop;
 import net.gowaka.gowaka.domain.model.Location;
 import net.gowaka.gowaka.domain.model.TransitAndStop;
 import net.gowaka.gowaka.domain.model.User;
@@ -127,7 +127,7 @@ public class TransitAndStopImplTest {
     @Test
     public void delete_transit_should_throw_journey_exist_api_exception(){
         TransitAndStop transitAndStop = new TransitAndStop();
-        transitAndStop.setJourneys(Collections.singletonList(new Journey()));
+        transitAndStop.setJourneyStops(Collections.singleton(new JourneyStop()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("Cannot delete record for any existing journey");

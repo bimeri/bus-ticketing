@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -81,13 +82,21 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)){
             checkJourneyCarInOfficialAgency(journey);
-            List<TransitAndStop> transitAndStops = journey.getTransitAndStops();
+            Set<JourneyStop> journeyStops = journey.getJourneyStops();
+            System.out.println(journeyStops);
+            List<TransitAndStop> transitAndStops = journeyStops.stream().map(
+                    JourneyStop::getTransitAndStop
+            ).collect(Collectors.toList());
             // save only if transit and stop does not already exist
             if (transitAndStops.stream()
                     .noneMatch(transitAndStop -> transitAndStop.getId()
                             .equals(addStopDTO.getTransitAndStopId()))){
                 transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
-                journey.setTransitAndStops(transitAndStops);
+                JourneyStop journeyStop = new JourneyStop();
+                journeyStop.setAmount(addStopDTO.getAmount());
+                journeyStop.setTransitAndStop(transitAndStops.get(0));
+                journeyStop.setJourney(journey);
+                journeyStops.add(journeyStop);
                 journeyRepository.save(journey);
             }
         }
@@ -193,13 +202,23 @@ public class JourneyServiceImpl implements JourneyService {
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car){
         journey.setCar(car);
-        TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDestination(), "Destination");
+        TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
+                journeyDTO.getDestination() == null ? null: journeyDTO.getDestination().getTransitAndStopId()
+                , "Destination");
         journey.setDestination(destinationTransitAndStop.getLocation());
         TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
         journey.setDepartureLocation(departureTransitAndStop.getLocation());
-        List<TransitAndStop> transitAndStops = journeyDTO.getTransitAndStops().stream()
-                .map(this::getTransitAndStop).collect(Collectors.toList());
-        journey.setTransitAndStops(transitAndStops);
+        Set<JourneyStop> journeyStops = journeyDTO.getTransitAndStops().stream()
+                .map(journeyStop -> {
+                    JourneyStop journeyStop1 = new JourneyStop();
+                    journeyStop1.setTransitAndStop(getTransitAndStop(journeyStop.getTransitAndStopId()));
+                    journeyStop1.setAmount(journeyStop.getAmount());
+                    journeyStop1.setJourney(journey);
+                    return journeyStop1;
+                }).collect(Collectors.toSet());
+        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
+        journeyStopSet.addAll(journeyStops);
+        journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setTimestamp(TimeProvider.now());
@@ -223,18 +242,22 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
         journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(departureTransitAndStop));
         journeyResponseDTO.setDepartureTime(journeyDTO.getDepartureTime());
-        journeyResponseDTO.setDestination(getLocationResponseDTO(destinationTransitAndStop));
+        journeyResponseDTO.setDestination(getLocationStopResponseDTO(destinationTransitAndStop,
+                journeyDTO.getDestination().getAmount()));
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
         journeyResponseDTO.setEstimatedArrivalTime(journeyDTO.getEstimatedArrivalTime());
         journeyResponseDTO.setTransitAndStops(
-                journey.getTransitAndStops().stream().map(
-                        this::getLocationResponseDTO
+                journey.getJourneyStops().stream().map(
+                        journeyStop -> getLocationStopResponseDTO(
+                                journeyStop.getTransitAndStop(), journeyStop.getAmount()
+                        )
                 ).collect(Collectors.toList())
         );
         journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
                 Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
 
         journeyResponseDTO.setId(journeyRepository.save(journey).getId());
+        journeyResponseDTO.setAmount(journeyDTO.getDestination().getAmount());
 
         return journeyResponseDTO;
     }
@@ -250,10 +273,7 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
-        Location location = new Location();
-        if (transitAndStop.getLocation() != null){
-            location = transitAndStop.getLocation();
-        }
+        Location location = transitAndStop.getLocation() != null ? transitAndStop.getLocation() : new Location();
         LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
         locationResponseDTO.setId(transitAndStop.getId());
         locationResponseDTO.setAddress(location.getAddress());
@@ -261,6 +281,24 @@ public class JourneyServiceImpl implements JourneyService {
         locationResponseDTO.setState(location.getState());
         locationResponseDTO.setCountry(location.getCountry());
         return locationResponseDTO;
+    }
+
+    /**
+     * get a response dto with the location and amount attached
+     * @param transitAndStop
+     * @param amount
+     * @return
+     */
+    private LocationStopResponseDTO getLocationStopResponseDTO(TransitAndStop transitAndStop, double amount){
+        Location location = transitAndStop.getLocation() != null ? transitAndStop.getLocation() : new Location();
+        LocationStopResponseDTO locationStopResponseDTO = new LocationStopResponseDTO();
+        locationStopResponseDTO.setId(transitAndStop.getId());
+        locationStopResponseDTO.setAddress(location.getAddress());
+        locationStopResponseDTO.setCity(location.getCity());
+        locationStopResponseDTO.setCountry(location.getCountry());
+        locationStopResponseDTO.setState(location.getState());
+        locationStopResponseDTO.setAmount(amount);
+        return locationStopResponseDTO;
     }
 
     /**
@@ -305,21 +343,26 @@ public class JourneyServiceImpl implements JourneyService {
                 Date.from(journey.getDepartureTime() == null ? LocalDateTime.now().atZone(zoneId).toInstant() :
                         journey.getDepartureTime().atZone(zoneId).toInstant())
         );
-        journeyResponseDTO.setDestination(getLocationResponseDTO(
-                getTransitAndStopByLocation(journey.getDestination())
+        journeyResponseDTO.setDestination(getLocationStopResponseDTO(
+                getTransitAndStopByLocation(journey.getDestination()),
+                journey.getAmount()
         ));
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
         journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
                 Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
         journeyResponseDTO.setTransitAndStops(
-                journey.getTransitAndStops().stream().map(
-                        this::getLocationResponseDTO
+                journey.getJourneyStops().stream().map(
+                        journeyStop -> getLocationStopResponseDTO(
+                                journeyStop.getTransitAndStop(), journeyStop.getAmount()
+                        )
                 ).collect(Collectors.toList())
         );
+
         journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
                 Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
 
         journeyResponseDTO.setId(journey.getId());
+        journeyResponseDTO.setAmount(journey.getAmount());
         return journeyResponseDTO;
     }
 

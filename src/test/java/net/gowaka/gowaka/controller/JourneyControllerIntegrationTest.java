@@ -26,8 +26,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -152,6 +152,7 @@ public class JourneyControllerIntegrationTest {
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
                 "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\": 1000.0," +
                 "\"driver\":{" +
                 "\"driverName\":\"John Doe\"," +
                 "\"driverLicenseNumber\":\"1234567899\"" +
@@ -168,7 +169,8 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Kumba\"," +
-                "\"address\":\"Buea Road Motor Park\"" +
+                "\"address\":\"Buea Road Motor Park\"," +
+                "\"amount\":1000.0" +
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
@@ -176,15 +178,16 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Muyuka\"," +
-                "\"address\":\"Muyuka Main Park\"" +
+                "\"address\":\"Muyuka Main Park\"," +
+                "\"amount\": 1000" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Ekona\"," +
-                "\"address\":\"Ekona Main Park\"" +
-                "}" +
+                "\"address\":\"Ekona Main Park\"," +
+                "\"amount\": 2000 }" +
                 "]," +
                 "\"car\":{" +
                 "\"id\":" + bus.getId() + "," +
@@ -202,8 +205,9 @@ public class JourneyControllerIntegrationTest {
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop.getId() + ",\n" +
-                "  \"destination\": " + transitAndStop1.getId() + ",\n" +
-                "  \"transitAndStops\": [" + transitAndStop2.getId()+", " + transitAndStop3.getId()+"]\n" +
+                "  \"destination\": {\"transitAndStopId\":" + transitAndStop1.getId() + ",\"amount\": 1000 }, \n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/cars/" + bus.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -329,18 +333,31 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
+
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+
         Driver driver = new Driver();
         driver.setDriverName("John Doe");
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(bus);
-        journey = journeyRepository.save(journey);
+        journeyRepository.save(journey);
         String expectedResponse = "{\"id\":" + journey.getId() + ",\"departureTime\":\"" + updatedDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
                 "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\":1000.0," +
                 "\"driver\":{" +
                 "\"driverName\":\"John Doe\"," +
                 "\"driverLicenseNumber\":\"1234567899\"" +
@@ -357,7 +374,8 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Buea\"," +
-                "\"address\":\"Mile 17 Motto Park\"" +
+                "\"address\":\"Mile 17 Motto Park\"," +
+                "\"amount\":1000.0" +
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
@@ -365,14 +383,16 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
-                "\"address\":\"Ekona Main Park\"" +
+                "\"address\":\"Ekona Main Park\"," +
+                "\"amount\":500.0" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop2.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Muyuka\"," +
-                "\"address\":\"Muyuka Main Park\"" +
+                "\"address\":\"Muyuka Main Park\"," +
+                "\"amount\":1500.0" +
                 "}" +
                 "]," +
                 "\"car\":{" +
@@ -391,8 +411,9 @@ public class JourneyControllerIntegrationTest {
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop1.getId() + ",\n" +
-                "  \"destination\": " + transitAndStop.getId() + ",\n" +
-                "  \"transitAndStops\": [" + transitAndStop3.getId()+", " + transitAndStop2.getId()+"]\n" +
+                "  \"destination\": {\"transitAndStopId\":" + transitAndStop.getId() + ",\"amount\": 1000 }, \n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/"+ journey.getId() + "/cars/" + bus.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -492,7 +513,20 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
+
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+
+
         Driver driver = new Driver();
         driver.setDriverName("John Doe");
         driver.setDriverLicenseNumber("1234567899");
@@ -505,6 +539,7 @@ public class JourneyControllerIntegrationTest {
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
                 "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\": 0.0," +
                 "\"driver\":{" +
                 "\"driverName\":\"John Doe\"," +
                 "\"driverLicenseNumber\":\"1234567899\"" +
@@ -521,7 +556,8 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Buea\"," +
-                "\"address\":\"Mile 17 Motto Park\"" +
+                "\"address\":\"Mile 17 Motto Park\"," +
+                "\"amount\": 0.0" +
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
@@ -529,14 +565,16 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
-                "\"address\":\"Ekona Main Park\"" +
+                "\"address\":\"Ekona Main Park\"," +
+                "\"amount\":500.0" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop2.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Muyuka\"," +
-                "\"address\":\"Muyuka Main Park\"" +
+                "\"address\":\"Muyuka Main Park\"," +
+                "\"amount\":1500.0" +
                 "}" +
                 "]," +
                 "\"car\":{" +
@@ -623,7 +661,18 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Arrays.asList(transitAndStop2, transitAndStop3));
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+        journey.setJourneyStops(journeyStops);
         Driver driver = new Driver();
         driver.setDriverName("John Doe");
         driver.setDriverLicenseNumber("1234567899");
@@ -636,6 +685,7 @@ public class JourneyControllerIntegrationTest {
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
                 "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\": 0.0," +
                 "\"driver\":{" +
                 "\"driverName\":\"John Doe\"," +
                 "\"driverLicenseNumber\":\"1234567899\"" +
@@ -652,7 +702,8 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Buea\"," +
-                "\"address\":\"Tole Park\"" +
+                "\"address\":\"Tole Park\"," +
+                "\"amount\": 0.0" +
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
@@ -660,14 +711,16 @@ public class JourneyControllerIntegrationTest {
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
-                "\"address\":\"Small Park\"" +
+                "\"address\":\"Small Park\"," +
+                "\"amount\": 500.0" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop2.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Muyuka\"," +
-                "\"address\":\"Munyenge Park\"" +
+                "\"address\":\"Munyenge Park\"," +
+                "\"amount\": 1500.0" +
                 "}" +
                 "]," +
                 "\"car\":{" +
@@ -713,10 +766,13 @@ public class JourneyControllerIntegrationTest {
 
         Journey journey = new Journey();
         journey.setArrivalIndicator(false);
-        journey.setTransitAndStops(Collections.singletonList(transitAndStop1));
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop1);
+        journeyStop.setJourney(journey);
+        journey.setJourneyStops(Collections.singleton(journeyStop));
         journey.setCar(bus);
         journeyRepository.save(journey);
-        String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + "}";
+        String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/add_stops")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)

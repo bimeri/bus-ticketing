@@ -117,8 +117,11 @@ public class JourneyServiceImplTest {
         journeyDTO.setDepartureLocation(2L);
         journeyDTO.setDepartureTime(Date.from(
                 LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        journeyDTO.setDestination(2L);
-        journeyDTO.setTransitAndStops(Collections.singletonList(2L));
+        AddStopDTO addStopDTO = new AddStopDTO();
+        addStopDTO.setTransitAndStopId(2L);
+        addStopDTO.setAmount(1000);
+        journeyDTO.setDestination(addStopDTO);
+        journeyDTO.setTransitAndStops(Collections.singletonList(addStopDTO));
 
         Journey journey = new Journey();
         journey.setId(3L);

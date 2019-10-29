@@ -1,10 +1,12 @@
 package net.gowaka.gowaka.domain.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Author: Edward Tanko <br/>
@@ -12,6 +14,7 @@ import java.util.List;
  */
 @Data
 @Entity
+@EqualsAndHashCode
 public class TransitAndStop {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,14 +22,13 @@ public class TransitAndStop {
     @Embedded
     private Location location;
 
-    @ManyToMany(mappedBy = "transitAndStops")
-    private List<Journey> journeys;
+    @OneToMany(mappedBy = "transitAndStop", cascade = {CascadeType.ALL})
+    private Set<JourneyStop> journeyStops;
 
     @OneToMany(mappedBy = "destination")
     private List<BookedJourney> bookedJourneys;
-    private double amount;
 
     public TransitAndStop() {
-        this.journeys = new ArrayList<>();
+        this.journeyStops = new HashSet<>();
     }
 }

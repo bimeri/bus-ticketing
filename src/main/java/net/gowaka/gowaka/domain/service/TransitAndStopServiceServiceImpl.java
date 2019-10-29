@@ -89,7 +89,7 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
     }
 
     private Long journeyCheck(TransitAndStop transitAndStop){
-        if (!transitAndStop.getJourneys().isEmpty()){
+        if (!transitAndStop.getJourneyStops().isEmpty()){
             logger.warn("Cannot delete record: \n <{}> \n has journeys", transitAndStop.toString());
             throw new ApiException("Cannot delete record for any existing journey", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }

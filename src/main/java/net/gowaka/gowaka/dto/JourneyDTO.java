@@ -21,6 +21,6 @@ public class JourneyDTO {
     @NotNull(message = "departureLocation is required")
     private Long departureLocation;
     @NotNull(message = "destination is required")
-    private Long destination;
-    private List<Long> transitAndStops;
+    private AddStopDTO destination;
+    private List<AddStopDTO> transitAndStops;
 }

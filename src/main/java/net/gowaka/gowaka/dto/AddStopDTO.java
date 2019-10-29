@@ -12,4 +12,5 @@ import javax.validation.constraints.NotNull;
 public class AddStopDTO {
     @NotNull(message = "transitAndStopId is required")
     private Long transitAndStopId;
+    private double amount;
 }

@@ -19,11 +19,12 @@ public class JourneyResponseDTO {
     private Date estimatedArrivalTime;
     private Boolean departureIndicator;
     private Boolean arrivalIndicator;
+    private double amount;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timestamp;
     private DriverDTO driver;
     private LocationResponseDTO departureLocation;
-    private LocationResponseDTO destination;
-    private List<LocationResponseDTO> transitAndStops;
+    private LocationStopResponseDTO destination;
+    private List<LocationStopResponseDTO> transitAndStops;
     private CarResponseDTO car;
 }
