@@ -10,8 +10,8 @@ ls
 export NG_CLI_ANALYTICS=ci
 cd ui-source-code-from-gitlab/
 mkdir -p gw_ui
-#npm install -g --save
-#npm install -g @angular-devkit/build-angular --save
+npm install -g --save
+npm install -g @angular-devkit/build-angular --save
 #npm install -g --save @angular/cli
 #npm install -g @angular/compiler-cli --save
 
