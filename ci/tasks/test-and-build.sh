@@ -12,7 +12,7 @@ cd ui-source-code-from-gitlab/
 mkdir -p gw_ui
 npm install -g --save
 npm install -g --save @angular-devkit/build-angular
-npm install -g @angular/cli
+npm install -g --save @angular/cli
 ng build --output-path gw_ui
 mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
 
