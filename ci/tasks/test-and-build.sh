@@ -15,7 +15,7 @@ npm install
 #npm install -g @angular-devkit/build-angular
 #npm install -g @angular/compiler-cli
 #npm install -g typescript
-npm install @angular/cli
+npm install -g @angular/cli
 
 ng build --output-path gw_ui
 mv ./gw_ui/* ../source-code-from-gitlab/src/main/resources/static
