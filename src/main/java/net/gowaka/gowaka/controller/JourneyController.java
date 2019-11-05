@@ -83,4 +83,9 @@ public class JourneyController {
         journeyService.updateJourneyArrivalIndicator(journeyId, journeyArrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
     }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @PostMapping("/users/journeys/cars/{carId}")
+    public ResponseEntity<JourneyResponseDTO> addSharedRideJourney(@PathVariable("carId") Long carId, @Valid @RequestBody JourneyDTO journeyDTO){
+        return ResponseEntity.ok(journeyService.addSharedJourney(journeyDTO, carId));
+    }
 }

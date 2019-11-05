@@ -50,6 +50,8 @@ public class JourneyServiceImplTest {
 
     @Mock
     private OfficialAgency mockOfficialAgency;
+    @Mock
+    private PersonalAgency mockPersonalAgency;
 
 
     @Rule
@@ -604,5 +606,46 @@ public class JourneyServiceImplTest {
         expectedException.expectMessage("Journey\'s car not in AuthUser\'s Agency");
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.updateJourneyArrivalIndicator(4L, new JourneyArrivalIndicatorDTO());
+    }
+
+    /**
+     * **USERS** Should be able to SharedRide Journey
+     * #169527991
+     * scenario: 1 carId not in user's personal agency
+     */
+    @Test
+    public void personal_agency_add_journey_shared_rides_should_throw_not_found_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s Car not in AuthUser\'s PersonalAgency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.addSharedJourney(new JourneyDTO(), 1L);
+    }
+
+    /**
+     * **USERS** Should be able to SharedRide Journey
+     * #169527991
+     * scenario: 3 transitAndStopId don't exist
+     */
+    @Test
+    public void personal_agency_add_journey_shared_rides_should_throw_transit_and_stop_not_found_api_exception(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setId(1L);
+        when(mockPersonalAgency.getSharedRides()).thenReturn(Collections.singletonList(sharedRide));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Destination TransitAndStop not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.addSharedJourney(new JourneyDTO(), 1L);
     }
 }

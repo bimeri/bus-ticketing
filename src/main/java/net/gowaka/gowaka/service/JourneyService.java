@@ -17,4 +17,5 @@ public interface JourneyService {
     void deleteNonBookedJourney(Long journeyId);
     void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator);
     void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO);
+    JourneyResponseDTO addSharedJourney(JourneyDTO journeyDTO, Long carId);
 }

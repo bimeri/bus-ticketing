@@ -131,6 +131,11 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    @Override
+    public JourneyResponseDTO addSharedJourney(JourneyDTO journeyDTO, Long carId) {
+        return mapSaveAndGetJourneyResponseDTO(journeyDTO, new Journey(), getPersonalAgencyCarById(carId));
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
@@ -158,6 +163,14 @@ public class JourneyServiceImpl implements JourneyService {
         return officialAgency;
     }
 
+    private PersonalAgency getPersonalAgency(User user) {
+        PersonalAgency personalAgency = user.getPersonalAgency();
+        if (personalAgency == null){
+            throw new ApiException("No Personal Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return personalAgency;
+    }
+
     /**
      * Gets car in user's official agency. if car not found, throw car not found api exception
      * @param carId
@@ -168,6 +181,16 @@ public class JourneyServiceImpl implements JourneyService {
                 .stream().filter(bus -> bus.getId().equals(carId)).collect(Collectors.toList());
         if (cars.isEmpty()){
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        return cars.get(0);
+    }
+
+    private Car getPersonalAgencyCarById(Long carId){
+        List<Car> cars = getPersonalAgency(verifyCurrentAuthUser()).getSharedRides()
+                .stream().filter(sharedRide -> sharedRide.getId().equals(carId))
+                .collect(Collectors.toList());
+        if (cars.isEmpty()){
+            throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return cars.get(0);
     }

@@ -89,7 +89,11 @@ public class GlobalExceptionHandler {
         String dev_message = ex.getMessage();
         String message = null;
         if (dev_message != null ){
-            message = dev_message.substring(dev_message.indexOf("expected format"), dev_message.indexOf(';'));
+            if (dev_message.contains("expected format") && dev_message.contains(";")){
+                message = dev_message.substring(dev_message.indexOf("expected format"), dev_message.indexOf(';'));
+            }else {
+                message = dev_message;
+            }
         }
         errorResponse.setMessage(message);
         errorResponse.setEndpoint(request.getRequestURI());
