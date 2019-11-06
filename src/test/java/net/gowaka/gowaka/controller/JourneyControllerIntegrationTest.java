@@ -1068,4 +1068,211 @@ public class JourneyControllerIntegrationTest {
                 .andReturn();
     }
 
+    /**
+     ***USERS** can update information about  Journey for PersonalAgency
+     * #169528238
+     * scenario: 3 Invalid input object missing field
+     */
+    @Test
+    public void personal_agency_update_journey_shared_rides_should_return_bad_request_with_validation_errors() throws Exception {
+        String badRequest = "{\n" +
+                "  \"departureTime\": \"2019-02-20 11:11:11\",\n" +
+                "  \"estimatedArrivalTime\": \"2019-02-20 11:11:11\",\n" +
+                "  \"driver\": {\n" +
+                "    \"driverName\": \"John Doe\",\n" +
+                "    \"driverLicenseNumber\": \"1234567899\"\n" +
+                "  },\n" + "\"departureLocation\": 10," +
+                "  \"transitAndStops\": [{\"transitAndStopId\": 12,\"amount\": 600},{\"transitAndStopId\": 13,\"amount\": 700}]\n" +
+                "}";
+        String expectedResponse = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"MethodArgumentNotValidException: #destination @errors.\",\"endpoint\":\"/api/protected/users/journeys/1/cars/1\",\"errors\":{\"destination\":\"destination is required\"}}";
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/1/cars/1")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(badRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+    /**
+     ***USERS** can update information about  Journey for PersonalAgency
+     * #169528238
+     * scenario: 3 Invalid input object missing field
+     */
+    @Test
+    public void personal_agency_update_journey_shared_rides_should_return_unprocessable_entity_with_validation_errors() throws Exception {
+        String badRequest = "{\n" +
+                "  \"departureTime\": \" 11:11:11\",\n" +
+                "  \"estimatedArrivalTime\": \"2019-02-20 11:11:11\",\n" +
+                "  \"driver\": {\n" +
+                "    \"driverName\": \"John Doe\",\n" +
+                "    \"driverLicenseNumber\": \"1234567899\"\n" +
+                "  },\n" + "\"departureLocation\": 10," +
+                "  \"transitAndStops\": [{\"transitAndStopId\": 12,\"amount\": 600},{\"transitAndStopId\": 13,\"amount\": 700}]\n" +
+                "}";
+        String expectedResponse = "{\"code\":\"INVALID_FORMAT\",\"message\":\"expected format \\\"yyyy-MM-dd HH:mm:ss\\\"\",\"endpoint\":\"/api/protected/users/journeys/1/cars/1\"}";
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/1/cars/1")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(badRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    /**
+     * **USERS** can update information about  Journey for PersonalAgency
+     *#169528238
+     * scenario: 5 Success
+     * @throws Exception
+     */
+    @Test
+    public void update_shared_ride_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgency.setName("Good Luck");
+        personalAgencyRepository.save(personalAgency);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setName("Mulongo Oscar");
+        sharedRide.setIsCarApproved(true);
+        sharedRide.setIsOfficialAgencyIndicator(false);
+        sharedRide.setLicensePlateNumber("SW1920");
+
+
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Tiko Park");
+        location.setCity("Tiko");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        location.setCity("Limbe");
+        location.setAddress("Limbe Mile 4 park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location);
+        transitAndStopRepository.save(transitAndStop1);
+        location.setCity("Limbe");
+        location.setAddress("Half Mile");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location);
+        transitAndStopRepository.save(transitAndStop2);
+        location.setCity("Tole");
+        location.setAddress("Longstreet");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String updatedDateTime = localDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        sharedRide.setPersonalAgency(personalAgency);
+        carRepository.save(sharedRide);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop.getLocation());
+        journey.setDestination(transitAndStop1.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(sharedRide);
+        journeyRepository.save(journey);
+        String expectedResponse = "{\"id\":" + journey.getId() + ",\"departureTime\":\"" + updatedDateTime + "\"," +
+                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
+                "\"departureIndicator\":false," +
+                "\"arrivalIndicator\":false," +
+                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\":1000.0," +
+                "\"driver\":{" +
+                "\"driverName\":\"John Doe\"," +
+                "\"driverLicenseNumber\":\"1234567899\"" +
+                "}," +
+                "\"departureLocation\":{" +
+                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Limbe\"," +
+                "\"address\":\"Limbe Mile 4 park\"" +
+                "}," +
+                "\"destination\":{" +
+                "\"id\":" + transitAndStop.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Tiko\"," +
+                "\"address\":\"Tiko Park\"," +
+                "\"amount\":1000.0" +
+                "}," +
+                "\"transitAndStops\":[" +
+                "{" +
+                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\": \"South West\"," +
+                "\"city\":\"Tole\"," +
+                "\"address\":\"Longstreet\"," +
+                "\"amount\":500.0" +
+                "}," +
+                "{" +
+                "\"id\":" + transitAndStop2.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Limbe\"," +
+                "\"address\":\"Half Mile\"," +
+                "\"amount\":1500.0" +
+                "}" +
+                "]," +
+                "\"car\":{" +
+                "\"id\":" + sharedRide.getId() + "," +
+                "\"name\":\"Mulongo Oscar\"," +
+                "\"licensePlateNumber\":\"SW1920\"," +
+                "\"isOfficialAgencyIndicator\":false," +
+                "\"isCarApproved\":true," +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "}}";
+        String reqBody = "{\n" +
+                "  \"departureTime\": \"" + updatedDateTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \"" + currentDateTime + "\",\n" +
+                "  \"driver\": {\n" +
+                "    \"driverName\": \"John Doe\",\n" +
+                "    \"driverLicenseNumber\": \"1234567899\"\n" +
+                "  },\n" +
+                "  \"departureLocation\": " + transitAndStop1.getId() + ",\n" +
+                "  \"destination\": {\"transitAndStopId\":" + transitAndStop.getId() + ",\"amount\": 1000 }, \n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 2000}]\n" +
+                "}\n";
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/"+ journey.getId() + "/cars/" + sharedRide.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
 }

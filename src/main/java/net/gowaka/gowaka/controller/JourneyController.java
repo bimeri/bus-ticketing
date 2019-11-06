@@ -88,4 +88,13 @@ public class JourneyController {
     public ResponseEntity<JourneyResponseDTO> addSharedRideJourney(@PathVariable("carId") Long carId, @Valid @RequestBody JourneyDTO journeyDTO){
         return ResponseEntity.ok(journeyService.addSharedJourney(journeyDTO, carId));
     }
+
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @PostMapping("/users/journeys/{journeyId}/cars/{carId}")
+    public ResponseEntity<JourneyResponseDTO> updateSharedRideJourney(
+            @PathVariable("journeyId") Long journeyId,
+            @PathVariable("carId") Long carId,
+            @Valid @RequestBody JourneyDTO journeyDTO){
+        return ResponseEntity.ok(journeyService.updateSharedJourney(journeyDTO, journeyId, carId));
+    }
 }

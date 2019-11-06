@@ -136,6 +136,11 @@ public class JourneyServiceImpl implements JourneyService {
         return mapSaveAndGetJourneyResponseDTO(journeyDTO, new Journey(), getPersonalAgencyCarById(carId));
     }
 
+    @Override
+    public JourneyResponseDTO updateSharedJourney(JourneyDTO journeyDTO, Long journeyId, Long carId) {
+        return mapSaveAndGetJourneyResponseDTO(journeyDTO, getJourney(journeyId), getPersonalAgencyCarById(carId));
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
