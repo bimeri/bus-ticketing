@@ -97,4 +97,9 @@ public class JourneyController {
             @Valid @RequestBody JourneyDTO journeyDTO){
         return ResponseEntity.ok(journeyService.updateSharedJourney(journeyDTO, journeyId, carId));
     }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @GetMapping("/users/journeys/{journeyId}")
+    public ResponseEntity<JourneyResponseDTO> getSharedRideById(@PathVariable("journeyId") Long journeyId){
+        return ResponseEntity.ok(journeyService.getSharedJourneyById(journeyId));
+    }
 }

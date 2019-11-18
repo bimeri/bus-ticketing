@@ -19,4 +19,5 @@ public interface JourneyService {
     void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO);
     JourneyResponseDTO addSharedJourney(JourneyDTO journeyDTO, Long carId);
     JourneyResponseDTO updateSharedJourney(JourneyDTO journeyDTO, Long journeyId, Long carId);
+    JourneyResponseDTO getSharedJourneyById(Long journeyId);
 }

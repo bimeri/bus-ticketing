@@ -141,6 +141,19 @@ public class JourneyServiceImpl implements JourneyService {
         return mapSaveAndGetJourneyResponseDTO(journeyDTO, getJourney(journeyId), getPersonalAgencyCarById(carId));
     }
 
+    @Override
+    public JourneyResponseDTO getSharedJourneyById(Long journeyId) {
+        Journey journey = getJourney(journeyId);
+        List<SharedRide> sharedRides = getPersonalAgency(verifyCurrentAuthUser()).getSharedRides()
+                .stream()
+                .filter(sharedRide -> journey.getCar().getId().equals(sharedRide.getId()))
+                .collect(Collectors.toList());
+        if (sharedRides.isEmpty()){
+            throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return mapToJourneyResponseDTO(journey);
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user

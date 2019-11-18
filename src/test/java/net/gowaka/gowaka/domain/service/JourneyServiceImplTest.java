@@ -681,4 +681,36 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.updateSharedJourney(new JourneyDTO(), 1L, 1L);
     }
+
+    /**
+     * **USERS** can GET  a Journey for OfficialAgency
+     * #169528470
+     * Scenario: 1 Journeys Not exist
+     */
+    @Test
+    public void personal_agency_get_journey_should_throw_journey_not_exist_api_exception(){
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.getSharedJourneyById(1L);
+    }
+
+    /**
+     * **USERS** can GET  a Journey for OfficialAgency
+     * #169528470
+     * Scenario: 2 Journey's Car not in AuthUser's personalAgency
+     */
+    @Test
+    public void personal_agency_get_journey_should_throw_car_not_in_personal_agency_api_exception(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(new Journey()));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s Car not in AuthUser\'s PersonalAgency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.getSharedJourneyById(1L);
+    }
 }
