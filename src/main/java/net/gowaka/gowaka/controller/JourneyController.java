@@ -102,4 +102,9 @@ public class JourneyController {
     public ResponseEntity<JourneyResponseDTO> getSharedRideById(@PathVariable("journeyId") Long journeyId){
         return ResponseEntity.ok(journeyService.getSharedJourneyById(journeyId));
     }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @GetMapping("/users/journeys")
+    public ResponseEntity<List<JourneyResponseDTO>> getAllPersonalAgencyJourneys(){
+        return ResponseEntity.ok(journeyService.getAllPersonalAgencyJourneys());
+    }
 }

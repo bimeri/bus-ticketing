@@ -58,7 +58,9 @@ public class JourneyServiceImpl implements JourneyService {
         return journeyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc().stream()
                 .filter(journey -> {
                     Car car = journey.getCar();
+                    if (car == null) return false;
                     if (car instanceof Bus){
+                        if (((Bus)car).getOfficialAgency() == null) return false;
                         return ((Bus) car).getOfficialAgency().equals(officialAgency);
                     }
                     return false;
@@ -152,6 +154,24 @@ public class JourneyServiceImpl implements JourneyService {
             throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return mapToJourneyResponseDTO(journey);
+    }
+
+    @Override
+    public List<JourneyResponseDTO> getAllPersonalAgencyJourneys() {
+        PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
+        return journeyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc()
+                .stream().filter(
+                        journey -> {
+                            Car car = journey.getCar();
+                            if (car == null) return false;
+                            if (car instanceof SharedRide){
+                                if (((SharedRide)car).getPersonalAgency() == null) return false;
+                                return ((SharedRide) car).getPersonalAgency().equals(personalAgency);
+                            }
+                            return false;
+                        }
+                ).map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+
     }
 
     /**

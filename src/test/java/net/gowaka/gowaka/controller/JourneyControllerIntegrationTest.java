@@ -3,6 +3,7 @@ package net.gowaka.gowaka.controller;
 import net.gowaka.gowaka.TimeProviderTestUtil;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
+import net.gowaka.gowaka.dto.UserDTO;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -1414,6 +1415,150 @@ public class JourneyControllerIntegrationTest {
                 "\"timestamp\":\"" + currentDateTime + "\"" +
                 "}}";
         RequestBuilder requestBuilder = get("/api/protected/users/journeys/"+journey.getId())
+                .header("Authorization", "Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder)
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+    /**
+     * **USERS**  can view all Journey for PersonalAgency ordered by date and arrivalIndicator
+     * * #169528531
+     * Scenario: 2.  Journeys found for user's Agency
+     * Given journeys exit
+     */
+    @Test
+    public void Journeys_found_for_user_Agency_Given_journeys_exit() throws Exception {
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgency.setName("Malingo Boy");
+        personalAgencyRepository.save(personalAgency);
+
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setName("Oboy");
+        sharedRide.setPersonalAgency(personalAgency);
+        sharedRide.setLicensePlateNumber("123SW");
+        sharedRide.setIsOfficialAgencyIndicator(false);
+        sharedRide.setIsCarApproved(true);
+
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+
+        Location location = new Location();
+        location.setAddress("Tikos Park");
+        location.setCity("Tikos");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        Location location1 = new Location();
+        location1.setState("South West");
+        location1.setCountry("Cameroon");
+        location1.setCity("Mutengenes");
+        location1.setAddress("Mutengenes Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
+        Location location2 = new Location();
+        location2.setState("South West");
+        location2.setCountry("Cameroon");
+        location2.setCity("Miles 14");
+        location2.setAddress("Miles 14 Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location2);
+        transitAndStopRepository.save(transitAndStop2);
+        Location location3 = new Location();
+        location3.setState("South West");
+        location3.setCountry("Cameroon");
+        location3.setCity("Miles 17");
+        location3.setAddress("Miles 17 main Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location3);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        carRepository.save(sharedRide);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop1.getLocation());
+        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+        journey.setJourneyStops(journeyStops);
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(sharedRide);
+        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journeyRepository.save(journey);
+        String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
+                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
+                "\"departureIndicator\":false," +
+                "\"arrivalIndicator\":false," +
+                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\": 0.0," +
+                "\"driver\":{" +
+                "\"driverName\":\"John Doe\"," +
+                "\"driverLicenseNumber\":\"1234567899\"" +
+                "}," +
+                "\"departureLocation\":{" +
+                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Mutengenes\"," +
+                "\"address\":\"Mutengenes Motor Park\"" +
+                "}," +
+                "\"destination\":{" +
+                "\"id\":" + transitAndStop.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Tikos\"," +
+                "\"address\":\"Tikos Park\"," +
+                "\"amount\": 0.0" +
+                "}," +
+                "\"transitAndStops\":[" +
+                "{" +
+                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\": \"South West\"," +
+                "\"city\":\"Miles 17\"," +
+                "\"address\":\"Miles 17 main Park\"," +
+                "\"amount\": 500.0" +
+                "}," +
+                "{" +
+                "\"id\":" + transitAndStop2.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"Miles 14\"," +
+                "\"address\":\"Miles 14 Park\"," +
+                "\"amount\": 1500.0" +
+                "}" +
+                "]," +
+                "\"car\":{" +
+                "\"id\":" + sharedRide.getId() + "," +
+                "\"name\":\"Oboy\"," +
+                "\"licensePlateNumber\":\"123SW\"," +
+                "\"isOfficialAgencyIndicator\":false," +
+                "\"isCarApproved\":true," +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "}}]";
+        RequestBuilder requestBuilder = get("/api/protected/users/journeys/")
                 .header("Authorization", "Bearer " + jwtToken);
         mockMvc.perform(requestBuilder)
                 .andExpect(content().json(expectedResponse))

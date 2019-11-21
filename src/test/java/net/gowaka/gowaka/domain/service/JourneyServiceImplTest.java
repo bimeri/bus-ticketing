@@ -713,4 +713,30 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.getSharedJourneyById(1L);
     }
+
+    /**
+     * **USERS**  can view all Journey for PersonalAgency ordered by date and arrivalIndicator
+     * #169528531
+     * Scenario: 1. No Journey found for user's Agency
+     *
+     */
+    @Test
+    public void Given_No_journey_exist_for_that_user_personal_agency(){
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Journey journey = new Journey();
+        journey.setId(1L);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setId(1L);
+        sharedRide.setPersonalAgency(new PersonalAgency());
+        journey.setCar(sharedRide);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc()).thenReturn(Collections.singletonList(journey));
+        List<JourneyResponseDTO> journeyList = journeyService.getAllPersonalAgencyJourneys();
+        assertTrue(journeyList.isEmpty());
+    }
+
 }

@@ -20,4 +20,5 @@ public interface JourneyService {
     JourneyResponseDTO addSharedJourney(JourneyDTO journeyDTO, Long carId);
     JourneyResponseDTO updateSharedJourney(JourneyDTO journeyDTO, Long journeyId, Long carId);
     JourneyResponseDTO getSharedJourneyById(Long journeyId);
+    List<JourneyResponseDTO> getAllPersonalAgencyJourneys();
 }
