@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.dto.CreateUserRequest;
 import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -38,11 +41,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class UserControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Value("${security.jwt.token.privateKey}")
+    private String secretKey = "";
+
 
     @Qualifier("apiSecurityRestTemplate")
     @Autowired
@@ -166,10 +173,18 @@ public class UserControllerIntegrationTest {
     @Test
     public void loginUser_success_returns_200() throws Exception {
 
-        startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
-                HttpStatus.OK, successUserTokenResponse);
 
-        String expectedResponse = "{\"header\":\"Authorization\",\"issuer\":\"API-Security\",\"accessToken\":\"jwt-token-user\",\"type\":\"Bearer\"}";
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
+
+        ApiSecurityAccessToken apiSecurityAccessToken = new ApiSecurityAccessToken();
+        apiSecurityAccessToken.setToken(jwtToken);
+        apiSecurityAccessToken.setHeader("Authorization");
+        apiSecurityAccessToken.setType("Bearer");
+        apiSecurityAccessToken.setIssuer("API-Security");
+        apiSecurityAccessToken.setVersion("v1");
+
+        startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
+                HttpStatus.OK, new ObjectMapper().writeValueAsString(apiSecurityAccessToken));
 
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
         emailPasswordDTO.setEmail("info@go-groups.net");
@@ -181,7 +196,6 @@ public class UserControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().json(expectedResponse))
                 .andReturn();
 
     }

@@ -2,24 +2,21 @@ package net.gowaka.gowaka.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.domain.model.User;
-import net.gowaka.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreatePersonalAgencyDTO;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 
@@ -47,33 +44,13 @@ public class PersonalAgencyControllerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private OfficialAgencyRepository officialAgencyRepository;
-
     private User user;
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Qualifier("apiSecurityRestTemplate")
-    @Autowired
-    private RestTemplate restTemplate;
-
-
-    private MockRestServiceServer mockServer;
-
-    private String successClientTokenResponse = "{\n" +
-            "  \"header\": \"Authorization\",\n" +
-            "  \"type\": \"Bearer\",\n" +
-            "  \"issuer\": \"API-Security\",\n" +
-            "  \"version\": \"v1\",\n" +
-            "  \"token\": \"jwt-token\"\n" +
-            "}";
-
     @Before
     public void setUp() throws Exception {
-
-        mockServer = MockRestServiceServer.createServer(restTemplate);
 
         User newUser = new User();
         newUser.setUserId("12");
@@ -83,8 +60,9 @@ public class PersonalAgencyControllerIntegrationTest {
 
     }
 
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     @Test
-    public void createOfficialAgency_success_return_200() throws Exception {
+    public void createPersonalAgency_success_return_200() throws Exception {
 
         CreatePersonalAgencyDTO createOfficialAgencyDTO = new CreatePersonalAgencyDTO();
         createOfficialAgencyDTO.setName("GG Express");

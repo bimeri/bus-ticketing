@@ -10,6 +10,7 @@ import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
 import net.gowaka.gowaka.security.AppGrantedAuthority;
+import net.gowaka.gowaka.security.JwtTokenProvider;
 import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
@@ -43,6 +44,8 @@ public class UserServiceImplTest {
     private ApiSecurityService mockApiSecurityService;
     private ClientUserCredConfig clientUserCredConfig;
     private UserService userService;
+    @Mock
+    private JwtTokenProvider mockJwtTokenProvider;
 
     ArgumentCaptor<ApiSecurityUser> apiSecurityUserArgumentCaptor;
     ArgumentCaptor<String> stringArgumentCaptor;
@@ -58,7 +61,7 @@ public class UserServiceImplTest {
         this.clientUserCredConfig.setClientId("client-secret");
         this.clientUserCredConfig.setAppName("GoWaka");
 
-        userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig);
+        userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig, mockJwtTokenProvider);
 
         apiSecurityUserArgumentCaptor =ArgumentCaptor.forClass(ApiSecurityUser.class);
         stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -128,6 +131,13 @@ public class UserServiceImplTest {
 
         when(mockApiSecurityService.getUserToken(any()))
                 .thenReturn(accessToken);
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setFullName("Full Name");
+        userDetails.setUsername("example@example.com");
+        userDetails.setId("1111");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("USERS"), new AppGrantedAuthority("AGENCY")));
+        when(mockJwtTokenProvider.getUserDetails(any()))
+                .thenReturn(userDetails);
 
         TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO);
 
@@ -136,6 +146,8 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getHeader()).isEqualTo("Authorization");
         assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
+        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY])");
+
 
 
     }

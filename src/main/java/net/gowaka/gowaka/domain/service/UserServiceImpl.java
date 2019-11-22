@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.network.api.apisecurity.model.*;
+import net.gowaka.gowaka.security.JwtTokenProvider;
 import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.UserService;
@@ -28,11 +29,14 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private ApiSecurityService apiSecurityService;
     private ClientUserCredConfig clientUserCredConfig;
+    private JwtTokenProvider jwtTokenProvider;
 
-    public UserServiceImpl(UserRepository userRepository, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig) {
+
+    public UserServiceImpl(UserRepository userRepository, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.apiSecurityService = apiSecurityService;
         this.clientUserCredConfig = clientUserCredConfig;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -74,11 +78,15 @@ public class UserServiceImpl implements UserService {
         apiSecurityUsernamePassword.setAppName(clientUserCredConfig.getAppName());
 
         ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
+        UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
+        UserDTO userDTO = getUserDTO(userDetails);
+
         TokenDTO tokenDTO = new TokenDTO();
         tokenDTO.setHeader(userToken.getHeader());
         tokenDTO.setIssuer(userToken.getIssuer());
         tokenDTO.setType(userToken.getType());
         tokenDTO.setAccessToken(userToken.getToken());
+        tokenDTO.setUserDetails(userDTO);
 
         return tokenDTO;
     }
@@ -127,4 +135,15 @@ public class UserServiceImpl implements UserService {
         return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
+    private UserDTO getUserDTO(UserDetailsImpl userDetails) {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(userDetails.getId());
+        userDTO.setFullName(userDetails.getFullName());
+        userDTO.setEmail(userDetails.getUsername());
+        userDTO.setRoles(userDetails.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .collect(Collectors.toList())
+        );
+        return userDTO;
+    }
 }

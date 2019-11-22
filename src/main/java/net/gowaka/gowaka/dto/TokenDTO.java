@@ -13,4 +13,5 @@ public class TokenDTO {
     private String issuer;
     private String accessToken;
     private String type;
+    private UserDTO userDetails;
 }
