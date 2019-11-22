@@ -10,6 +10,8 @@ import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.service.JourneyService;
 import net.gowaka.gowaka.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,7 @@ public class JourneyServiceImpl implements JourneyService {
     private TransitAndStopRepository transitAndStopRepository;
     private JourneyRepository journeyRepository;
     private ZoneId zoneId = ZoneId.of("GMT");
+    private Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
 
     @Autowired
     public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository) {
@@ -172,6 +175,17 @@ public class JourneyServiceImpl implements JourneyService {
                         }
                 ).map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
 
+    }
+
+    @Override
+    public void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
+        Journey journey = getJourney(journeyId);
+        if (journeyTerminationFilter(journey)){
+            checkJourneyCarInPersonalAgency(journey);
+            journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
+            journey = journeyRepository.save(journey);
+            logger.info("Departure Indicator Updated to: {}", journey.getDepartureIndicator());
+        }
     }
 
     /**
@@ -475,6 +489,18 @@ public class JourneyServiceImpl implements JourneyService {
         }
         return true;
     }
-
+    /**
+     * throw exception if journey car is not in official agency
+     * @param journey
+     */
+    private void checkJourneyCarInPersonalAgency(Journey journey) {
+        List<Car> cars = getPersonalAgency(verifyCurrentAuthUser())
+                .getSharedRides().stream()
+                .filter(sharedRide -> journey.getCar() != null && journey.getCar().getId().equals(sharedRide.getId()))
+                .collect(Collectors.toList());
+        if (cars.isEmpty()) {
+            throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+    }
 
 }

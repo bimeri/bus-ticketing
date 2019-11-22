@@ -739,4 +739,82 @@ public class JourneyServiceImplTest {
         assertTrue(journeyList.isEmpty());
     }
 
+    /**
+     * USERS can change departureIndicator state
+     *#169528573
+     *Scenario:  1. Journeys NOT exist
+     */
+    @Test
+    public void Journeys_NOT_exist_Given_JourneyId_passed_as_parameter_NOT_exit(){
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.updateSharedJourneyDepartureIndicator(1L, new JourneyDepartureIndicatorDTO());
+    }
+
+
+    /**
+     * USERS can change departureIndicator state
+     *#169528573
+     *Scenario:  3. Journey's car is NOT in AuthUser Agency
+     */
+    @Test
+    public void Journey_car_is_NOT_in_AuthUser_Agency_Given_journeyId_passed_and_arrivalIndicator_false(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s Car not in AuthUser\'s PersonalAgency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.updateSharedJourneyDepartureIndicator(1L, new JourneyDepartureIndicatorDTO());
+    }
+
+    /**
+     * USERS can change departureIndicator state
+     * #169528573
+     * Scenario:  2. Journey's arrivalIndicator is true;
+     */
+    @Test
+    public void given_journeyId_passed_as_parameter_exist_and_journey_arrivalIndicator_true_throw_journey_terminated_exception(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(true);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        journeyService.updateSharedJourneyDepartureIndicator(journey.getId(), new JourneyDepartureIndicatorDTO());
+    }
+    /**
+     * USERS can change departureIndicator state
+     * #169528573
+     * Scenario:  4. change  Journey departureIndicator state
+     */
+    @Test
+    public  void  given_journeyId_passed_as_parameter_exist_and_journey_arrivalIndicator_false_and_Journey_car_is_IN_AuthUser_Agency_then_change_departure_state(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setPersonalAgency(mockPersonalAgency);
+        sharedRide.setId(1L);
+        journey.setCar(sharedRide);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockJourneyRepository.save(any(Journey.class))).thenReturn(journey);
+        when(mockPersonalAgency.getSharedRides()).thenReturn(Collections.singletonList(sharedRide));
+        journeyService.updateSharedJourneyDepartureIndicator(1L, new JourneyDepartureIndicatorDTO());
+        verify(mockJourneyRepository).save(journey);
+    }
+
 }

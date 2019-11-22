@@ -107,4 +107,12 @@ public class JourneyController {
     public ResponseEntity<List<JourneyResponseDTO>> getAllPersonalAgencyJourneys(){
         return ResponseEntity.ok(journeyService.getAllPersonalAgencyJourneys());
     }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @PostMapping("/users/journeys/{journeyId}/departure")
+    public ResponseEntity updateSharedJourneyDepartureIndicator(
+            @PathVariable("journeyId") Long journeyId,
+            @RequestBody JourneyDepartureIndicatorDTO departureIndicatorDTO){
+        journeyService.updateSharedJourneyDepartureIndicator(journeyId, departureIndicatorDTO);
+        return ResponseEntity.noContent().build();
+    }
 }
