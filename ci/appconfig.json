@@ -3,5 +3,6 @@
   "appType":"jar",
   "port":"8081",
   "env": "GoWakaEnv",
-  "services":[]
+  "services":[],
+  "hostServers":["GoLabTest"]
 }

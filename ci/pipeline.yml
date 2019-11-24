@@ -90,7 +90,7 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: eddytnk/ldc
+          repository: eddytnk/lc
           tag: latest
       inputs:
       - name: source-code-from-gitlab
