@@ -2,9 +2,11 @@ package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.JourneyService;
+import org.hibernate.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -69,7 +71,7 @@ public class JourneyController {
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/departure")
     public ResponseEntity updateJourneyDepartureIndicator(
-            @RequestBody JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO,
+            @RequestBody @Valid JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO,
             @PathVariable("journeyId") Long journeyId){
         journeyService.updateJourneyDepartureIndicator(journeyId, journeyDepartureIndicatorDTO);
         return ResponseEntity.noContent().build();
@@ -78,7 +80,7 @@ public class JourneyController {
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/arrival")
     public ResponseEntity updateJourneyArrivalIndicator(
-            @RequestBody JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO,
+            @RequestBody @Valid JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO,
             @PathVariable("journeyId") Long journeyId){
         journeyService.updateJourneyArrivalIndicator(journeyId, journeyArrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
@@ -111,8 +113,16 @@ public class JourneyController {
     @PostMapping("/users/journeys/{journeyId}/departure")
     public ResponseEntity updateSharedJourneyDepartureIndicator(
             @PathVariable("journeyId") Long journeyId,
-            @RequestBody JourneyDepartureIndicatorDTO departureIndicatorDTO){
+            @RequestBody @Valid JourneyDepartureIndicatorDTO departureIndicatorDTO){
         journeyService.updateSharedJourneyDepartureIndicator(journeyId, departureIndicatorDTO);
+        return ResponseEntity.noContent().build();
+    }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @PostMapping("/users/journeys/{journeyId}/arrival")
+    public ResponseEntity updateShareJourneyArrivalIndicator(
+            @PathVariable("journeyId") Long journeyId,
+            @RequestBody @Valid JourneyArrivalIndicatorDTO arrivalIndicatorDTO){
+        journeyService.updateSharedJourneyArrivalIndicator(journeyId, arrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
     }
 }

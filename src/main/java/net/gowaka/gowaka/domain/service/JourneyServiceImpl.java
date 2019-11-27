@@ -188,6 +188,18 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    @Override
+    public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
+        Journey journey = getJourney(journeyId);
+        logger.info("Arrival Indicator: {}", journey.getArrivalIndicator());
+        if (journeyArrivalFilter(journey)){
+            checkJourneyCarInPersonalAgency(journey);
+            journey.setArrivalIndicator(journeyArrivalIndicator.getArrivalIndicator());
+            journey = journeyRepository.save(journey);
+            logger.info("Arrival Indicator Updated to: {}", journey.getArrivalIndicator());
+        }
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
@@ -484,7 +496,7 @@ public class JourneyServiceImpl implements JourneyService {
      * @return boolean
      */
     private boolean journeyArrivalFilter(Journey journey){
-        if (journey.getDepartureIndicator()){
+        if (!journey.getDepartureIndicator()){
             throw new ApiException("Journey not started", ErrorCodes.JOURNEY_NOT_STARTED.toString(), HttpStatus.CONFLICT);
         }
         return true;

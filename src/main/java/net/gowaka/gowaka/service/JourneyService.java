@@ -22,4 +22,5 @@ public interface JourneyService {
     JourneyResponseDTO getSharedJourneyById(Long journeyId);
     List<JourneyResponseDTO> getAllPersonalAgencyJourneys();
     void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator);
+    void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator);
 }

@@ -872,7 +872,7 @@ public class JourneyControllerIntegrationTest {
         carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureIndicator(false);
+        journey.setDepartureIndicator(true);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
         journeyRepository.save(journey);
@@ -1592,5 +1592,38 @@ public class JourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
                 .andReturn();
+    }
+    /**
+     * **USERS** can change arrivalIndicator state
+     * #169528624
+     * Scenario:  4. change  Journey arrivalIndicator state
+     */
+    @Test
+    public  void given_journeyId_passed_as_parameter_exist_and_journey_departureIndicator_true_and_Journey_car_is_in_AuthUser_Agency_then_change_departure_state() throws Exception{
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgencyRepository.save(personalAgency);
+
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setPersonalAgency(personalAgency);
+        carRepository.save(sharedRide);
+
+        Journey journey = new Journey();
+        journey.setDepartureIndicator(true);
+        journey.setArrivalIndicator(false);
+        journey.setCar(sharedRide);
+        journeyRepository.save(journey);
+        String reqBody = "{\"arrivalIndicator\": true}";
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/" + journey.getId() + "/arrival")
+                .header("Authorization","Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(reqBody);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+
     }
 }
