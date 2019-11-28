@@ -125,4 +125,12 @@ public class JourneyController {
         journeyService.updateSharedJourneyArrivalIndicator(journeyId, arrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
     }
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @DeleteMapping("/users/journeys/{journeyId}")
+    public ResponseEntity deleteNonBookedSharedJourney(
+            @PathVariable("journeyId") Long journeyId){
+        journeyService.deleteNonBookedSharedJourney(journeyId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

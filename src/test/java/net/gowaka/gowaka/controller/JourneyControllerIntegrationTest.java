@@ -1626,4 +1626,32 @@ public class JourneyControllerIntegrationTest {
                 .andReturn();
 
     }
+    /**
+     * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
+     * #169528640
+     *Scenario:  4. Delete Journey Success
+     */
+    @Test
+    public void delete_shared_journey_should_delete_journey_and_return_204() throws Exception{
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgencyRepository.save(personalAgency);
+
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setPersonalAgency(personalAgency);
+        carRepository.save(sharedRide);
+
+        Journey journey = new Journey();
+        journey.setDepartureIndicator(true);
+        journey.setArrivalIndicator(false);
+        journey.setCar(sharedRide);
+        journeyRepository.save(journey);
+        RequestBuilder requestBuilder = delete("/api/protected/users/journeys/" + journey.getId())
+                .header("Authorization","Bearer " + jwtToken);
+        mockMvc.perform(requestBuilder).andExpect(status().isNoContent()).andReturn();
+
+
+    }
 }

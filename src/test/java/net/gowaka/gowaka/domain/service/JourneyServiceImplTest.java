@@ -895,5 +895,77 @@ public class JourneyServiceImplTest {
         journeyService.updateSharedJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO);
         verify(mockJourneyRepository).save(journey);
     }
+    /**
+     * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
+     * #169528640
+     * Scenario:  1. Journeys NOT exist
+     */
+    @Test
+    public void given_JourneyId_passed_as_parameter_not_exit(){
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect( hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.deleteNonBookedSharedJourney(1L);
+    }
+    /**
+     * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
+     * #169528640
+     *Scenario:  2. Journey's arrivalIndicator is truet
+     */
+    @Test
+    public void given_journeyId_passed_as_parameter_exit_and_journey_arrival_indicator_true_journey_already_terminated(){
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(true);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect( hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        journeyService.deleteNonBookedSharedJourney(1L);
+    }
+    /**
+     * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
+     * #169528640
+     *Scenario:  3. Journey's car is NOT in AuthUser Agency
+     */
+    @Test
+    public void given_journeyId_passed_as_parameter_exist_and_journey_arrivalIndicator_false_but_journey_car_is_not_in_authUser_agency(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(false);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s Car not in AuthUser\'s PersonalAgency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.deleteNonBookedSharedJourney(1L);
+    }
+    /**
+     * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
+     * #169528640
+     *Scenario:  4. Delete Journey Success
+     */
+    @Test
+    public void delete_shared_journey_should_call_journey_repository_delete(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setPersonalAgency(mockPersonalAgency);
+        sharedRide.setId(1L);
+        journey.setCar(sharedRide);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockPersonalAgency.getSharedRides()).thenReturn(Collections.singletonList(sharedRide));
+        journeyService.deleteNonBookedSharedJourney(journey.getId());
+        verify(mockJourneyRepository).delete(journey);
+    }
 
 }

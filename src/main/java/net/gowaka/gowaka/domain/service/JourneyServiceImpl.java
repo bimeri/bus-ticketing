@@ -112,7 +112,7 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)){
             checkJourneyCarInOfficialAgency(journey);
-            journeyRepository.delete(journey);
+            if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
         }
     }
 
@@ -129,7 +129,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
         Journey journey = getJourney(journeyId);
-        if (journeyArrivalFilter(journey)){
+        if (journeyDepartureFilter(journey)){
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
@@ -192,11 +192,20 @@ public class JourneyServiceImpl implements JourneyService {
     public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
         Journey journey = getJourney(journeyId);
         logger.info("Arrival Indicator: {}", journey.getArrivalIndicator());
-        if (journeyArrivalFilter(journey)){
+        if (journeyDepartureFilter(journey)){
             checkJourneyCarInPersonalAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicator.getArrivalIndicator());
             journey = journeyRepository.save(journey);
             logger.info("Arrival Indicator Updated to: {}", journey.getArrivalIndicator());
+        }
+    }
+
+    @Override
+    public void deleteNonBookedSharedJourney(Long journeyId) {
+        Journey journey = getJourney(journeyId);
+        if (journeyTerminationFilter(journey)){
+            checkJourneyCarInPersonalAgency(journey);
+            if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
         }
     }
 
@@ -495,7 +504,7 @@ public class JourneyServiceImpl implements JourneyService {
      * @param journey
      * @return boolean
      */
-    private boolean journeyArrivalFilter(Journey journey){
+    private boolean journeyDepartureFilter(Journey journey){
         if (!journey.getDepartureIndicator()){
             throw new ApiException("Journey not started", ErrorCodes.JOURNEY_NOT_STARTED.toString(), HttpStatus.CONFLICT);
         }
@@ -515,4 +524,16 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    /**
+     * Returns true if journey has been booked, false otherwise
+     * @param journey
+     * @return boolean
+     */
+    private boolean isJourneyNotBooked(Journey journey) {
+        List<BookedJourney> bookedJourneys = journey.getBookedJourneys();
+        if (!bookedJourneys.isEmpty()){
+            throw new ApiException("Bookings Exist for this Journey, cannot delete", ErrorCodes.OPERATION_NOT_ALLOWED.toString(), HttpStatus.METHOD_NOT_ALLOWED);
+        }
+        return true;
+    }
 }
