@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(value = {"/"}, produces = MediaType.TEXT_HTML_VALUE)
 public class HomeController {
        @GetMapping
-       public String home(Model model) {
+       public String home() {
               return "forward:/index.html";
        }
 }
