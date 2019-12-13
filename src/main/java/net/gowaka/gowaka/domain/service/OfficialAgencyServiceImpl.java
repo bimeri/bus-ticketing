@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static net.gowaka.gowaka.constant.UserRoles.AGENCY_ADMIN;
-import static net.gowaka.gowaka.constant.UserRoles.USERS;
+import static net.gowaka.gowaka.constant.UserRoles.*;
 
 
 /**
@@ -133,6 +132,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
         List<String> roles = officialAgencyUserRoleRequestDTO.getRoles().stream()
                 .filter(role -> systemRoles.contains(UserRoles.valueOf(role)))
+                .filter(role->!role.equalsIgnoreCase(AGENCY_ADMIN.toString()))
+                .filter(role->!role.equalsIgnoreCase(GW_ADMIN.toString()))
                 .collect(Collectors.toList());
         String userRole = USERS.toString();
         for (String role : roles) {

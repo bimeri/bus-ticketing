@@ -210,7 +210,7 @@ public class OfficialAgencyServiceImplTest {
 
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
         officialAgencyUserRoleRequestDTO.setUserId("12");
-        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_ADMIN", "AGENCY_MANAGER"));
+        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_OPERATOR", "AGENCY_MANAGER"));
 
         officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
 
@@ -219,7 +219,62 @@ public class OfficialAgencyServiceImplTest {
 
         assertThat(idArgumentCaptor.getValue()).isEqualTo("12");
         assertThat(fieldArgumentCaptor.getValue()).isEqualTo("ROLES");
-        assertThat(roleArgumentCaptor.getValue()).isEqualTo("USERS;AGENCY_ADMIN;AGENCY_MANAGER");
+        assertThat(roleArgumentCaptor.getValue()).isEqualTo("USERS;AGENCY_OPERATOR;AGENCY_MANAGER");
+        assertThat(valueArgumentCaptor.getValue()).isEqualTo("jwt-token");
+
+    }
+
+    @Test
+    public void assignAgencyUserRole_Donot_assign_AGENCY_ADMIN_and_GW_ADMIN() {
+
+        ArgumentCaptor<String> idArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> fieldArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> roleArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> valueArgumentCaptor = ArgumentCaptor.forClass(String.class);
+
+
+        ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
+        apiSecurityUser.setId("12");
+        apiSecurityUser.setRoles("USERS;");
+        apiSecurityUser.setEmail("example@example.com");
+        apiSecurityUser.setFullName("Jesus Christ");
+        apiSecurityUser.setUsername("example@example.com");
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(88L);
+        User agencyUser = new User();
+        agencyUser.setOfficialAgency(officialAgency);
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(agencyUser));
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.of(authUser));
+
+        when(mockApiSecurityService.getUserByUserId(any(), any()))
+                .thenReturn(apiSecurityUser);
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        when(mockApiSecurityService.getClientToken(any()))
+                .thenReturn(accessToken);
+
+        OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
+        officialAgencyUserRoleRequestDTO.setUserId("12");
+        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_ADMIN", "AGENCY_MANAGER", "GW_ADMIN"));
+
+        officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
+
+        verify(mockApiSecurityService).updateUserInfo(idArgumentCaptor.capture(), fieldArgumentCaptor.capture(),
+                roleArgumentCaptor.capture(), valueArgumentCaptor.capture());
+
+        assertThat(idArgumentCaptor.getValue()).isEqualTo("12");
+        assertThat(fieldArgumentCaptor.getValue()).isEqualTo("ROLES");
+        assertThat(roleArgumentCaptor.getValue()).isEqualTo("USERS;AGENCY_MANAGER");
         assertThat(valueArgumentCaptor.getValue()).isEqualTo("jwt-token");
 
     }
