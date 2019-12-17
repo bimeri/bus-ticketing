@@ -209,6 +209,28 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
+    @Override
+    public void addStopToPersonalAgency(Long journeyId, AddStopDTO addStopDTO) {
+        Journey journey = getJourney(journeyId);
+        if (journeyTerminationFilter(journey)){
+            checkJourneyCarInPersonalAgency(journey);
+            Set<JourneyStop> journeyStops = journey.getJourneyStops();
+            List<TransitAndStop> transitAndStops = journeyStops.stream().map(
+                    JourneyStop::getTransitAndStop).collect(Collectors.toList());
+            if (transitAndStops.stream()
+                    .noneMatch(transitAndStop -> transitAndStop.getId()
+                            .equals(addStopDTO.getTransitAndStopId()))) {
+                transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
+                JourneyStop journeyStop = new JourneyStop();
+                journeyStop.setAmount(addStopDTO.getAmount());
+                journeyStop.setTransitAndStop(transitAndStops.get(0));
+                journeyStop.setJourney(journey);
+                journeyStops.add(journeyStop);
+                journeyRepository.save(journey);
+            }
+            }
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user

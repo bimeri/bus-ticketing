@@ -968,4 +968,93 @@ public class JourneyServiceImplTest {
         verify(mockJourneyRepository).delete(journey);
     }
 
+    /**
+     * **USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * #169528838
+     * Scenario:  1. Journey's arrivalIndicator is true
+     */
+    @Test
+    public void throw_journey_already_exist_given_arrivalIndicator_is_true_with_id(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(true);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        journeyService.addStopToPersonalAgency(1L, new AddStopDTO());
+    }
+
+    /**
+     * **USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * #169528838
+     * Scenario:  2. Journeys NOT exist
+     */
+    @Test
+    public void throw_error_resource_not_found_given_journey_does_not_exist(){
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.addStopToPersonalAgency(1L, new AddStopDTO());
+
+    }
+
+    /**
+     * **USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * #169528838
+     * Scenario:  3. Journey's car is NOT in AuthUser Agency
+     */
+    @Test
+    public void throw_resource_not_found_given_arrivalIndicator_is_false_with_id_car_is_not_in_autUser_agency(){
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s Car not in AuthUser\'s PersonalAgency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.addStopToPersonalAgency(1L, new AddStopDTO());
+    }
+
+    /**
+     * **USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * #169528838
+     * Scenario:  4. TransitAndStopId don't exit
+     */
+
+    @Test
+    public void throw_transit_and_stop_not_found_given_transit_and_stop_false_car_not_in_authUser_agency(){
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        SharedRide sharedRide = new SharedRide();
+        sharedRide.setId(1L);
+
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(sharedRide);
+
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+
+        when(mockPersonalAgency.getSharedRides()).thenReturn(Collections.singletonList(sharedRide));
+
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("TransitAndStop not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.addStopToPersonalAgency(1L, new AddStopDTO());
+    }
+
+
 }

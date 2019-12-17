@@ -24,4 +24,5 @@ public interface JourneyService {
     void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator);
     void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator);
     void deleteNonBookedSharedJourney(Long journeyId);
+    void addStopToPersonalAgency(Long journeyId, AddStopDTO addStopDTO);
 }

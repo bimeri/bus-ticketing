@@ -1123,8 +1123,8 @@ public class JourneyControllerIntegrationTest {
     /**
      * **USERS** can update information about  Journey for PersonalAgency
      *#169528238
-     * scenario: 5 Success
-     * @throws Exception
+     * scenario: 5 Success throws Exception
+     *
      */
     @Test
     public void update_shared_ride_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
@@ -1651,6 +1651,49 @@ public class JourneyControllerIntegrationTest {
         RequestBuilder requestBuilder = delete("/api/protected/users/journeys/" + journey.getId())
                 .header("Authorization","Bearer " + jwtToken);
         mockMvc.perform(requestBuilder).andExpect(status().isNoContent()).andReturn();
+
+
+    }
+
+    /**
+     ***USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * Scenario:  5. Add Journey Success
+     * #169528838
+     */
+    @Test
+    public void add_stops_to_personal_agency_should_return_204_no_content() throws Exception{
+
+        PersonalAgency personalAgency = new PersonalAgency();
+        personalAgencyRepository.save(personalAgency);
+        SharedRide sharedRide = new SharedRide();
+
+        user.setPersonalAgency(personalAgency);
+        userRepository.save(user);
+
+        Location location = new Location();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        sharedRide.setPersonalAgency(personalAgency);
+        carRepository.save(sharedRide);
+
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(false);
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop);
+        journeyStop.setJourney(journey);
+        journey.setJourneyStops(Collections.singleton(journeyStop));
+        journey.setCar(sharedRide);
+        journeyRepository.save(journey);
+        String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/" + journey.getId() + "/add_stops")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(reqBody)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
 
 
     }
