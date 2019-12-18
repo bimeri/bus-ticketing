@@ -132,7 +132,7 @@ public class JourneyController {
         journeyService.deleteNonBookedSharedJourney(journeyId);
         return ResponseEntity.noContent().build();
     }
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/users/journeys/{journeyId}/add_stops")
     public ResponseEntity addStopsInPersonalAgency(@PathVariable("journeyId") Long journeyId,
                                                    @Valid @RequestBody AddStopDTO addStopDTO ){
