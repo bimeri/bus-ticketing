@@ -9,10 +9,12 @@ import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
+import net.gowaka.gowaka.network.api.notification.service.NotificationServiceImpl;
 import net.gowaka.gowaka.security.AppGrantedAuthority;
 import net.gowaka.gowaka.security.JwtTokenProvider;
 import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
+import net.gowaka.gowaka.service.NotificationService;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +48,8 @@ public class UserServiceImplTest {
     private UserService userService;
     @Mock
     private JwtTokenProvider mockJwtTokenProvider;
+    @Mock
+    private NotificationService mockNotificationService;
 
     ArgumentCaptor<ApiSecurityUser> apiSecurityUserArgumentCaptor;
     ArgumentCaptor<String> stringArgumentCaptor;
@@ -66,6 +70,7 @@ public class UserServiceImplTest {
         apiSecurityUserArgumentCaptor =ArgumentCaptor.forClass(ApiSecurityUser.class);
         stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
         userArgumentCaptor = ArgumentCaptor.forClass(User.class);
+        ((UserServiceImpl) userService).setNotificationService(mockNotificationService);
 
     }
 

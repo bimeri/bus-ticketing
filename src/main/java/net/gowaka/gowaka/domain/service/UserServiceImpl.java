@@ -1,19 +1,25 @@
 package net.gowaka.gowaka.domain.service;
 
+import net.gowaka.gowaka.constant.notification.EmailFields;
 import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.network.api.apisecurity.model.*;
+import net.gowaka.gowaka.network.api.notification.model.EmailAddress;
+import net.gowaka.gowaka.network.api.notification.model.SendEmailDTO;
 import net.gowaka.gowaka.security.JwtTokenProvider;
 import net.gowaka.gowaka.security.UserDetailsImpl;
 import net.gowaka.gowaka.service.ApiSecurityService;
+import net.gowaka.gowaka.service.NotificationService;
 import net.gowaka.gowaka.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private ApiSecurityService apiSecurityService;
     private ClientUserCredConfig clientUserCredConfig;
     private JwtTokenProvider jwtTokenProvider;
+    private NotificationService notificationService;
 
 
     public UserServiceImpl(UserRepository userRepository, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, JwtTokenProvider jwtTokenProvider) {
@@ -37,6 +44,11 @@ public class UserServiceImpl implements UserService {
         this.apiSecurityService = apiSecurityService;
         this.clientUserCredConfig = clientUserCredConfig;
         this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @Autowired
+    public void setNotificationService(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -66,6 +78,19 @@ public class UserServiceImpl implements UserService {
         userDTO.setEmail(createUserRequest.getEmail());
         userDTO.setRoles(Arrays.asList(roles));
 
+        // send welcome email
+        SendEmailDTO emailDTO = new SendEmailDTO();
+        emailDTO.setSubject(EmailFields.WELCOME_SUBJECT.getMessage());
+        emailDTO.setMessage(EmailFields.WELCOME_MESSAGE.getMessage());
+
+        emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(
+                createUserRequest.getEmail(),
+                createUserRequest.getFullName()
+        )));
+        // setting cc and bcc to empty lists
+        emailDTO.setCcAddresses(Collections.emptyList());
+        emailDTO.setBccAddresses(Collections.emptyList());
+        notificationService.sendEmail(emailDTO);
         return userDTO;
     }
 
