@@ -15,4 +15,5 @@ public class ClientUserCredConfig {
     private String clientId;
     private String clientSecret;
     private String appName;
+    private String url;
 }

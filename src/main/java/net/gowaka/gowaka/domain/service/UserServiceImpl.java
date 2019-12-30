@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,13 +38,18 @@ public class UserServiceImpl implements UserService {
     private ClientUserCredConfig clientUserCredConfig;
     private JwtTokenProvider jwtTokenProvider;
     private NotificationService notificationService;
+    private EmailContentBuilder emailContentBuilder;
 
 
-    public UserServiceImpl(UserRepository userRepository, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, JwtTokenProvider jwtTokenProvider) {
+    public UserServiceImpl(UserRepository userRepository, ApiSecurityService apiSecurityService,
+                           ClientUserCredConfig clientUserCredConfig, JwtTokenProvider jwtTokenProvider,
+                           EmailContentBuilder emailContentBuilder) {
         this.userRepository = userRepository;
         this.apiSecurityService = apiSecurityService;
         this.clientUserCredConfig = clientUserCredConfig;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.emailContentBuilder = emailContentBuilder;
+
     }
 
     @Autowired
@@ -52,7 +58,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO createUser(CreateUserRequest createUserRequest){
+    public UserDTO createUser(CreateUserRequest createUserRequest) {
 
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
@@ -78,19 +84,8 @@ public class UserServiceImpl implements UserService {
         userDTO.setEmail(createUserRequest.getEmail());
         userDTO.setRoles(Arrays.asList(roles));
 
-        // send welcome email
-        SendEmailDTO emailDTO = new SendEmailDTO();
-        emailDTO.setSubject(EmailFields.WELCOME_SUBJECT.getMessage());
-        emailDTO.setMessage(EmailFields.WELCOME_MESSAGE.getMessage());
+        sendWelcomeEmail(createUserRequest);
 
-        emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(
-                createUserRequest.getEmail(),
-                createUserRequest.getFullName()
-        )));
-        // setting cc and bcc to empty lists
-        emailDTO.setCcAddresses(Collections.emptyList());
-        emailDTO.setBccAddresses(Collections.emptyList());
-        notificationService.sendEmail(emailDTO);
         return userDTO;
     }
 
@@ -170,5 +165,25 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList())
         );
         return userDTO;
+    }
+
+    private void sendWelcomeEmail(CreateUserRequest createUserRequest) {
+        // send welcome email
+        String message = emailContentBuilder.buildWelcomeEmail(createUserRequest.getFullName(), createUserRequest.getEmail(),
+                clientUserCredConfig.getUrl(), LocalDate.now().getYear());
+        SendEmailDTO emailDTO = new SendEmailDTO();
+        emailDTO.setSubject(EmailFields.WELCOME_SUBJECT.getMessage());
+        emailDTO.setMessage(message);
+
+        System.out.println(message);
+
+        emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(
+                createUserRequest.getEmail(),
+                createUserRequest.getFullName()
+        )));
+        // setting cc and bcc to empty lists
+        emailDTO.setCcAddresses(Collections.emptyList());
+        emailDTO.setBccAddresses(Collections.emptyList());
+        notificationService.sendEmail(emailDTO);
     }
 }

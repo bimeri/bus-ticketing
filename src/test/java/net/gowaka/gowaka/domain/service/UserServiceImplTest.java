@@ -44,6 +44,8 @@ public class UserServiceImplTest {
     private UserRepository mockUserRepository;
     @Mock
     private ApiSecurityService mockApiSecurityService;
+    @Mock
+    private EmailContentBuilder mockEmailContentBuilder;
     private ClientUserCredConfig clientUserCredConfig;
     private UserService userService;
     @Mock
@@ -65,7 +67,7 @@ public class UserServiceImplTest {
         this.clientUserCredConfig.setClientId("client-secret");
         this.clientUserCredConfig.setAppName("GoWaka");
 
-        userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig, mockJwtTokenProvider);
+        userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig, mockJwtTokenProvider, mockEmailContentBuilder);
 
         apiSecurityUserArgumentCaptor =ArgumentCaptor.forClass(ApiSecurityUser.class);
         stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
