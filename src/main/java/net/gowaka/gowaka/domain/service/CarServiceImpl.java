@@ -127,9 +127,9 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public void updateAgencyCarInfo(Long busId, BusDTO busDTO) {
+    public void updateAgencyCarInfo(Long carId, BusDTO busDTO) {
         // which car to update?
-        Car car = getCarById(busId);
+        Car car = getCarById(carId);
         // check if car has journey booked
         handleCarBooked(car);
         // check if car is in user's agency
@@ -139,6 +139,18 @@ public class CarServiceImpl implements CarService {
         car.setLicensePlateNumber(busDTO.getLicensePlateNumber());
         if (car instanceof Bus) ((Bus) car).setNumberOfSeats(busDTO.getNumberOfSeats());
         carRepository.save(car);
+    }
+
+    @Override
+    public void deleteAgencyCarInfo(Long carId) {
+        // which car to delete?
+        Car car = getCarById(carId);
+        // check if car has journeys
+        handleCarHasJourney(car);
+        // check if car is in user's agency
+        handleCarNotInAuthUserAgency(car);
+        // successfully delete
+        carRepository.delete(car);
     }
 
     /**
@@ -244,14 +256,22 @@ public class CarServiceImpl implements CarService {
                 journey -> !journey.getBookedJourneys().isEmpty()
         )) {
             throw new  ApiException(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage(),
-                    ErrorCodes.CAR_ALREADY_HAS_JOURNEY.toString(), HttpStatus.FORBIDDEN);
+                    ErrorCodes.CAR_ALREADY_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
     private void handleCarNotInAuthUserAgency(Car car) {
+        // get user's official agency
+        // check if car is in official agency
         if (getOfficialAgency(verifyCurrentAuthUser()).getBuses()
                 .stream().noneMatch(bus -> bus.getId().equals(car.getId()))) {
             throw new ApiException(ErrorCodes.CAR_NOT_IN_USERS_AGENCY.getMessage(),
-                    ErrorCodes.CAR_NOT_IN_USERS_AGENCY.toString(), HttpStatus.FORBIDDEN);
+                    ErrorCodes.CAR_NOT_IN_USERS_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+    }
+    private void handleCarHasJourney(Car car) {
+        if (!car.getJourneys().isEmpty()) {
+            throw new  ApiException(ErrorCodes.CAR_HAS_JOURNEY.getMessage(),
+                    ErrorCodes.CAR_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 

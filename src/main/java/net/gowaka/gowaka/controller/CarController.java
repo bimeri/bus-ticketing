@@ -74,4 +74,10 @@ public class CarController {
         carService.updateAgencyCarInfo(carId, busDTO);
         return ResponseEntity.noContent().build();
     }
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN')")
+    @DeleteMapping("/agency/car/{carId}")
+    public ResponseEntity deleteAgencyCarInfo(@PathVariable("carId") Long carId) {
+        carService.deleteAgencyCarInfo(carId);
+        return ResponseEntity.noContent().build();
+    }
 }

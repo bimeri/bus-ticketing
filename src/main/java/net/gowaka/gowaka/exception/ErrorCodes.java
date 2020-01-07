@@ -22,6 +22,7 @@ public enum ErrorCodes {
     JOURNEY_NOT_STARTED("This Journey has not started."),
     OPERATION_NOT_ALLOWED("This operation is not allowed."),
     CAR_NOT_IN_USERS_AGENCY("This car is not in user\"s agency"),
+    CAR_HAS_JOURNEY("This Car has one or more journeys"),
     CAR_ALREADY_HAS_JOURNEY("This Car has one or more booked journeys");
     private String message;
     ErrorCodes(String message){

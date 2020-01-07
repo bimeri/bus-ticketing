@@ -32,8 +32,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -332,7 +331,7 @@ public class CarControllerIntegrationTest {
     /**
      * #170426654
      * Update Agency Car Information
-     * Scenario: 1. Car already has journey booked
+     * Scenario: 3. Update success
      */
     @Test
     public void update_car_should_update_car_and_return_no_content() throws Exception {
@@ -361,4 +360,29 @@ public class CarControllerIntegrationTest {
                 .andReturn();
     }
 
+    /**
+     * #170426660
+     * Delete Agency Car Information
+     * Scenario: 3 delete successfully
+     */
+    @Test
+    public void delete_car_should_delete_car_and_return_no_content() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Te widikum");
+        bus.setNumberOfSeats(3);
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+
+        RequestBuilder request = delete("/api/protected/agency/car/" + bus.getId())
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(request)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
 }
