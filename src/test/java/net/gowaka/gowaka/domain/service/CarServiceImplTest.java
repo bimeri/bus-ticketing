@@ -18,10 +18,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
@@ -319,5 +316,69 @@ public class CarServiceImplTest {
          when(mockCarRepository.findByLicensePlateNumberIgnoreCase(anyString())).thenReturn(Optional.of(car));
          assertThat(carService.searchByLicensePlateNumber(car.getLicensePlateNumber()).getId(), is(equalTo(car.getId())));
      }
+
+    /**
+     * #170426654
+     * Update Agency Car Information
+     * Scenario: 1. Car already has journey booked
+     */
+    @Test
+     public void update_car_should_throw_car_already_has_journey_booked_exception() {
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Journey journey = new Journey();
+        journey.setBookedJourneys(Collections.singletonList(new BookedJourney()));
+        bus.setJourneys(Collections.singletonList(journey));
+        when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage());
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.toString())));
+        carService.updateAgencyCarInfo(1L, new BusDTO());
+     }
+
+    /**
+     * #170426654
+     * Update Agency Car Information
+     * Scenario: 1. Car already has journey booked
+     */
+    @Test
+    public void update_car_should_throw_car_not_in_user_agency_exception() {
+        Bus bus = new Bus();
+        bus.setId(1L);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        OfficialAgency officialAgency = new OfficialAgency();
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        officialAgency.setBuses(Collections.singletonList(bus1));
+        when(user.getOfficialAgency()).thenReturn(officialAgency);
+        when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage(ErrorCodes.CAR_NOT_IN_USERS_AGENCY.getMessage());
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.CAR_NOT_IN_USERS_AGENCY.toString())));
+        carService.updateAgencyCarInfo(1L, new BusDTO());
+    }
+    /**
+     * #170426654
+     * Update Agency Car Information
+     * Scenario: 1. Car already has journey booked
+     */
+    @Test
+    public void update_car_should_update_and_save_car() {
+        Bus bus = new Bus();
+        bus.setId(1L);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setBuses(Collections.singletonList(bus));
+        when(user.getOfficialAgency()).thenReturn(officialAgency);
+        when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
+        carService.updateAgencyCarInfo(1L, new BusDTO());
+        verify(mockCarRepository).save(bus);
+    }
 
 }

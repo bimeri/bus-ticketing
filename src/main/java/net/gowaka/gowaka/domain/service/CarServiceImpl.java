@@ -126,6 +126,21 @@ public class CarServiceImpl implements CarService {
         return getCarDTO(getCarByLicensePlateNumber(licensePlateNumber));
     }
 
+    @Override
+    public void updateAgencyCarInfo(Long busId, BusDTO busDTO) {
+        // which car to update?
+        Car car = getCarById(busId);
+        // check if car has journey booked
+        handleCarBooked(car);
+        // check if car is in user's agency
+        handleCarNotInAuthUserAgency(car);
+        // update car successfully
+        if (busDTO.getName() != null) car.setName(busDTO.getName());
+        car.setLicensePlateNumber(busDTO.getLicensePlateNumber());
+        if (car instanceof Bus) ((Bus) car).setNumberOfSeats(busDTO.getNumberOfSeats());
+        carRepository.save(car);
+    }
+
     /**
      * verify and return the current user in cases where user id is relevant
      * @return user
@@ -221,6 +236,23 @@ public class CarServiceImpl implements CarService {
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
+    }
+    private void handleCarBooked(Car car) {
+        // get car journeys
+        // check if any journey is booked
+        if (car.getJourneys().stream().anyMatch(
+                journey -> !journey.getBookedJourneys().isEmpty()
+        )) {
+            throw new  ApiException(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage(),
+                    ErrorCodes.CAR_ALREADY_HAS_JOURNEY.toString(), HttpStatus.FORBIDDEN);
+        }
+    }
+    private void handleCarNotInAuthUserAgency(Car car) {
+        if (getOfficialAgency(verifyCurrentAuthUser()).getBuses()
+                .stream().noneMatch(bus -> bus.getId().equals(car.getId()))) {
+            throw new ApiException(ErrorCodes.CAR_NOT_IN_USERS_AGENCY.getMessage(),
+                    ErrorCodes.CAR_NOT_IN_USERS_AGENCY.toString(), HttpStatus.FORBIDDEN);
+        }
     }
 
     private SharedRideResponseDTO getSharedRideResponseDTO(SharedRide sharedRide) {

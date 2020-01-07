@@ -329,5 +329,36 @@ public class CarControllerIntegrationTest {
                 .andExpect(content().json(new ObjectMapper().writeValueAsString(carDTO)))
                 .andReturn();
     }
+    /**
+     * #170426654
+     * Update Agency Car Information
+     * Scenario: 1. Car already has journey booked
+     */
+    @Test
+    public void update_car_should_update_car_and_return_no_content() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Te widikum");
+        bus.setNumberOfSeats(3);
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        String expectedRequest = "{\n" +
+                "  \"licensePlateNumber\": \"123SW\",\n" +
+                "  \"name\": \"70 Seater\",\n" +
+                "  \"numberOfSeats\": 70\n" +
+                "}";
+        RequestBuilder request = post("/api/protected/agency/car/" + bus.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(expectedRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(request)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
 
 }

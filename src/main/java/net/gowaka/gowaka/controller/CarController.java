@@ -67,4 +67,11 @@ public class CarController {
             @RequestParam("licensePlateNumber") String licensePlateNumber){
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
     }
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN')")
+    @PostMapping("/agency/car/{carId}")
+    public ResponseEntity updateAgencyCarInfo(
+            @PathVariable("carId") Long carId, @RequestBody @Valid BusDTO busDTO) {
+        carService.updateAgencyCarInfo(carId, busDTO);
+        return ResponseEntity.noContent().build();
+    }
 }

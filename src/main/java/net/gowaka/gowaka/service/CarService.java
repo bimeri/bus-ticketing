@@ -17,4 +17,5 @@ public interface CarService {
     List<SharedRideResponseDTO> getAllSharedRides();
     List<CarDTO> getAllUnapprovedCars();
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
+    void updateAgencyCarInfo(Long busId, BusDTO busDTO);
 }
