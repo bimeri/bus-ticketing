@@ -24,7 +24,7 @@ public class CarController {
         this.carService = carService;
     }
 
-    @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN') or hasRole('ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/car")
     public ResponseEntity<BusResponseDTO> addAgencyBus(@Valid @RequestBody BusDTO busDTO){
         return ResponseEntity.ok(carService.addOfficialAgencyBus(busDTO));
