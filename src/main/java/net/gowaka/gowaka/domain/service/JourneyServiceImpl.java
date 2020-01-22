@@ -18,10 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -230,6 +228,34 @@ public class JourneyServiceImpl implements JourneyService {
             }
             }
     }
+
+    @Override
+    public List<JourneyResponseDTO> searchJourney(Long departureLocationId, Long destinationLocationId, String time) {
+        LocalDateTime dateTime;
+        try {
+            dateTime = LocalDateTime.parse(time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        } catch (Exception ex) {
+            //Validation Error
+            throw new ApiException("Invalid date time format. Try yyyy-MM-dd HH:mm",
+                    ErrorCodes.INVALID_FORMAT.toString(), HttpStatus.BAD_REQUEST);
+        }
+
+        List<Journey> journeyList = journeyRepository.findAll();
+        Location departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure").getLocation();
+        Location destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination").getLocation();
+            return journeyList.stream().filter(
+                    journey -> journey.getDepartureLocation()
+                                .equals(departureLocation) &&
+                                journey.getDestination()
+                                        .equals(destinationLocation) &&
+                                (journey.getDepartureTime().isAfter(dateTime)||
+                                journey.getDepartureTime().isEqual(dateTime))
+            ).map(this::mapToJourneyResponseDTO)
+                            .collect(Collectors.toList());
+
+    }
+
+
 
     /**
      * verify and return the current user in cases where user id is relevant

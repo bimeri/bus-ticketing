@@ -14,11 +14,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -52,6 +55,9 @@ public class JourneyServiceImplTest {
     private OfficialAgency mockOfficialAgency;
     @Mock
     private PersonalAgency mockPersonalAgency;
+
+    /*@Spy
+    private LocalDateTime spyMockLocalDateTime;*/
 
 
     @Rule
@@ -1055,6 +1061,57 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.addStopToPersonalAgency(1L, new AddStopDTO());
     }
+
+    /**
+     * **add Search Journey api endpoint
+     * #169528838
+     * Scenario: 1. Wrong input data passed
+     */
+    @Test
+    public void throw_bad_request_given_wrong_date_time_input_data_passed_when_during_search() {
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Invalid date time format. Try yyyy-MM-dd HH:mm");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.INVALID_FORMAT.toString())));
+        journeyService.searchJourney(1L, 1L,"9999999" );
+
+
+    }
+
+    /**
+     * **add Search Journey api endpoint
+     * #169528838
+     * Scenario: 1. Wrong input data passed
+     */
+    @Test
+    public void throw_bad_request_given_wrong_departure_id_input_data_passed_when_during_search() {
+        when(mockTransitAndStopRepository.findById(1L)).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Departure TransitAndStop not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.searchJourney(1L, 1L,"2020-01-20 12:30" );
+
+
+    }
+
+    /**
+     * **add Search Journey api endpoint
+     * #169528838
+     * Scenario: 1. Wrong input data passed
+     */
+    @Test
+    public void throw_bad_request_given_wrong_destination_id_input_data_passed_when_during_search() {
+        when(mockTransitAndStopRepository.findById(1L)).thenReturn(Optional.of(new TransitAndStop()));
+        when(mockTransitAndStopRepository.findById(2L)).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Destination TransitAndStop not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.searchJourney(1L, 2L,"2020-01-20 12:30" );
+
+    }
+
+
+
+
 
 
 }

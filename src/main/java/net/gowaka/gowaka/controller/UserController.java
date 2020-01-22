@@ -1,13 +1,13 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.*;
+import net.gowaka.gowaka.service.JourneyService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -17,11 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class UserController {
 
+    private JourneyService journeyService;
     private UserService userService;
 
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @Autowired
+    public void setJourneyService(JourneyService journeyService) {
+        this.journeyService = journeyService;
     }
 
     @PostMapping("/public/register")
@@ -41,6 +47,15 @@ public class UserController {
     ResponseEntity<?> forgotUserPassword(@RequestBody EmailDTO emailDTO){
         userService.forgotUserPassword(emailDTO);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/public/journey/search/departure/{departureLocationID}/destination/{destinationLocationID}")
+    public ResponseEntity<List<JourneyResponseDTO>> searchJourney(@PathVariable ("departureLocationID") Long departureLocationId,
+                                                                  @PathVariable ("destinationLocationID") Long destinationLocationId,
+                                                                  @RequestParam ("time") String time)
+    {
+
+        return ResponseEntity.ok(journeyService.searchJourney(departureLocationId, destinationLocationId, time));
     }
 
 }

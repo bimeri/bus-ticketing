@@ -4,6 +4,8 @@ import net.gowaka.gowaka.TimeProviderTestUtil;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.UserDTO;
+import net.gowaka.gowaka.exception.ApiException;
+import net.gowaka.gowaka.exception.ErrorCodes;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +33,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -1694,6 +1699,160 @@ public class JourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
                 .andReturn();
+
+
+    }
+
+    /**
+     * **add Search Journey api endpoint
+     * #169528838
+     * Scenario: 2. Success search with input data passeds
+     */
+    @Test
+    public void  return_a_list_of_journeyDto_on_successful_search() throws Exception {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Malingo Major");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Mile 17 Motto Park");
+        location.setCity("koke");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        Location location1 = new Location();
+        location1.setState("South West");
+        location1.setCountry("Cameroon");
+        location1.setCity("bova");
+        location1.setAddress("Buea Road Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
+        Location location2 = new Location();
+        location2.setState("South West");
+        location2.setCountry("Cameroon");
+        location2.setCity("mamu");
+        location2.setAddress("Muyuka Main Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location2);
+        transitAndStopRepository.save(transitAndStop2);
+        Location location3 = new Location();
+        location3.setState("South West");
+        location3.setCountry("Cameroon");
+        location3.setCity("mautu");
+        location3.setAddress("Ekona Main Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location3);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String currentShortDateTime = currentDateTime.substring(0, currentDateTime.lastIndexOf(":"));
+        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        bus = carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop1.getLocation());
+        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+
+
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(bus);
+        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journeyRepository.save(journey);
+        String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
+                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
+                "\"departureIndicator\":false," +
+                "\"arrivalIndicator\":false," +
+                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"amount\": 0.0," +
+                "\"driver\":{" +
+                "\"driverName\":\"John Doe\"," +
+                "\"driverLicenseNumber\":\"1234567899\"" +
+                "}," +
+                "\"departureLocation\":{" +
+                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"bova\"," +
+                "\"address\":\"Buea Road Motor Park\"" +
+                "}," +
+                "\"destination\":{" +
+                "\"id\":" + transitAndStop.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"koke\"," +
+                "\"address\":\"Mile 17 Motto Park\"," +
+                "\"amount\": 0.0" +
+                "}," +
+                "\"transitAndStops\":[" +
+                "{" +
+                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\": \"South West\"," +
+                "\"city\":\"mautu\"," +
+                "\"address\":\"Ekona Main Park\"," +
+                "\"amount\":500.0" +
+                "}," +
+                "{" +
+                "\"id\":" + transitAndStop2.getId() + "," +
+                "\"country\":\"Cameroon\"," +
+                "\"state\":\"South West\"," +
+                "\"city\":\"mamu\"," +
+                "\"address\":\"Muyuka Main Park\"," +
+                "\"amount\":1500.0" +
+                "}" +
+                "]," +
+                "\"car\":{" +
+                "\"id\":" + bus.getId() + "," +
+                "\"name\":\"Kumba One Chances\"," +
+                "\"licensePlateNumber\":\"123454387\"," +
+                "\"isOfficialAgencyIndicator\":true," +
+                "\"isCarApproved\":true," +
+                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "}}]";
+
+        RequestBuilder requestBuilder = get("/api/public/journey/search/departure/" + transitAndStop1.getId() + "/destination/" + transitAndStop.getId() + "?time=" + currentShortDateTime)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+
 
 
     }
