@@ -1760,7 +1760,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String currentShortDateTime = currentDateTime.substring(0, currentDateTime.lastIndexOf(":"));
+        String currentShortDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
         bus.setTimestamp(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         bus = carRepository.save(bus);
