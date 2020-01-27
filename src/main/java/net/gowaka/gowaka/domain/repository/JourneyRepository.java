@@ -13,4 +13,5 @@ import java.util.List;
 @Repository
 public interface JourneyRepository extends JpaRepository<Journey, Long> {
     List<Journey> findAllByOrderByTimestampDescArrivalIndicatorAsc();
+    List<Journey> findAllByDepartureIndicatorFalseOrderByEstimatedArrivalTimeAsc();
 }

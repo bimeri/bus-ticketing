@@ -240,19 +240,13 @@ public class JourneyServiceImpl implements JourneyService {
                     ErrorCodes.INVALID_FORMAT.toString(), HttpStatus.BAD_REQUEST);
         }
 
-        List<Journey> journeyList = journeyRepository.findAll();
+        List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByEstimatedArrivalTimeAsc();
         Location departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure").getLocation();
         Location destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination").getLocation();
             return journeyList.stream().filter(
-                    journey -> journey.getDepartureLocation()
-                                .equals(departureLocation) &&
-                                journey.getDestination()
-                                        .equals(destinationLocation) &&
-                                (journey.getDepartureTime().isAfter(dateTime)||
-                                journey.getDepartureTime().isEqual(dateTime))
+                    journey -> journeySearchFilter(journey, departureLocation, destinationLocation, dateTime)
             ).map(this::mapToJourneyResponseDTO)
                             .collect(Collectors.toList());
-
     }
 
 
@@ -599,5 +593,27 @@ public class JourneyServiceImpl implements JourneyService {
             // time string does not have minutes nor seconds
             return DateTimeFormatter.ofPattern("yyyy-MM-dd HH");
         }
+    }
+
+    /**
+     * filter for journey search includes destination location, departure location and journey stops
+     * @param journey
+     * @param departureLocation
+     * @param destinationLocation
+     * @param dateTime
+     * @return
+     */
+    private boolean journeySearchFilter(Journey journey, Location departureLocation,
+                                        Location destinationLocation, LocalDateTime dateTime) {
+        // users destination can either be journey destination or one of the journey stops location
+        boolean anyStopMatch = journey.getJourneyStops().stream().anyMatch(
+                journeyStop -> journeyStop.getTransitAndStop().getLocation().equals(destinationLocation)
+        );
+        return journey.getDepartureLocation()
+                .equals(departureLocation) &&
+                journey.getDestination()
+                        .equals(destinationLocation) &&
+                (journey.getDepartureTime().isAfter(dateTime)||
+                        journey.getDepartureTime().isEqual(dateTime)) || anyStopMatch;
     }
 }
