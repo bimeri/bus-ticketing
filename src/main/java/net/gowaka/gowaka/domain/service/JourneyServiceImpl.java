@@ -609,11 +609,8 @@ public class JourneyServiceImpl implements JourneyService {
         boolean anyStopMatch = journey.getJourneyStops().stream().anyMatch(
                 journeyStop -> journeyStop.getTransitAndStop().getLocation().equals(destinationLocation)
         );
-        return journey.getDepartureLocation()
-                .equals(departureLocation) &&
-                journey.getDestination()
-                        .equals(destinationLocation) &&
-                (journey.getDepartureTime().isAfter(dateTime)||
-                        journey.getDepartureTime().isEqual(dateTime)) || anyStopMatch;
+        return journey.getDepartureLocation().equals(departureLocation) &&
+                (journey.getDestination().equals(destinationLocation) || anyStopMatch) &&
+                (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime));
     }
 }
