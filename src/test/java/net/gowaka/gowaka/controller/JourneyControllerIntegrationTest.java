@@ -794,7 +794,7 @@ public class JourneyControllerIntegrationTest {
      * Scenario: 4 Delete Journey Success
      */
     @Test
-    public void delete_journey_should_delete_journey_successfully() throws Exception {
+    public void delete_Non_Booked_journey_should_delete_journey_successfully() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgencyRepository.save(officialAgency);
         Bus bus = new Bus();
