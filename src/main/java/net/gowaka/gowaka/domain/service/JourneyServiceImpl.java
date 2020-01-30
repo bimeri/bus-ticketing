@@ -86,7 +86,6 @@ public class JourneyServiceImpl implements JourneyService {
         if (journeyTerminationFilter(journey)){
             checkJourneyCarInOfficialAgency(journey);
             Set<JourneyStop> journeyStops = journey.getJourneyStops();
-            System.out.println(journeyStops);
             List<TransitAndStop> transitAndStops = journeyStops.stream().map(
                     JourneyStop::getTransitAndStop
             ).collect(Collectors.toList());
@@ -94,12 +93,12 @@ public class JourneyServiceImpl implements JourneyService {
             if (transitAndStops.stream()
                     .noneMatch(transitAndStop -> transitAndStop.getId()
                             .equals(addStopDTO.getTransitAndStopId()))){
-                transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
                 JourneyStop journeyStop = new JourneyStop();
                 journeyStop.setAmount(addStopDTO.getAmount());
-                journeyStop.setTransitAndStop(transitAndStops.get(0));
+                journeyStop.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
                 journeyStop.setJourney(journey);
                 journeyStops.add(journeyStop);
+                journey.setJourneyStops(journeyStops);
                 journeyRepository.save(journey);
             }
         }
@@ -218,10 +217,9 @@ public class JourneyServiceImpl implements JourneyService {
             if (transitAndStops.stream()
                     .noneMatch(transitAndStop -> transitAndStop.getId()
                             .equals(addStopDTO.getTransitAndStopId()))) {
-                transitAndStops.add(getTransitAndStop(addStopDTO.getTransitAndStopId()));
                 JourneyStop journeyStop = new JourneyStop();
                 journeyStop.setAmount(addStopDTO.getAmount());
-                journeyStop.setTransitAndStop(transitAndStops.get(0));
+                journeyStop.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
                 journeyStop.setJourney(journey);
                 journeyStops.add(journeyStop);
                 journeyRepository.save(journey);
@@ -609,8 +607,8 @@ public class JourneyServiceImpl implements JourneyService {
         boolean anyStopMatch = journey.getJourneyStops().stream().anyMatch(
                 journeyStop -> journeyStop.getTransitAndStop().getLocation().equals(destinationLocation)
         );
-        return journey.getDepartureLocation().equals(departureLocation) &&
-                (journey.getDestination().equals(destinationLocation) || anyStopMatch) &&
-                (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime));
+        return (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime)) &&
+                journey.getDepartureLocation().equals(departureLocation) &&
+                (journey.getDestination().equals(destinationLocation) || anyStopMatch);
     }
 }

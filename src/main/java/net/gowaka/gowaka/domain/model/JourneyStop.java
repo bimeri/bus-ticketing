@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.domain.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -14,11 +11,13 @@ import java.util.Objects;
  */
 @Entity
 public class JourneyStop implements Serializable {
-    @Id
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne
     @JoinColumn(name = "journey_id")
     private Journey journey;
-    @Id
+
     @ManyToOne
     @JoinColumn(name = "transit_stop_id")
     private TransitAndStop transitAndStop;
@@ -26,8 +25,12 @@ public class JourneyStop implements Serializable {
     private double amount;
 
     public JourneyStop() {
-        this.journey = new Journey();
-        this.transitAndStop = new TransitAndStop();
+    }
+
+    public JourneyStop(Journey journey, TransitAndStop transitAndStop, double amount) {
+        this.journey = journey;
+        this.transitAndStop = transitAndStop;
+        this.amount = amount;
     }
 
     public Journey getJourney() {
@@ -54,6 +57,14 @@ public class JourneyStop implements Serializable {
         this.amount = amount;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -69,5 +80,13 @@ public class JourneyStop implements Serializable {
     public int hashCode() {
         return journey != null && transitAndStop != null
                 ? Objects.hash(journey.getId(), transitAndStop.getId()) : 0 ;
+    }
+
+    @Override
+    public String toString() {
+        return "JourneyStop{" +
+                "transitAndStop=" + transitAndStop +
+                ", amount=" + amount +
+                '}';
     }
 }

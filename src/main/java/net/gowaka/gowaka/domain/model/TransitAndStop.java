@@ -31,4 +31,12 @@ public class TransitAndStop {
     public TransitAndStop() {
         this.journeyStops = new HashSet<>();
     }
+
+    @Override
+    public String toString() {
+        return "TransitAndStop{" +
+                "id=" + id +
+                ", location=" + location +
+                '}';
+    }
 }
