@@ -36,7 +36,7 @@ public class CarController {
         return ResponseEntity.ok(carService.addSharedRide(sharedRideDTO));
     }
 
-    @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @GetMapping("/agency/car")
     public ResponseEntity<List<BusResponseDTO>> getAllOfficialAgencyBuses(){
         return ResponseEntity.ok(carService.getAllOfficialAgencyBuses());

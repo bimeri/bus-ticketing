@@ -472,36 +472,41 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
-        journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(
-                getTransitAndStopByLocation(journey.getDepartureLocation())
-        ));
-        journeyResponseDTO.setDepartureTime(
-                Date.from(journey.getDepartureTime() == null ? LocalDateTime.now().atZone(zoneId).toInstant() :
-                        journey.getDepartureTime().atZone(zoneId).toInstant())
-        );
-        journeyResponseDTO.setDestination(getLocationStopResponseDTO(
-                getTransitAndStopByLocation(journey.getDestination()),
-                journey.getAmount()
-        ));
+        try {
+            // these can throw exceptions
+            // no need to throw an exception during get, just log the exception in the catch block
+            // and show the user the valid responses
+            journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(
+                    getTransitAndStopByLocation(journey.getDepartureLocation())
+            ));
+            journeyResponseDTO.setDepartureTime(
+                    Date.from(journey.getDepartureTime() == null ? LocalDateTime.now().atZone(zoneId).toInstant() :
+                            journey.getDepartureTime().atZone(zoneId).toInstant())
+            );
+            journeyResponseDTO.setDestination(getLocationStopResponseDTO(
+                    getTransitAndStopByLocation(journey.getDestination()),
+                    journey.getAmount()
+            ));
+            journeyResponseDTO.setTransitAndStops(
+                    journey.getJourneyStops().stream().map(
+                            journeyStop -> getLocationStopResponseDTO(
+                                    journeyStop.getTransitAndStop(), journeyStop.getAmount()
+                            )
+                    ).collect(Collectors.toList())
+            );
+            journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
+                    Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
+
+            journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
+                    Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
+        } catch (Exception e) {
+            logger.warn("An exception occurred during get: {}", e.getMessage());
+        }
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
-        journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
-                Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
-        journeyResponseDTO.setTransitAndStops(
-                journey.getJourneyStops().stream().map(
-                        journeyStop -> getLocationStopResponseDTO(
-                                journeyStop.getTransitAndStop(), journeyStop.getAmount()
-                        )
-                ).collect(Collectors.toList())
-        );
-
-        journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
-                Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
-
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
         return journeyResponseDTO;
     }
-
     /**
      * Gets the transitAndStop for a particular location
      * @param location

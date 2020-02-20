@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.TimeProviderTestUtil;
 import net.gowaka.gowaka.domain.model.*;
@@ -383,6 +384,47 @@ public class CarControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(request)
                 .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    /**
+     * #171379876
+     * @throws Exception
+     */
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    public void get_all_official_agency_buses_should_return_list_of_buses_for_operators() throws Exception {
+        String customJwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "AGENCY_OPERATOR");
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Te widikum");
+        bus.setNumberOfSeats(30);
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
+        Bus bus1 = new Bus();
+        bus1.setName("Fly way");
+        bus1.setNumberOfSeats(70);
+        bus1.setOfficialAgency(officialAgency);
+        carRepository.save(bus1);
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        RequestBuilder requestBuilder = get("/api/protected/agency/car")
+                .header("Authorization", "Bearer " + customJwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString( new ArrayList<>(Arrays.asList(bus, bus1)).stream().map(
+                        officialAgencyBus -> {
+                            BusResponseDTO busResponseDTO = new BusResponseDTO();
+                            busResponseDTO.setId(officialAgencyBus.getId());
+                            busResponseDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
+                            busResponseDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
+                            busResponseDTO.setName(officialAgencyBus.getName());
+                            return busResponseDTO;
+                        }
+                ).collect(Collectors.toList()))))
                 .andReturn();
     }
 }

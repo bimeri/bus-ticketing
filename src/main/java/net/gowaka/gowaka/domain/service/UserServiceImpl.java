@@ -184,7 +184,7 @@ public class UserServiceImpl implements UserService {
         // setting cc and bcc to empty lists
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
-        notificationService.  sendEmail(emailDTO);
+        notificationService.sendEmail(emailDTO);
     }
 
 }
