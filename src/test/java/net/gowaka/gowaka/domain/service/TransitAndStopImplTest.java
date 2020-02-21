@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.domain.model.JourneyStop;
-import net.gowaka.gowaka.domain.model.Location;
-import net.gowaka.gowaka.domain.model.TransitAndStop;
-import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.LocationDTO;
@@ -99,6 +96,7 @@ public class TransitAndStopImplTest {
         transitAndStopService.updateLocation(1L, locationDTO);
         verify(transitAndStopRepository).save(transitAndStop);
     }
+
     @Test
     public void update_location_should_throw_transit_and_stop_not_found_api_exception(){
         LocationDTO locationDTO = new LocationDTO();
@@ -179,5 +177,25 @@ public class TransitAndStopImplTest {
         List<LocationResponseDTO> locationResponseDTOList = transitAndStopService.searchByCity("Buea");
         assertThat(locationResponseDTOList.get(0).getId(), is(transitAndStop.getId()));
         assertThat(locationResponseDTOList.get(0).getState(), is(location.getState()));
+    }
+
+    /**
+     * Journey departure Location to use Transit and Stop Location Id
+     * #171379777
+     * restrict stop updates to non booked journeys
+     */
+    @Test
+    public void update_stop_should_throw_location_has_booked_journey_api_exception() {
+        LocationDTO locationDTO = new LocationDTO();
+        Location location = new Location();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStop.setId(1L);
+        transitAndStop.setBookedJourneys(Collections.singletonList(new BookedJourney()));
+        when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage());
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString())));
+        transitAndStopService.updateLocation(1L, locationDTO);
     }
 }

@@ -14,14 +14,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -231,7 +228,6 @@ public class JourneyServiceImplTest {
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
         when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
                 .thenReturn(Collections.singletonList(journey));
-        when(mockTransitAndStopRepository.findDistinctFirstByLocation(any())).thenReturn(Optional.of(new TransitAndStop()));
         List<JourneyResponseDTO> journeyResponseDTOList = journeyService.getAllOfficialAgencyJourneys();
         assertFalse(journeyResponseDTOList.isEmpty());
         assertThat(journeyResponseDTOList.get(0).getCar(), is(instanceOf(CarResponseDTO.class)));
@@ -302,7 +298,6 @@ public class JourneyServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockTransitAndStopRepository.findDistinctFirstByLocation(any())).thenReturn(Optional.of(transitAndStop));
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
         when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
         journeyService.getJourneyById(1L);

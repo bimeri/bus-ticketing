@@ -333,8 +333,8 @@ public class JourneyControllerIntegrationTest {
         carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop.getLocation());
-        journey.setDestination(transitAndStop1.getLocation());
+        journey.setDepartureLocation(transitAndStop);
+        journey.setDestination(transitAndStop1);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -513,8 +513,8 @@ public class JourneyControllerIntegrationTest {
         bus = carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -661,8 +661,8 @@ public class JourneyControllerIntegrationTest {
         bus = carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -1178,8 +1178,8 @@ public class JourneyControllerIntegrationTest {
         carRepository.save(sharedRide);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop.getLocation());
-        journey.setDestination(transitAndStop1.getLocation());
+        journey.setDepartureLocation(transitAndStop);
+        journey.setDestination(transitAndStop1);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -1339,8 +1339,8 @@ public class JourneyControllerIntegrationTest {
         carRepository.save(sharedRide);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -1483,8 +1483,8 @@ public class JourneyControllerIntegrationTest {
         carRepository.save(sharedRide);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
@@ -1766,8 +1766,8 @@ public class JourneyControllerIntegrationTest {
         bus = carRepository.save(bus);
 
         Journey journey = new Journey();
-        journey.setDepartureLocation(transitAndStop1.getLocation());
-        journey.setDestination(transitAndStop.getLocation());
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
         journey.setDepartureTime(localDateTime.toLocalDateTime());
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);

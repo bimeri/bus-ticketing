@@ -239,8 +239,8 @@ public class JourneyServiceImpl implements JourneyService {
         }
 
         List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByEstimatedArrivalTimeAsc();
-        Location departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure").getLocation();
-        Location destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination").getLocation();
+        TransitAndStop departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure");
+        TransitAndStop destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination");
             return journeyList.stream().filter(
                     journey -> journeySearchFilter(journey, departureLocation, destinationLocation, dateTime)
             ).map(this::mapToJourneyResponseDTO)
@@ -341,9 +341,9 @@ public class JourneyServiceImpl implements JourneyService {
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null: journeyDTO.getDestination().getTransitAndStopId()
                 , "Destination");
-        journey.setDestination(destinationTransitAndStop.getLocation());
+        journey.setDestination(destinationTransitAndStop);
         TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
-        journey.setDepartureLocation(departureTransitAndStop.getLocation());
+        journey.setDepartureLocation(departureTransitAndStop);
         Set<JourneyStop> journeyStops = journeyDTO.getTransitAndStops().stream()
                 .map(journeyStop -> {
                     JourneyStop journeyStop1 = new JourneyStop();
@@ -477,14 +477,14 @@ public class JourneyServiceImpl implements JourneyService {
             // no need to throw an exception during get, just log the exception in the catch block
             // and show the user the valid responses
             journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(
-                    getTransitAndStopByLocation(journey.getDepartureLocation())
+                    journey.getDepartureLocation()
             ));
             journeyResponseDTO.setDepartureTime(
                     Date.from(journey.getDepartureTime() == null ? LocalDateTime.now().atZone(zoneId).toInstant() :
                             journey.getDepartureTime().atZone(zoneId).toInstant())
             );
             journeyResponseDTO.setDestination(getLocationStopResponseDTO(
-                    getTransitAndStopByLocation(journey.getDestination()),
+                    journey.getDestination(),
                     journey.getAmount()
             ));
             journeyResponseDTO.setTransitAndStops(
@@ -606,11 +606,11 @@ public class JourneyServiceImpl implements JourneyService {
      * @param dateTime
      * @return
      */
-    private boolean journeySearchFilter(Journey journey, Location departureLocation,
-                                        Location destinationLocation, LocalDateTime dateTime) {
+    private boolean journeySearchFilter(Journey journey, TransitAndStop departureLocation,
+                                        TransitAndStop destinationLocation, LocalDateTime dateTime) {
         // users destination can either be journey destination or one of the journey stops location
         boolean anyStopMatch = journey.getJourneyStops().stream().anyMatch(
-                journeyStop -> journeyStop.getTransitAndStop().getLocation().equals(destinationLocation)
+                journeyStop -> journeyStop.getTransitAndStop().equals(destinationLocation)
         );
         return (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime)) &&
                 journey.getDepartureLocation().equals(departureLocation) &&

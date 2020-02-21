@@ -43,6 +43,7 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
     @Override
     public void updateLocation(Long id, LocationDTO locationDTO) {
         TransitAndStop transitAndStop = getTransitAndStop(id);
+        restrictStopChangeToNonBookedJourneys(transitAndStop);
         transitAndStop.setLocation(verifyLocation(locationDTO));
         transitAndStopRepository.save(transitAndStop);
     }
@@ -108,5 +109,14 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         locationResponseDTO.setState(location.getState());
         locationResponseDTO.setCountry(location.getCountry());
         return locationResponseDTO;
+    }
+
+    private void restrictStopChangeToNonBookedJourneys(TransitAndStop transitAndStop) {
+        if (transitAndStop != null &&
+                transitAndStop.getBookedJourneys() != null &&
+                !transitAndStop.getBookedJourneys().isEmpty()) {
+            throw new ApiException(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage(),
+                    ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString(), HttpStatus.FORBIDDEN);
+        }
     }
 }
