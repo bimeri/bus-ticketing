@@ -390,7 +390,7 @@ public class JourneyControllerIntegrationTest {
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
                 "\"address\":\"Ekona Main Park\"," +
-                "\"amount\":500.0" +
+                "\"amount\":1000.0" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop2.getId() + "," +
@@ -398,7 +398,7 @@ public class JourneyControllerIntegrationTest {
                 "\"state\":\"South West\"," +
                 "\"city\":\"Muyuka\"," +
                 "\"address\":\"Muyuka Main Park\"," +
-                "\"amount\":1500.0" +
+                "\"amount\":2000.0" +
                 "}" +
                 "]," +
                 "\"car\":{" +
@@ -1235,7 +1235,7 @@ public class JourneyControllerIntegrationTest {
                 "\"state\": \"South West\"," +
                 "\"city\":\"Tole\"," +
                 "\"address\":\"Longstreet\"," +
-                "\"amount\":500.0" +
+                "\"amount\":1000.0" +
                 "}," +
                 "{" +
                 "\"id\":" + transitAndStop2.getId() + "," +
@@ -1243,7 +1243,7 @@ public class JourneyControllerIntegrationTest {
                 "\"state\":\"South West\"," +
                 "\"city\":\"Limbe\"," +
                 "\"address\":\"Half Mile\"," +
-                "\"amount\":1500.0" +
+                "\"amount\":2000.0" +
                 "}" +
                 "]," +
                 "\"car\":{" +

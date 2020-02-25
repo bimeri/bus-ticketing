@@ -352,8 +352,7 @@ public class JourneyServiceImpl implements JourneyService {
                     journeyStop1.setJourney(journey);
                     return journeyStop1;
                 }).collect(Collectors.toSet());
-        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
-        journeyStopSet.addAll(journeyStops);
+        journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
