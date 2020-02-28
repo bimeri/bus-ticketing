@@ -344,15 +344,26 @@ public class JourneyServiceImpl implements JourneyService {
         journey.setDestination(destinationTransitAndStop);
         TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
         journey.setDepartureLocation(departureTransitAndStop);
-        Set<JourneyStop> journeyStops = journeyDTO.getTransitAndStops().stream()
+        Set<JourneyStop> journeyStops = new HashSet<>();
+        for (AddStopDTO addStopDTO: journeyDTO.getTransitAndStops()) {
+            JourneyStop journeyStop1 = new JourneyStop();
+            journeyStop1.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
+            journeyStop1.setAmount(addStopDTO.getAmount());
+            journeyStop1.setJourney(journey);
+            journeyStops.add(journeyStop1);
+        }
+        /*Set<JourneyStop> journeyStops = journeyDTO.getTransitAndStops().stream()
                 .map(journeyStop -> {
                     JourneyStop journeyStop1 = new JourneyStop();
                     journeyStop1.setTransitAndStop(getTransitAndStop(journeyStop.getTransitAndStopId()));
                     journeyStop1.setAmount(journeyStop.getAmount());
                     journeyStop1.setJourney(journey);
                     return journeyStop1;
-                }).collect(Collectors.toSet());
-        journey.setJourneyStops(journeyStops);
+                }).collect(Collectors.toSet());*/
+        // remove all previous journeyStops
+        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
+        journeyStopSet.clear();
+        journeyStopSet.addAll(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
@@ -370,7 +381,7 @@ public class JourneyServiceImpl implements JourneyService {
         journey.setDepartureTime(journeyDTO.getDepartureTime() == null ? null :
                 journeyDTO.getDepartureTime().toInstant().atZone(zoneId).toLocalDateTime());
 
-
+        journey = journeyRepository.save(journey);
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
@@ -391,8 +402,8 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
                 Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
 
-        journeyResponseDTO.setId(journeyRepository.save(journey).getId());
-        journeyResponseDTO.setAmount(journeyDTO.getDestination().getAmount());
+        journeyResponseDTO.setId(journey.getId());
+        journeyResponseDTO.setAmount(journey.getAmount());
 
         return journeyResponseDTO;
     }
@@ -451,13 +462,15 @@ public class JourneyServiceImpl implements JourneyService {
 
     private CarResponseDTO getCarResponseDTO(Car car){
         CarResponseDTO carDTO = new CarResponseDTO();
-        carDTO.setId(car.getId());
-        carDTO.setName(car.getName());
-        carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-        carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
-        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
-        carDTO.setTimestamp(car.getTimestamp() == null ? null :
-                Date.from(car.getTimestamp().atZone(zoneId).toInstant()));
+        if (car != null) {
+            carDTO.setId(car.getId());
+            carDTO.setName(car.getName());
+            carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
+            carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
+            carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+            carDTO.setTimestamp(car.getTimestamp() == null ? null :
+                    Date.from(car.getTimestamp().atZone(zoneId).toInstant()));
+        }
         return carDTO;
     }
 

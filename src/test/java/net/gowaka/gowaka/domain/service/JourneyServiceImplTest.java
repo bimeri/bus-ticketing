@@ -131,7 +131,12 @@ public class JourneyServiceImplTest {
         Journey journey = new Journey();
         journey.setId(3L);
 
+        journey.setCar(bus);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 3500);
 
+        journey.setJourneyStops(Collections.singleton(journeyStop));
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
