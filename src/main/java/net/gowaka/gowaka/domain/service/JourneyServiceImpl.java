@@ -369,11 +369,15 @@ public class JourneyServiceImpl implements JourneyService {
                 }).collect(Collectors.toSet());*/
         // remove all previous journeyStops
         Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
-        journeyStopSet.forEach(
-                journeyStop -> journeyStopRepository.delete(journeyStop)
-        );
-        journeyStopSet.clear();
-        journeyStopSet.addAll(journeyStops);
+        if (journeyStopSet != null) {
+            journeyStopSet.forEach(
+                    journeyStop -> {
+                        if (journeyStop != null)
+                        journeyStopRepository.delete(journeyStop);
+                    }
+            );
+        }
+        journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
