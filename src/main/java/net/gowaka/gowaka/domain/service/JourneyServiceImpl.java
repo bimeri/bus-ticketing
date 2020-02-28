@@ -2,6 +2,7 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.JourneyRepository;
+import net.gowaka.gowaka.domain.repository.JourneyStopRepository;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.domain.service.utilities.TimeProvider;
@@ -32,6 +33,7 @@ public class JourneyServiceImpl implements JourneyService {
     private UserRepository userRepository;
     private TransitAndStopRepository transitAndStopRepository;
     private JourneyRepository journeyRepository;
+    private JourneyStopRepository journeyStopRepository;
     private ZoneId zoneId = ZoneId.of("GMT");
     private Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
 
@@ -41,6 +43,11 @@ public class JourneyServiceImpl implements JourneyService {
         this.userRepository = userRepository;
         this.transitAndStopRepository = transitAndStopRepository;
         this.journeyRepository = journeyRepository;
+    }
+
+    @Autowired
+    public void setJourneyStopRepository(JourneyStopRepository journeyStopRepository) {
+        this.journeyStopRepository = journeyStopRepository;
     }
 
     @Override
@@ -361,9 +368,10 @@ public class JourneyServiceImpl implements JourneyService {
                     return journeyStop1;
                 }).collect(Collectors.toSet());*/
         // remove all previous journeyStops
-        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
-        journeyStopSet.clear();
-        journeyStopSet.addAll(journeyStops);
+        journey.getJourneyStops().forEach(
+                journeyStop -> journeyStopRepository.delete(journeyStop)
+        );
+        journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
