@@ -10,6 +10,7 @@ import java.util.Objects;
  * @date 28 Oct 2019
  */
 @Entity
+@Table(name = "journey_stop")
 public class JourneyStop implements Serializable {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -85,7 +86,8 @@ public class JourneyStop implements Serializable {
     @Override
     public String toString() {
         return "JourneyStop{" +
-                "transitAndStop=" + transitAndStop +
+                "id=" + id +
+                ", transitAndStop=" + transitAndStop +
                 ", amount=" + amount +
                 '}';
     }

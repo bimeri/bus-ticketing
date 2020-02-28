@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +35,7 @@ public class JourneyServiceImpl implements JourneyService {
     private TransitAndStopRepository transitAndStopRepository;
     private JourneyRepository journeyRepository;
     private JourneyStopRepository journeyStopRepository;
+    private EntityManager entityManager;
     private ZoneId zoneId = ZoneId.of("GMT");
     private Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
 
@@ -48,6 +50,11 @@ public class JourneyServiceImpl implements JourneyService {
     @Autowired
     public void setJourneyStopRepository(JourneyStopRepository journeyStopRepository) {
         this.journeyStopRepository = journeyStopRepository;
+    }
+
+    @Autowired
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -344,6 +351,7 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car){
+        logger.info("Trying to save journey");
         journey.setCar(car);
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null: journeyDTO.getDestination().getTransitAndStopId()
@@ -368,14 +376,15 @@ public class JourneyServiceImpl implements JourneyService {
                     return journeyStop1;
                 }).collect(Collectors.toSet());*/
         // remove all previous journeyStops
+        logger.info("trying to remove all previous journeyStops");
         Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
+
         if (journeyStopSet != null) {
-            journeyStopSet.forEach(
-                    journeyStop -> {
-                        if (journeyStop != null)
-                        journeyStopRepository.delete(journeyStop);
-                    }
-            );
+            logger.info(journeyStopSet.toString());
+            for (JourneyStop journeyStop : journeyStopSet) {
+                if (journeyStop != null)
+                    logger.info("deleting stop#: {}", journeyStopRepository.deleteJourneyStopById(journeyStop.getId()).toString());
+            }
         }
         journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
