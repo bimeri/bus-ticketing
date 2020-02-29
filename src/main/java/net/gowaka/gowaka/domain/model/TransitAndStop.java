@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,13 +24,13 @@ public class TransitAndStop {
     private Location location;
 
     @OneToMany(mappedBy = "transitAndStop", cascade = {CascadeType.ALL})
-    private Set<JourneyStop> journeyStops;
+    private List<JourneyStop> journeyStops;
 
     @OneToMany(mappedBy = "destination")
     private List<BookedJourney> bookedJourneys;
 
     public TransitAndStop() {
-        this.journeyStops = new HashSet<>();
+        this.journeyStops = new ArrayList<>();
     }
 
     @Override

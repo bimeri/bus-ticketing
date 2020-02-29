@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -68,7 +69,7 @@ public class JourneyStopRepositoryTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 
@@ -79,7 +80,7 @@ public class JourneyStopRepositoryTest {
         journey = journeyRepository.save(journey);
 
         // when
-        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
+        List<JourneyStop> journeyStopSet = journey.getJourneyStops();
         assertEquals(2, journeyStopSet.size());
         journeyStopSet.forEach(
                 journeyStop2 -> stopRepository.delete(journeyStop2)
@@ -92,12 +93,12 @@ public class JourneyStopRepositoryTest {
         journeyStop4.setTransitAndStop(transitAndStop3);
         journeyStop4.setJourney(journey);
         journeyStop4.setAmount(500);
-        Set<JourneyStop> journeyStopSet1 = new HashSet<>();
+        List<JourneyStop> journeyStopSet1 = new ArrayList<>();
         journeyStopSet1.add(journeyStop3);
         journeyStopSet1.add(journeyStop4);
         journey.setJourneyStops(journeyStopSet1);
         journey = journeyRepository.save(journey);
-        Set<JourneyStop> journeyStopSet2 = journey.getJourneyStops();
+        List<JourneyStop> journeyStopSet2 = journey.getJourneyStops();
         assertEquals(2, journeyStopSet2.size());
 
         List<JourneyStop> journeyStopList = stopRepository.findAll();

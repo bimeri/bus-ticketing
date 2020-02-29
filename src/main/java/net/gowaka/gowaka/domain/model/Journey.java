@@ -52,12 +52,12 @@ public class Journey {
     private List<BookedJourney> bookedJourneys;
 
     @OneToMany(mappedBy = "journey", cascade = {CascadeType.ALL})
-    private Set<JourneyStop> journeyStops;
+    private List<JourneyStop> journeyStops;
     @ManyToOne
     private Car car;
 
     public Journey() {
-        this.journeyStops = new HashSet<>();
+        this.journeyStops = new ArrayList<>();
         this.bookedJourneys = new ArrayList<>();
     }
 }

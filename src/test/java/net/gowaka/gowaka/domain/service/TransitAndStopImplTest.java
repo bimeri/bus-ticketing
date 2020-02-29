@@ -125,7 +125,7 @@ public class TransitAndStopImplTest {
     @Test
     public void delete_transit_should_throw_journey_exist_api_exception(){
         TransitAndStop transitAndStop = new TransitAndStop();
-        transitAndStop.setJourneyStops(Collections.singleton(new JourneyStop()));
+        transitAndStop.setJourneyStops(Collections.singletonList(new JourneyStop()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("Cannot delete record for any existing journey");

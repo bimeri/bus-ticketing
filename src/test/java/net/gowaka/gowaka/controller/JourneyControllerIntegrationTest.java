@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
@@ -348,7 +349,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 
@@ -528,7 +529,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 
@@ -675,7 +676,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
         journey.setJourneyStops(journeyStops);
@@ -775,7 +776,7 @@ public class JourneyControllerIntegrationTest {
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop1);
         journeyStop.setJourney(journey);
-        journey.setJourneyStops(Collections.singleton(journeyStop));
+        journey.setJourneyStops(Collections.singletonList(journeyStop));
         journey.setCar(bus);
         journeyRepository.save(journey);
         String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
@@ -1193,7 +1194,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 
@@ -1353,7 +1354,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
         journey.setJourneyStops(journeyStops);
@@ -1497,7 +1498,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
         journey.setJourneyStops(journeyStops);
@@ -1687,7 +1688,7 @@ public class JourneyControllerIntegrationTest {
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop);
         journeyStop.setJourney(journey);
-        journey.setJourneyStops(Collections.singleton(journeyStop));
+        journey.setJourneyStops(Collections.singletonList(journeyStop));
         journey.setCar(sharedRide);
         journeyRepository.save(journey);
         String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
@@ -1781,7 +1782,7 @@ public class JourneyControllerIntegrationTest {
         journeyStop1.setTransitAndStop(transitAndStop3);
         journeyStop1.setJourney(journey);
         journeyStop1.setAmount(500);
-        Set<JourneyStop> journeyStops = journey.getJourneyStops();
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 

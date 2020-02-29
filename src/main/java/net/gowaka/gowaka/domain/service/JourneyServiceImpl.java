@@ -99,7 +99,7 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)){
             checkJourneyCarInOfficialAgency(journey);
-            Set<JourneyStop> journeyStops = journey.getJourneyStops();
+            List<JourneyStop> journeyStops = journey.getJourneyStops();
             List<TransitAndStop> transitAndStops = journeyStops.stream().map(
                     JourneyStop::getTransitAndStop
             ).collect(Collectors.toList());
@@ -225,7 +225,7 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)){
             checkJourneyCarInPersonalAgency(journey);
-            Set<JourneyStop> journeyStops = journey.getJourneyStops();
+            List<JourneyStop> journeyStops = journey.getJourneyStops();
             List<TransitAndStop> transitAndStops = journeyStops.stream().map(
                     JourneyStop::getTransitAndStop).collect(Collectors.toList());
             if (transitAndStops.stream()
@@ -351,7 +351,6 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car){
-        logger.info("Trying to save journey");
         journey.setCar(car);
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null: journeyDTO.getDestination().getTransitAndStopId()
@@ -359,7 +358,7 @@ public class JourneyServiceImpl implements JourneyService {
         journey.setDestination(destinationTransitAndStop);
         TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
         journey.setDepartureLocation(departureTransitAndStop);
-        Set<JourneyStop> journeyStops = new HashSet<>();
+        List<JourneyStop> journeyStops = new ArrayList<>();
         for (AddStopDTO addStopDTO: journeyDTO.getTransitAndStops()) {
             JourneyStop journeyStop1 = new JourneyStop();
             journeyStop1.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
@@ -367,25 +366,10 @@ public class JourneyServiceImpl implements JourneyService {
             journeyStop1.setJourney(journey);
             journeyStops.add(journeyStop1);
         }
-        /*Set<JourneyStop> journeyStops = journeyDTO.getTransitAndStops().stream()
-                .map(journeyStop -> {
-                    JourneyStop journeyStop1 = new JourneyStop();
-                    journeyStop1.setTransitAndStop(getTransitAndStop(journeyStop.getTransitAndStopId()));
-                    journeyStop1.setAmount(journeyStop.getAmount());
-                    journeyStop1.setJourney(journey);
-                    return journeyStop1;
-                }).collect(Collectors.toSet());*/
-        // remove all previous journeyStops
-        logger.info("trying to remove all previous journeyStops");
-        Set<JourneyStop> journeyStopSet = journey.getJourneyStops();
-
-        if (journeyStopSet != null) {
-            logger.info(journeyStopSet.toString());
-            for (JourneyStop journeyStop : journeyStopSet) {
-                if (journeyStop != null)
-                    logger.info("deleting stop#: {}", journeyStopRepository.deleteJourneyStopById(journeyStop.getId()).toString());
-            }
-        }
+        logger.info("removing all previous journeyStops");
+        if (journey.getId() != null)
+        journeyStopRepository.deleteAllByJourneyId(journey.getId());
+        logger.info("setting new journeyStops");
         journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);

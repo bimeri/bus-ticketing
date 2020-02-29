@@ -1,5 +1,9 @@
 package net.gowaka.gowaka.domain.model;
 
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
@@ -11,6 +15,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "journey_stop")
+@Getter
+@Setter
 public class JourneyStop implements Serializable {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,53 +40,20 @@ public class JourneyStop implements Serializable {
         this.amount = amount;
     }
 
-    public Journey getJourney() {
-        return journey;
-    }
-
-    public void setJourney(Journey journey) {
-        this.journey = journey;
-    }
-
-    public TransitAndStop getTransitAndStop() {
-        return transitAndStop;
-    }
-
-    public void setTransitAndStop(TransitAndStop transitAndStop) {
-        this.transitAndStop = transitAndStop;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public void setAmount(double amount) {
-        this.amount = amount;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof JourneyStop)) return false;
         JourneyStop that = (JourneyStop) o;
-        return journey != null && transitAndStop != null
-                ? journey.getId().equals(that.getJourney().getId()) &&
-                transitAndStop.getId().equals(that.getTransitAndStop().getId())
-                : that.getJourney() == null || that.getTransitAndStop() == null;
+        return Double.compare(that.amount, amount) == 0 &&
+                Objects.equals(id, that.id) &&
+                Objects.equals(journey.getId(), that.journey.getId()) &&
+                Objects.equals(transitAndStop.getId(), that.transitAndStop.getId());
     }
 
     @Override
     public int hashCode() {
-        return journey != null && transitAndStop != null
-                ? Objects.hash(journey.getId(), transitAndStop.getId()) : 0 ;
+        return Objects.hash(id, journey.getId(), transitAndStop.getId(), amount);
     }
 
     @Override
