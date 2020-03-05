@@ -2,9 +2,7 @@ package net.gowaka.gowaka.domain.model;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +21,10 @@ public class Bus extends Car{
 
     @OneToMany(mappedBy = "bus")
     private List<Seat> seats;
+
+    @OneToOne
+    @JoinColumn(name = "seat_structure_id", referencedColumnName = "id")
+    private SeatStructure seatStructure;
 
     public Bus() {
         super();

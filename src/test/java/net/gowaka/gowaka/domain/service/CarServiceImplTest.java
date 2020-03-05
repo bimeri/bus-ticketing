@@ -1,10 +1,7 @@
 package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
-import net.gowaka.gowaka.domain.repository.CarRepository;
-import net.gowaka.gowaka.domain.repository.JourneyRepository;
-import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
-import net.gowaka.gowaka.domain.repository.UserRepository;
+import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
@@ -17,6 +14,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -52,9 +51,13 @@ public class CarServiceImplTest {
 
      @Mock
      private PersonalAgency mockPersonalAgency;
+     @Mock
+     private SeatStructureRepository mockSeatStructureRepository;
 
      @Rule
      public ExpectedException expectedException = ExpectedException.none();
+
+     Logger logger = LoggerFactory.getLogger(CarServiceImplTest.class);
 
      @Before
      public void setup() throws Exception{
@@ -444,5 +447,28 @@ public class CarServiceImplTest {
         when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
         carService.deleteAgencyCarInfo(1L);
         verify(mockCarRepository).delete(bus);
+    }
+
+    @Test
+    public void get_seat_structures_should_return_list_of_seat_structure_dtos() {
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setId(1L);
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("10.png");
+        SeatStructure seatStructure1 = new SeatStructure();
+        seatStructure1.setId(2L);
+        seatStructure1.setNumberOfSeats(10);
+        seatStructure1.setImage("10-1.png");
+        if (carService instanceof CarServiceImpl) {
+            ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
+        }
+        when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(new ArrayList<>(
+                Arrays.asList(seatStructure, seatStructure1)
+        ));
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10, "/image");
+        assertFalse(seatStructureDTOS.isEmpty());
+        assertThat(seatStructureDTOS.get(0).getNumberOfSeats(), is(equalTo(10)));
+        assertThat(seatStructureDTOS.get(1).getImage(),
+                is(equalTo("/image/api/public/resources/seatstructures/" + seatStructure1.getImage())));
     }
 }

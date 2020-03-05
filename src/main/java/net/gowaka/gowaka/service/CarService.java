@@ -19,4 +19,5 @@ public interface CarService {
     CarDTO searchByLicensePlateNumber(String licensePlateNumber);
     void updateAgencyCarInfo(Long carId, BusDTO busDTO);
     void deleteAgencyCarInfo(Long carId);
+    List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats, String baseUri);
 }

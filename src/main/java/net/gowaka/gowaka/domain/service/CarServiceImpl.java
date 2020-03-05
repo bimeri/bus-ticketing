@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.CarRepository;
+import net.gowaka.gowaka.domain.repository.SeatStructureRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -27,12 +28,18 @@ public class CarServiceImpl implements CarService {
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
+    private SeatStructureRepository seatStructureRepository;
 
     @Autowired
     public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
         this.carRepository = carRepository;
         this.userService = userService;
         this.userRepository = userRepository;
+    }
+
+    @Autowired
+    public void setSeatStructureRepository(SeatStructureRepository seatStructureRepository) {
+        this.seatStructureRepository = seatStructureRepository;
     }
 
     @Override
@@ -151,6 +158,15 @@ public class CarServiceImpl implements CarService {
         handleCarNotInAuthUserAgency(car);
         // successfully delete
         carRepository.delete(car);
+    }
+
+    @Override
+    public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats, String baseUri) {
+        List<SeatStructure> seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+        return seatStructures.stream()
+                .map(
+                        seatStructure -> new SeatStructureDTO(seatStructure, baseUri + "/api/public/resources/seatstructures/")
+                ).collect(Collectors.toList());
     }
 
     /**
