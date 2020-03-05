@@ -67,6 +67,8 @@ public class CarControllerIntegrationTest {
 
     @Autowired
     private JourneyRepository journeyRepository;
+    @Autowired
+    private SeatStructureRepository seatStructureRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -434,5 +436,43 @@ public class CarControllerIntegrationTest {
     @Test
     public void file_helper_should_resolve_correct_folder_structure() {
         fileHelper.loadFileAsResource("ten-seater-picnic.png");
+    }
+
+    @Test
+    public void get_seat_structures_should_return_list_of_seat_structure_dtos() throws Exception {
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setId(1L);
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("10.png");
+        seatStructureRepository.save(seatStructure);
+        SeatStructure seatStructure1 = new SeatStructure();
+        seatStructure1.setId(2L);
+        seatStructure1.setNumberOfSeats(10);
+        seatStructure1.setImage("10-1.png");
+        seatStructureRepository.save(seatStructure1);
+        SeatStructure seatStructure2 = new SeatStructure();
+        seatStructure2.setId(3L);
+        seatStructure2.setNumberOfSeats(30);
+        seatStructure2.setImage("30.png");
+        seatStructureRepository.save(seatStructure2);
+        String response = "[" +
+                    "{" +
+                        "\"id\":" + seatStructure.getId() +
+                        ",\"numberOfSeats\": 10," +
+                        "\"image\": \"/api/public/resources/seat_structure/10.png\"" +
+                    "}," +
+                    "{" +
+                    "\"id\":" + seatStructure1.getId() +
+                    ",\"numberOfSeats\": 10," +
+                    "\"image\": \"/api/public/resources/seat_structure/10-1.png\"" +
+                    "}" +
+                        "]";
+        RequestBuilder requestBuilder = get("/api/protected/car/seat_structure?numberOfSeat=10")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(response))
+                .andReturn();
     }
 }

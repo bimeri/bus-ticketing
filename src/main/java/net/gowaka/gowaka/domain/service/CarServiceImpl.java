@@ -165,7 +165,7 @@ public class CarServiceImpl implements CarService {
         List<SeatStructure> seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
         return seatStructures.stream()
                 .map(
-                        seatStructure -> new SeatStructureDTO(seatStructure, baseUri + "/api/public/resources/seatstructures/")
+                        seatStructure -> new SeatStructureDTO(seatStructure, baseUri)
                 ).collect(Collectors.toList());
     }
 

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
 
@@ -79,5 +80,12 @@ public class CarController {
     public ResponseEntity deleteAgencyCarInfo(@PathVariable("carId") Long carId) {
         carService.deleteAgencyCarInfo(carId);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/car/seat_structure")
+    public ResponseEntity<List<SeatStructureDTO>> getSeatStructures(
+            @RequestParam("numberOfSeat") Integer numberOfSeats, HttpServletRequest request) {
+        String baseUri = request.getRequestURI();
+        baseUri = baseUri.substring(0, baseUri.indexOf("/protected")) + "/public/resources/seat_structure";
+        return ResponseEntity.ok(carService.getSeatStructures(numberOfSeats, baseUri));
     }
 }

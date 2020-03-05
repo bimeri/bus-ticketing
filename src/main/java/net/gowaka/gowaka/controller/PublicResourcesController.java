@@ -28,7 +28,7 @@ public class PublicResourcesController {
         this.fileHelper = fileHelper;
     }
 
-    @GetMapping("/seatstructures/{fileName:.+}")
+    @GetMapping("/seat_structure/{fileName:.+}")
     public void loadSeatStructures(@PathVariable String fileName, HttpServletResponse response) {
         Resource resource = fileHelper.loadFileAsResource(fileName);
         try{
