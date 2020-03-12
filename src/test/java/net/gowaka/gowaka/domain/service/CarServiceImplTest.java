@@ -465,11 +465,11 @@ public class CarServiceImplTest {
         when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(new ArrayList<>(
                 Arrays.asList(seatStructure, seatStructure1)
         ));
-        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10, "/image");
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10);
         assertFalse(seatStructureDTOS.isEmpty());
         assertThat(seatStructureDTOS.get(0).getNumberOfSeats(), is(equalTo(10)));
         assertThat(seatStructureDTOS.get(1).getImage(),
-                is(equalTo("/image/" + seatStructure1.getImage())));
+                is(equalTo("seatstructures/" + seatStructure1.getImage())));
     }
     @Test
     public void get_seat_structures_should_return_empty_list_of_no_structure_exits() {
@@ -477,7 +477,7 @@ public class CarServiceImplTest {
             ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
         }
         when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(Collections.emptyList());
-        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10, "/image");
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10);
         assertTrue(seatStructureDTOS.isEmpty());
     }
 }

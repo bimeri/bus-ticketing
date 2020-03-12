@@ -58,8 +58,8 @@ public class CarServiceImpl implements CarService {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
         bus.setOfficialAgency(officialAgency);
-        if (busDTO.getNumberOfSeats() != null){
-            for (int i = 0; i < busDTO.getNumberOfSeats(); i++){
+        if (busDTO.getNumberOfSeats() != null) {
+            for (int i = 0; i < busDTO.getNumberOfSeats(); i++) {
                 Seat seat = new Seat();
                 seat.setSeatNumber(i + 1);
                 seat.setBus(bus);
@@ -125,7 +125,7 @@ public class CarServiceImpl implements CarService {
                     return carDTO;
                 }).collect(Collectors.toList());
 
-       return carDTOs;
+        return carDTOs;
     }
 
     @Override
@@ -161,23 +161,23 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats, String baseUri) {
+    public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
         List<SeatStructure> seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
         return seatStructures.stream()
-                .map(
-                        seatStructure -> new SeatStructureDTO(seatStructure, baseUri)
-                ).collect(Collectors.toList());
+                .map(SeatStructureDTO::new)
+                .collect(Collectors.toList());
     }
 
     /**
      * verify and return the current user in cases where user id is relevant
+     *
      * @return user
      */
-    private User verifyCurrentAuthUser(){
+    private User verifyCurrentAuthUser() {
         UserDTO authUser = userService.getCurrentAuthUser();
         // get user entity
         Optional<User> optionalUser = userRepository.findById(authUser.getId());
-        if (!optionalUser.isPresent()){
+        if (!optionalUser.isPresent()) {
             throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalUser.get();
@@ -185,6 +185,7 @@ public class CarServiceImpl implements CarService {
 
     /**
      * Get the personal agency of user or throw api exception if agency is not found
+     *
      * @param user
      * @return personalAgency
      */
@@ -198,12 +199,13 @@ public class CarServiceImpl implements CarService {
 
     /**
      * Get the personal agency of user or throw api exception if agency is not found
+     *
      * @param user
      * @return officialAgency
      */
     private OfficialAgency getOfficialAgency(User user) {
         OfficialAgency officialAgency = user.getOfficialAgency();
-        if (officialAgency == null){
+        if (officialAgency == null) {
             throw new ApiException("No Official Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return officialAgency;
@@ -211,12 +213,13 @@ public class CarServiceImpl implements CarService {
 
     /**
      * Get buses of official agency or throw api exception if agency is empty
+     *
      * @param officialAgency
      * @return List: bus
      */
-    private List<Bus> getBuses(OfficialAgency officialAgency){
+    private List<Bus> getBuses(OfficialAgency officialAgency) {
         List<Bus> buses = officialAgency.getBuses();
-        if (buses.isEmpty()){
+        if (buses.isEmpty()) {
             throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
         }
         return buses;
@@ -224,12 +227,13 @@ public class CarServiceImpl implements CarService {
 
     /**
      * Get sharedRides of Agency or throw api exception if agency is empty
+     *
      * @param personalAgency
      * @return sharedRides
      */
-    private List<SharedRide> getSharedRides(PersonalAgency personalAgency){
+    private List<SharedRide> getSharedRides(PersonalAgency personalAgency) {
         List<SharedRide> sharedRides = personalAgency.getSharedRides();
-        if (sharedRides.isEmpty()){
+        if (sharedRides.isEmpty()) {
             throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
         }
         return sharedRides;
@@ -237,44 +241,47 @@ public class CarServiceImpl implements CarService {
 
     /**
      * throws license plate already in use api exception
+     *
      * @param licensePlateNumber
      */
-    private void verifyCarLicensePlateNumber(String licensePlateNumber){
-        if (licensePlateNumber != null && carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber.trim()).isPresent()){
+    private void verifyCarLicensePlateNumber(String licensePlateNumber) {
+        if (licensePlateNumber != null && carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber.trim()).isPresent()) {
             throw new ApiException("License plate number already in use",
                     ErrorCodes.LICENSE_PLATE_NUMBER_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
         }
     }
 
     /**
-     *
      * @param id
      * @return Car
      */
-    private Car getCarById(Long id){
+    private Car getCarById(Long id) {
         Optional<Car> optionalCar = carRepository.findById(id);
-        if (!optionalCar.isPresent()){
+        if (!optionalCar.isPresent()) {
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
     }
-    private Car getCarByLicensePlateNumber(String licensePlateNumber){
+
+    private Car getCarByLicensePlateNumber(String licensePlateNumber) {
         Optional<Car> optionalCar = carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber);
-        if (!optionalCar.isPresent()){
+        if (!optionalCar.isPresent()) {
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
     }
+
     private void handleCarBooked(Car car) {
         // get car journeys
         // check if any journey is booked
         if (car.getJourneys().stream().anyMatch(
                 journey -> !journey.getBookedJourneys().isEmpty()
         )) {
-            throw new  ApiException(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage(),
+            throw new ApiException(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage(),
                     ErrorCodes.CAR_ALREADY_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
+
     private void handleCarNotInAuthUserAgency(Car car) {
         // get user's official agency
         // check if car is in official agency
@@ -284,9 +291,10 @@ public class CarServiceImpl implements CarService {
                     ErrorCodes.CAR_NOT_IN_USERS_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
+
     private void handleCarHasJourney(Car car) {
         if (!car.getJourneys().isEmpty()) {
-            throw new  ApiException(ErrorCodes.CAR_HAS_JOURNEY.getMessage(),
+            throw new ApiException(ErrorCodes.CAR_HAS_JOURNEY.getMessage(),
                     ErrorCodes.CAR_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
@@ -302,7 +310,7 @@ public class CarServiceImpl implements CarService {
         return sharedRideResponseDTO;
     }
 
-    private BusResponseDTO getBusResponseDTO(Bus bus){
+    private BusResponseDTO getBusResponseDTO(Bus bus) {
         BusResponseDTO busResponseDTO = new BusResponseDTO();
         busResponseDTO.setId(bus.getId());
         busResponseDTO.setNumberOfSeats(bus.getNumberOfSeats());
@@ -312,7 +320,7 @@ public class CarServiceImpl implements CarService {
         return busResponseDTO;
     }
 
-    private CarDTO getCarDTO(Car car){
+    private CarDTO getCarDTO(Car car) {
         CarDTO carDTO = new CarDTO();
         carDTO.setId(car.getId());
         carDTO.setName(car.getName());

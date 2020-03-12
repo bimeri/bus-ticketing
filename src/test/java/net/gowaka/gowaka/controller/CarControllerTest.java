@@ -20,10 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
@@ -49,20 +46,20 @@ public class CarControllerTest {
     private CarService carService;
 
     @Before
-    public void setup(){
+    public void setup() {
         carController = new CarController(mockCarService);
         carService = new CarServiceImpl(mockCarRepository, mockUserService, mockUserRepository);
     }
 
     @Test
-    public void official_agency_should_call_car_service_add_agency_bus_method(){
+    public void official_agency_should_call_car_service_add_agency_bus_method() {
         BusDTO busDTO = new BusDTO();
         carController.addAgencyBus(busDTO);
         verify(mockCarService).addOfficialAgencyBus(busDTO);
     }
 
     @Test
-    public void official_agency_should_return_200_ok_status_code_with_responseBusDTO(){
+    public void official_agency_should_return_200_ok_status_code_with_responseBusDTO() {
         BusDTO busDTO = new BusDTO();
         busDTO.setName("Malingo Royal");
         busDTO.setNumberOfSeats(5);
@@ -90,14 +87,14 @@ public class CarControllerTest {
     }
 
     @Test
-    public void personal_agency_should_call_car_service_add_sharedRide_method(){
+    public void personal_agency_should_call_car_service_add_sharedRide_method() {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         carController.addSharedRide(sharedRideDTO);
         verify(mockCarService).addSharedRide(sharedRideDTO);
     }
 
     @Test
-    public void personal_agency_should_return_200_ok_status_code_with_responseSharedRideDTO(){
+    public void personal_agency_should_return_200_ok_status_code_with_responseSharedRideDTO() {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         sharedRideDTO.setCarOwnerIdNumber("12345");
         sharedRideDTO.setName("Danfo Driver");
@@ -127,13 +124,13 @@ public class CarControllerTest {
     }
 
     @Test
-    public void official_agency_get_all_buses_should_call_car_service_get_all_buses(){
+    public void official_agency_get_all_buses_should_call_car_service_get_all_buses() {
         carController.getAllOfficialAgencyBuses();
         verify(mockCarService).getAllOfficialAgencyBuses();
     }
 
     @Test
-    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTO_list(){
+    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTO_list() {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setName("Happy");
@@ -142,13 +139,13 @@ public class CarControllerTest {
         bus1.setName("Angry");
         when(mockCarService.getAllOfficialAgencyBuses()).thenAnswer(new Answer<List<BusResponseDTO>>() {
             public List<BusResponseDTO> answer(InvocationOnMock invocation) throws Throwable {
-              BusResponseDTO busResponseDTO = new BusResponseDTO();
-              busResponseDTO.setId(bus.getId());
-              busResponseDTO.setName(bus.getName());
-              BusResponseDTO busResponseDTO1 = new BusResponseDTO();
-              busResponseDTO1.setId(bus1.getId());
-              busResponseDTO1.setName(bus1.getName());
-              return new ArrayList<>(Arrays.asList(busResponseDTO, busResponseDTO1));
+                BusResponseDTO busResponseDTO = new BusResponseDTO();
+                busResponseDTO.setId(bus.getId());
+                busResponseDTO.setName(bus.getName());
+                BusResponseDTO busResponseDTO1 = new BusResponseDTO();
+                busResponseDTO1.setId(bus1.getId());
+                busResponseDTO1.setName(bus1.getName());
+                return new ArrayList<>(Arrays.asList(busResponseDTO, busResponseDTO1));
             }
         });
         ReflectionTestUtils.setField(carController, "carService", mockCarService);
@@ -161,13 +158,13 @@ public class CarControllerTest {
     }
 
     @Test
-    public void personal_agency_get_shareRides_should_call_car_service_getShareRides(){
+    public void personal_agency_get_shareRides_should_call_car_service_getShareRides() {
         carController.getSharedRides();
         verify(mockCarService).getAllSharedRides();
     }
 
     @Test
-    public void personal_agency_get_shared_rides_should_return_200_with_response_shared_rides_list(){
+    public void personal_agency_get_shared_rides_should_return_200_with_response_shared_rides_list() {
         SharedRide sharedRide = new SharedRide();
         sharedRide.setId(1L);
         sharedRide.setName("OK");
@@ -195,14 +192,14 @@ public class CarControllerTest {
     }
 
     @Test
-    public void approve_should_call_car_service_approve_method(){
+    public void approve_should_call_car_service_approve_method() {
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController.shallApprove(approveCarDTO, "1");
         verify(mockCarService).approve(approveCarDTO, 1L);
     }
 
     @Test
-    public void approve_should_return_204_no_content_status_code(){
+    public void approve_should_return_204_no_content_status_code() {
         Car car = new Bus();
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController = new CarController(carService);
@@ -228,4 +225,13 @@ public class CarControllerTest {
         verify(mockCarService).getAllUnapprovedCars();
     }
 
+    @Test
+    public void getSeatStructures_returnsListOfSeatStructure() {
+        when(mockCarService.getSeatStructures(10))
+                .thenReturn(Collections.singletonList(new SeatStructureDTO()));
+
+        ResponseEntity<List<SeatStructureDTO>> seatStructures = carController.getSeatStructures(10);
+        verify(mockCarService).getSeatStructures(10);
+        assertThat(seatStructures.getBody().size(), is(1));
+    }
 }

@@ -2,10 +2,7 @@ package net.gowaka.gowaka.domain.model;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * Author: Edward Tanko <br/>
@@ -35,5 +32,9 @@ public class PaymentTransaction {
     private String paymentChannel;
     private String paymentChannelTransactionNumber;
     private String transactionStatus;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
+    private BookedJourney bookedJourney;
 
 }

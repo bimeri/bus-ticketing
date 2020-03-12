@@ -27,19 +27,19 @@ public class CarController {
 
     @PreAuthorize("hasRole('ROLE_AGENCY_MANAGER') or hasRole('ROLE_AGENCY_ADMIN') or hasRole('ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/car")
-    public ResponseEntity<BusResponseDTO> addAgencyBus(@Valid @RequestBody BusDTO busDTO){
+    public ResponseEntity<BusResponseDTO> addAgencyBus(@Valid @RequestBody BusDTO busDTO) {
         return ResponseEntity.ok(carService.addOfficialAgencyBus(busDTO));
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/users/car")
-    public ResponseEntity<SharedRideResponseDTO> addSharedRide(@Valid @RequestBody SharedRideDTO sharedRideDTO){
+    public ResponseEntity<SharedRideResponseDTO> addSharedRide(@Valid @RequestBody SharedRideDTO sharedRideDTO) {
         return ResponseEntity.ok(carService.addSharedRide(sharedRideDTO));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @GetMapping("/agency/car")
-    public ResponseEntity<List<BusResponseDTO>> getAllOfficialAgencyBuses(){
+    public ResponseEntity<List<BusResponseDTO>> getAllOfficialAgencyBuses() {
         return ResponseEntity.ok(carService.getAllOfficialAgencyBuses());
     }
 
@@ -52,22 +52,24 @@ public class CarController {
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @PostMapping("/car/{id}/approve")
     public ResponseEntity<Object> shallApprove(@Valid @RequestBody ApproveCarDTO approveCarDTO,
-                                                      @PathVariable("id") String id){
+                                               @PathVariable("id") String id) {
         carService.approve(approveCarDTO, Long.parseLong(id));
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @GetMapping("/cars/unapproved")
-    public ResponseEntity<List<CarDTO>> getAllUnapprovedCars(){
+    public ResponseEntity<List<CarDTO>> getAllUnapprovedCars() {
         return ResponseEntity.ok(carService.getAllUnapprovedCars());
     }
+
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @GetMapping("/car/search")
     public ResponseEntity<CarDTO> searchByLicensePlateNumber(
-            @RequestParam("licensePlateNumber") String licensePlateNumber){
+            @RequestParam("licensePlateNumber") String licensePlateNumber) {
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
     }
+
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/car/{carId}")
     public ResponseEntity updateAgencyCarInfo(
@@ -75,17 +77,16 @@ public class CarController {
         carService.updateAgencyCarInfo(carId, busDTO);
         return ResponseEntity.noContent().build();
     }
+
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @DeleteMapping("/agency/car/{carId}")
     public ResponseEntity deleteAgencyCarInfo(@PathVariable("carId") Long carId) {
         carService.deleteAgencyCarInfo(carId);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/car/seat_structure")
-    public ResponseEntity<List<SeatStructureDTO>> getSeatStructures(
-            @RequestParam("numberOfSeat") Integer numberOfSeats, HttpServletRequest request) {
-        String baseUri = request.getRequestURI();
-        baseUri = baseUri.substring(0, baseUri.indexOf("/protected")) + "/public/resources/seat_structure";
-        return ResponseEntity.ok(carService.getSeatStructures(numberOfSeats, baseUri));
+    public ResponseEntity<List<SeatStructureDTO>> getSeatStructures(@RequestParam("numberOfSeat") Integer numberOfSeats) {
+        return ResponseEntity.ok(carService.getSeatStructures(numberOfSeats));
     }
 }

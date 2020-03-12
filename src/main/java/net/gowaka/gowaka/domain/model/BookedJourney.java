@@ -29,4 +29,7 @@ public class BookedJourney {
 
     private String checkedInCode;
 
+    @OneToOne(mappedBy = "bookedJourney")
+    private PaymentTransaction paymentTransaction;
+
 }

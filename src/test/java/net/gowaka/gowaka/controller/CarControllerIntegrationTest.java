@@ -1,12 +1,10 @@
 package net.gowaka.gowaka.controller;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.TimeProviderTestUtil;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
-import net.gowaka.gowaka.domain.service.utilities.FileHelper;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import org.junit.AfterClass;
@@ -59,8 +57,6 @@ public class CarControllerIntegrationTest {
 
     @Autowired
     private CarRepository carRepository;
-    @Autowired
-    private FileHelper fileHelper;
 
     @Autowired
     private TransitAndStopRepository transitAndStopRepository;
@@ -434,11 +430,6 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void file_helper_should_resolve_correct_folder_structure() {
-        fileHelper.loadFileAsResource("ten-seater-picnic.png");
-    }
-
-    @Test
     public void get_seat_structures_should_return_list_of_seat_structure_dtos() throws Exception {
         SeatStructure seatStructure = new SeatStructure();
         seatStructure.setId(1L);
@@ -459,12 +450,12 @@ public class CarControllerIntegrationTest {
                     "{" +
                         "\"id\":" + seatStructure.getId() +
                         ",\"numberOfSeats\": 10," +
-                        "\"image\": \"/api/public/resources/seat_structure/10.png\"" +
+                        "\"image\": \"seatstructures/10.png\"" +
                     "}," +
                     "{" +
                     "\"id\":" + seatStructure1.getId() +
                     ",\"numberOfSeats\": 10," +
-                    "\"image\": \"/api/public/resources/seat_structure/10-1.png\"" +
+                    "\"image\": \"seatstructures/10-1.png\"" +
                     "}" +
                         "]";
         RequestBuilder requestBuilder = get("/api/protected/car/seat_structure?numberOfSeat=10")
