@@ -68,14 +68,14 @@ public class CarController {
             @RequestParam("licensePlateNumber") String licensePlateNumber){
         return ResponseEntity.ok(carService.searchByLicensePlateNumber(licensePlateNumber));
     }
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/car/{carId}")
     public ResponseEntity updateAgencyCarInfo(
             @PathVariable("carId") Long carId, @RequestBody @Valid BusDTO busDTO) {
         carService.updateAgencyCarInfo(carId, busDTO);
         return ResponseEntity.noContent().build();
     }
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_OPERATOR')")
     @DeleteMapping("/agency/car/{carId}")
     public ResponseEntity deleteAgencyCarInfo(@PathVariable("carId") Long carId) {
         carService.deleteAgencyCarInfo(carId);
