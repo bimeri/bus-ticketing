@@ -25,6 +25,7 @@ public enum ErrorCodes {
     CAR_HAS_JOURNEY("This Car has one or more journeys"),
     CAR_ALREADY_HAS_JOURNEY("This Car has one or more booked journeys"),
     LOCATION_HAS_BOOKED_JOURNEY("This location has one or more booked journeys"),
+    SEAT_STRUCTURE_NOT_FOUND("The seat structure does not exist or may have been deleted"),
     FILE_NOT_FOUND("File not found ");
     private String message;
     ErrorCodes(String message){

@@ -64,18 +64,27 @@ public class CarServiceImplTest {
          carService = new CarServiceImpl(mockCarRepository, mockUserService, mockUserRepository);
      }
 
-     @Test
+    public void setMockSeatStructureRepository() {
+        ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
+    }
+
+    @Test
      public void official_agency_should_add_car(){
          Bus bus = new Bus();
          bus.setId(1L);
          user.setUserId("1");
          BusDTO busDTO = new BusDTO();
+         busDTO.setSeatStructureId(1L);
          UserDTO userDTO = new UserDTO();
          userDTO.setId("1");
+         SeatStructure seatStructure = new SeatStructure();
+         seatStructure.setId(1L);
          when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
          when(mockCarRepository.save(any())).thenReturn(bus);
          when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
          when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+         setMockSeatStructureRepository();
+         when(mockSeatStructureRepository.findById(anyLong())).thenReturn(Optional.of(seatStructure));
          carService.addOfficialAgencyBus(busDTO);
          verify(mockUserService).getCurrentAuthUser();
          verify(mockUserRepository).findById("1");

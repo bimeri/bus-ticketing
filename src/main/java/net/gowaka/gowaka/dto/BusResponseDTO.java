@@ -8,7 +8,11 @@ import lombok.Data;
  *
  */
 @Data
-public class BusResponseDTO extends BusDTO {
+public class BusResponseDTO {
     private Long id;
     private Boolean isCarApproved;
+    private String name;
+    private String licensePlateNumber;
+    private Integer numberOfSeats;
+    private SeatStructureDTO seatStructure;
 }

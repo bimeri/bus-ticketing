@@ -22,7 +22,7 @@ public class Bus extends Car{
     @OneToMany(mappedBy = "bus")
     private List<Seat> seats;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "seat_structure_id", referencedColumnName = "id")
     private SeatStructure seatStructure;
 

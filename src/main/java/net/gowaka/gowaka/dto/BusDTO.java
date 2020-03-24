@@ -17,4 +17,6 @@ public class BusDTO {
     private String licensePlateNumber;
     @NotNull(message = "numberOfSeats is required")
     private Integer numberOfSeats;
+    @NotNull(message = "seatStructure is required")
+    private Long seatStructureId;
 }

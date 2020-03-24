@@ -100,6 +100,13 @@ public class CarControllerIntegrationTest {
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
+    public SeatStructure initSeatStructure(Long id, Integer numberOfSeats) {
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setId(id);
+        seatStructure.setNumberOfSeats(numberOfSeats);
+        return seatStructureRepository.save(seatStructure);
+    }
+
     @AfterClass
     public static void tearDown() {
         TimeProviderTestUtil.useSystemClock();
@@ -111,6 +118,8 @@ public class CarControllerIntegrationTest {
         busDTO.setLicensePlateNumber("12345LT");
         busDTO.setNumberOfSeats(5);
         busDTO.setName("Malingo Royal");
+        // seat structure
+        busDTO.setSeatStructureId(initSeatStructure(1L, 30).getId());
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName(user.getUserId());
         user.setOfficialAgency(officialAgencyRepository.save(officialAgency));
@@ -195,11 +204,13 @@ public class CarControllerIntegrationTest {
         Bus bus = new Bus();
         bus.setName("Te widikum");
         bus.setNumberOfSeats(3);
+        bus.setSeatStructure(initSeatStructure(3L, 70));
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
         Bus bus1 = new Bus();
         bus1.setName("Fly way");
         bus1.setNumberOfSeats(7);
+        bus1.setSeatStructure(initSeatStructure(2L, 30));
         bus1.setOfficialAgency(officialAgency);
         carRepository.save(bus1);
         user.setOfficialAgency(officialAgency);
@@ -216,6 +227,7 @@ public class CarControllerIntegrationTest {
                             busResponseDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
                             busResponseDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
                             busResponseDTO.setName(officialAgencyBus.getName());
+                            busResponseDTO.setSeatStructure(new SeatStructureDTO(officialAgencyBus.getSeatStructure()));
                             return busResponseDTO;
                         }
                 ).collect(Collectors.toList()))))
@@ -350,7 +362,8 @@ public class CarControllerIntegrationTest {
         String expectedRequest = "{\n" +
                 "  \"licensePlateNumber\": \"123SW\",\n" +
                 "  \"name\": \"70 Seater\",\n" +
-                "  \"numberOfSeats\": 70\n" +
+                "  \"numberOfSeats\": 70,\n" +
+                "  \"seatStructureId\":" + initSeatStructure(1L, 30).getId() + "\n" +
                 "}";
         RequestBuilder request = post("/api/protected/agency/car/" + bus.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -423,6 +436,7 @@ public class CarControllerIntegrationTest {
                             busResponseDTO.setNumberOfSeats(officialAgencyBus.getNumberOfSeats());
                             busResponseDTO.setLicensePlateNumber(officialAgencyBus.getLicensePlateNumber());
                             busResponseDTO.setName(officialAgencyBus.getName());
+                            busResponseDTO.setSeatStructure(new SeatStructureDTO(officialAgencyBus.getSeatStructure()));
                             return busResponseDTO;
                         }
                 ).collect(Collectors.toList()))))

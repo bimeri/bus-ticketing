@@ -58,6 +58,8 @@ public class CarServiceImpl implements CarService {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
         bus.setOfficialAgency(officialAgency);
+        SeatStructure seatStructure = getSeatStructureById(busDTO.getSeatStructureId());
+        bus.setSeatStructure(seatStructure);
         if (busDTO.getNumberOfSeats() != null) {
             for (int i = 0; i < busDTO.getNumberOfSeats(); i++) {
                 Seat seat = new Seat();
@@ -317,6 +319,7 @@ public class CarServiceImpl implements CarService {
         busResponseDTO.setName(bus.getName());
         busResponseDTO.setLicensePlateNumber(bus.getLicensePlateNumber());
         busResponseDTO.setIsCarApproved(bus.getIsCarApproved());
+        busResponseDTO.setSeatStructure(getSeatStructureDTO(bus.getSeatStructure()));
         return busResponseDTO;
     }
 
@@ -329,6 +332,18 @@ public class CarServiceImpl implements CarService {
         carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
         carDTO.setTimestamp(car.getTimestamp());
         return carDTO;
+    }
+
+    private SeatStructure getSeatStructureById(Long id) {
+        Optional<SeatStructure> structureOptional = seatStructureRepository.findById(id);
+        if (structureOptional.isPresent()) {
+            return structureOptional.get();
+        }
+        throw new ApiException(ErrorCodes.SEAT_STRUCTURE_NOT_FOUND.getMessage(), ErrorCodes.SEAT_STRUCTURE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+    }
+
+    private SeatStructureDTO getSeatStructureDTO(SeatStructure seatStructure) {
+        return new SeatStructureDTO(seatStructure);
     }
 
 
