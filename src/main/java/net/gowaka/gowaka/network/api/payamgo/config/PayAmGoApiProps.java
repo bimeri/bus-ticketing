@@ -15,13 +15,9 @@ public class PayAmGoApiProps {
 
     private String host;
     private String port;
-    private String tokenRequest;
     private String paymentRequest;
     private String clientKey;
     private String clientSecret;
-
-    private String username;
-    private String password;
 
 
 }

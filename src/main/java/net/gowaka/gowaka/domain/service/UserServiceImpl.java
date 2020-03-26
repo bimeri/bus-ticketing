@@ -175,8 +175,6 @@ public class UserServiceImpl implements UserService {
         emailDTO.setSubject(EmailFields.WELCOME_SUBJECT.getMessage());
         emailDTO.setMessage(message);
 
-        System.out.println(message);
-
         emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(
                 createUserRequest.getEmail(),
                 createUserRequest.getFullName()

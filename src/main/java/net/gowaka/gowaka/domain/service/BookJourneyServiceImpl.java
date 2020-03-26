@@ -298,7 +298,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     private PayAmGoRequestDTO getPayAmGoRequestDTO(PaymentTransaction savedPaymentTransaction) {
         PayAmGoRequestDTO payAmGoRequestDTO = new PayAmGoRequestDTO();
-        payAmGoRequestDTO.setAmount(savedPaymentTransaction.getAmount());
+        payAmGoRequestDTO.setAmount(savedPaymentTransaction.getAmount().toString());
         payAmGoRequestDTO.setCurrencyCode(savedPaymentTransaction.getCurrencyCode());
         payAmGoRequestDTO.setPaymentReason(savedPaymentTransaction.getPaymentReason());
         payAmGoRequestDTO.setLanguage(savedPaymentTransaction.getLanguage());

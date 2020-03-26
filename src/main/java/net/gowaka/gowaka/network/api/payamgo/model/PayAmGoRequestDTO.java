@@ -8,7 +8,7 @@ import lombok.Data;
  */
 @Data
 public class PayAmGoRequestDTO {
-    private Double amount;
+    private String amount;
     private String appTransactionNumber;
     private String appUserEmail;
     private String appUserFirstName;

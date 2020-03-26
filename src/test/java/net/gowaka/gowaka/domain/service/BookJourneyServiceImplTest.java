@@ -364,6 +364,7 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(bookedJourney);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
 
@@ -463,6 +464,7 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(bookedJourney);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
 
