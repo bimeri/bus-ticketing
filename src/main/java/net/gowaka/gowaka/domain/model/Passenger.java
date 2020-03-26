@@ -1,6 +1,8 @@
 package net.gowaka.gowaka.domain.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.Embeddable;
 
@@ -10,10 +12,12 @@ import javax.persistence.Embeddable;
  */
 @Data
 @Embeddable
+@NoArgsConstructor
+@AllArgsConstructor
 public class Passenger {
 
     private String passengerName;
     private String passengerIdNumber;
-    private String seatNumber;
+    private Integer seatNumber;
 
 }
