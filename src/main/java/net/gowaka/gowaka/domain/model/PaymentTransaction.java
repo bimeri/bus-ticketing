@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 /**
  * Author: Edward Tanko <br/>
@@ -32,9 +33,13 @@ public class PaymentTransaction {
     private String paymentChannel;
     private String paymentChannelTransactionNumber;
     private String transactionStatus;
+    private LocalDateTime paymentDate;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
     private BookedJourney bookedJourney;
+
+    private LocalDateTime createAt = LocalDateTime.now();
+
 
 }

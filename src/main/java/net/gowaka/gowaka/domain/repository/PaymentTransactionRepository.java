@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
  * Date: 10/5/19 9:19 PM <br/>
  */
 @Repository
-public interface PayAmGoTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
+public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
 
 }

@@ -3,6 +3,7 @@ package net.gowaka.gowaka.domain.model;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 /**
  * Author: Edward Tanko <br/>
@@ -31,5 +32,7 @@ public class BookedJourney {
 
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
 
 }
