@@ -48,7 +48,7 @@ public class Journey {
     private Boolean arrivalIndicator;
     private LocalDateTime timestamp;
 
-    @OneToMany(mappedBy = "journey")
+    @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BookedJourney> bookedJourneys;
 
     @OneToMany(mappedBy = "journey", cascade = {CascadeType.ALL})

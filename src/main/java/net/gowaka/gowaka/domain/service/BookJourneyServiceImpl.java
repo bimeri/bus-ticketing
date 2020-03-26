@@ -198,15 +198,16 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     @Override
     public void handlePaymentResponse(Long bookedJourneyId, PaymentStatusResponseDTO paymentStatusResponseDTO) {
+
         Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findById(bookedJourneyId);
         if (!bookedJourneyOptional.isPresent()) {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         BookedJourney bookedJourney = bookedJourneyOptional.get();
         PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
-        if(paymentTransaction.getTransactionStatus().equals(WAITING.toString()) &&
+        if (paymentTransaction.getTransactionStatus().equals(WAITING.toString()) &&
                 paymentTransaction.getProcessingNumber().equals(paymentStatusResponseDTO.getProcessingNumber())
-                && paymentTransaction.getAppTransactionNumber().equals(paymentStatusResponseDTO.getAppTransactionNumber())){
+                && paymentTransaction.getAppTransactionNumber().equals(paymentStatusResponseDTO.getAppTransactionNumber())) {
 
             paymentTransaction.setTransactionStatus(paymentStatusResponseDTO.getTransactionStatus().equals(COMPLETED.toString()) ? COMPLETED.toString() : DECLINED.toString());
             paymentTransaction.setPaymentChannelTransactionNumber(paymentStatusResponseDTO.getPaymentChannelTransactionNumber());
@@ -214,8 +215,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             paymentTransaction.setPaymentDate(LocalDateTime.now());
 
             paymentTransactionRepository.save(paymentTransaction);
-            BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
-            sendTicketEmail(bookedJourneyStatusDTO);
+            if(paymentStatusResponseDTO.getTransactionStatus().equals(COMPLETED.toString())){
+                BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
+                sendTicketEmail(bookedJourneyStatusDTO);
+            }
         }
 
 
@@ -260,6 +263,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         Location departureLocation = bookedJourney.getJourney().getDepartureLocation().getLocation();
         bookedJourneyStatusDTO.setDepartureLocation(departureLocation.getAddress() + ", " + departureLocation.getCity() + " " + departureLocation.getState() + ", " + departureLocation.getCountry());
         bookedJourneyStatusDTO.setDepartureTime(bookedJourney.getJourney().getDepartureTime());
+        bookedJourneyStatusDTO.setEstimatedArrivalTime(bookedJourney.getJourney().getEstimatedArrivalTime());
 
         Location destinationLocation = bookedJourney.getDestination().getLocation();
         bookedJourneyStatusDTO.setDestinationLocation(destinationLocation.getAddress() + ", " + destinationLocation.getCity() + " " + destinationLocation.getState() + ", " + destinationLocation.getCountry());

@@ -35,7 +35,7 @@ public class PaymentTransaction {
     private String transactionStatus;
     private LocalDateTime paymentDate;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne()
     @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
     private BookedJourney bookedJourney;
 

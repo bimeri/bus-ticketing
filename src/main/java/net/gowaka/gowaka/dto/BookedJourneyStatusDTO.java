@@ -35,6 +35,7 @@ public class BookedJourneyStatusDTO {
 
     private String departureLocation;
     private LocalDateTime departureTime;
+    private LocalDateTime estimatedArrivalTime;
     private String destinationLocation;
 
 }

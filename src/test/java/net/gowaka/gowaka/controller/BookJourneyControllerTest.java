@@ -1,6 +1,8 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.dto.BookJourneyRequest;
+import net.gowaka.gowaka.dto.BookedJourneyStatusDTO;
+import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
 import net.gowaka.gowaka.dto.PaymentUrlDTO;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.junit.Before;
@@ -10,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,8 +33,9 @@ public class BookJourneyControllerTest {
     private BookJourneyService mockBookJourneyService;
 
     private BookJourneyController bookJourneyController;
+
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         bookJourneyController = new BookJourneyController(mockBookJourneyService);
     }
 
@@ -49,4 +55,51 @@ public class BookJourneyControllerTest {
         assertThat(paymentUrlDTOResponseEntity.getBody().getPaymentUrl()).isEqualTo("http://payamgo.com/xyz");
 
     }
+
+    @Test
+    public void getAllBookedSeats_callsBookJourneyService() {
+
+        when(mockBookJourneyService.getAllBookedSeats(anyLong()))
+                .thenReturn(Arrays.asList(1, 2, 3, 4));
+
+        ResponseEntity<List<Integer>> allBookedSeats = bookJourneyController.getAllBookedSeats(1L);
+        verify(mockBookJourneyService).getAllBookedSeats(1L);
+        assertThat(allBookedSeats.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(allBookedSeats.getBody().size()).isEqualTo(4);
+        assertThat(allBookedSeats.getBody().get(0)).isEqualTo(1);
+        assertThat(allBookedSeats.getBody().get(1)).isEqualTo(2);
+        assertThat(allBookedSeats.getBody().get(2)).isEqualTo(3);
+        assertThat(allBookedSeats.getBody().get(3)).isEqualTo(4);
+
+    }
+
+    @Test
+    public void getBookJourneyStatus_callsBookJourneyService() {
+
+        BookedJourneyStatusDTO bookedJourneyStatus = new BookedJourneyStatusDTO();
+        bookedJourneyStatus.setId(10L);
+        when(mockBookJourneyService.getBookJourneyStatus(anyLong()))
+                .thenReturn(bookedJourneyStatus);
+
+        ResponseEntity<BookedJourneyStatusDTO> bookJourneyStatus = bookJourneyController.getBookJourneyStatus(1L);
+        verify(mockBookJourneyService).getBookJourneyStatus(1L);
+        assertThat(bookJourneyStatus.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(bookJourneyStatus.getBody()).isEqualTo(bookedJourneyStatus);
+
+    }
+
+    @Test
+    public void handlePaymentResponse_callsBookJourneyService() {
+
+        PaymentStatusResponseDTO paymentStatusResponseDTO = new PaymentStatusResponseDTO();
+        paymentStatusResponseDTO.setProcessingNumber("12345");
+
+        ResponseEntity<?> responseEntity = bookJourneyController.handlePaymentResponse(1L, paymentStatusResponseDTO);
+        verify(mockBookJourneyService).handlePaymentResponse(1L, paymentStatusResponseDTO);
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+    }
+
+
+
 }
