@@ -13,4 +13,12 @@ public class PayAmGoRequestResponseDTO {
     private String processingNumber;
     private String paymentUrl;
 
+    @Override
+    public String toString() {
+        return "PayAmGoRequestResponseDTO{" +
+                "appTransactionNumber='" + appTransactionNumber + '\'' +
+                ", processingNumber='" + processingNumber + '\'' +
+                ", paymentUrl='" + paymentUrl + '\'' +
+                '}';
+    }
 }

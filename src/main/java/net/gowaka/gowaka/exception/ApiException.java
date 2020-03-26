@@ -16,4 +16,13 @@ public class ApiException extends RuntimeException {
         this.httpStatus = httpStatus;
         this.errorCode = errorCode;
     }
+
+    @Override
+    public String toString() {
+        return "ApiException{" +
+                "message=" + getMessage() +
+                "httpStatus=" + httpStatus +
+                ", errorCode='" + errorCode + '\'' +
+                '}';
+    }
 }

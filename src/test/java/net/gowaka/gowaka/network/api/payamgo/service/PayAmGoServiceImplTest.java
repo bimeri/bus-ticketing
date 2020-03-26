@@ -5,6 +5,7 @@ import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoTokenRequest;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoTokenResponse;
+import net.gowaka.gowaka.network.api.payamgo.utils.Hashes;
 import net.gowaka.gowaka.service.PayAmGoService;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +39,7 @@ public class PayAmGoServiceImplTest {
     private PayAmGoApiProps payAmGoApiProps;
 
     private PayAmGoService payAmGoService;
+    private PayAmGoRestClient payAmGoRestClient;
 
     @Before
     public void setUp() throws Exception {
@@ -49,7 +51,10 @@ public class PayAmGoServiceImplTest {
         payAmGoApiProps.setPaymentRequest("/api/protected/users/init_payment");
         payAmGoApiProps.setUsername("gw-username");
         payAmGoApiProps.setPassword("gw-password");
-        payAmGoService = new PayAmGoServiceImpl(payAmGoApiProps, mockRestTemplate);
+        payAmGoApiProps.setClientKey("zebraMan");
+        payAmGoApiProps.setClientSecret("12345678");
+        payAmGoRestClient = new PayAmGoRestClient(mockRestTemplate, payAmGoApiProps);
+        payAmGoService = new PayAmGoServiceImpl(payAmGoRestClient);
     }
 
     @Test
@@ -79,10 +84,10 @@ public class PayAmGoServiceImplTest {
         ArgumentCaptor<HttpMethod> payMethodCaptor = ArgumentCaptor.forClass(HttpMethod.class);
 
 
-        PayAmGoTokenResponse tokenResponse = new PayAmGoTokenResponse();
+        /*PayAmGoTokenResponse tokenResponse = new PayAmGoTokenResponse();
         tokenResponse.setAccessToken("access-token");
         when(mockRestTemplate.postForEntity(anyString(), any(), any()))
-                .thenReturn(ResponseEntity.of(Optional.of(tokenResponse)));
+                .thenReturn(ResponseEntity.of(Optional.of(tokenResponse)));*/
 
         PayAmGoRequestResponseDTO requestResponse = new PayAmGoRequestResponseDTO();
         requestResponse.setAppTransactionNumber("app-txn");
@@ -93,23 +98,29 @@ public class PayAmGoServiceImplTest {
 
         PayAmGoRequestResponseDTO payAmGoRequestResponseDTO = payAmGoService.initiatePayment(payAmGoRequestDTO);
 
-        verify(mockRestTemplate).postForEntity(stringArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+//        verify(mockRestTemplate).postForEntity(stringArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
         verify(mockRestTemplate).exchange(urlArgumentCaptor.capture(), payMethodCaptor.capture(),
                 payEntityArgumentCaptor.capture(), payClazzCaptor.capture());
 
-        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/login");
-        assertThat(entityArgumentCaptor.getValue().getHeaders().get("Content-Type").get(0)).isEqualTo("application/json;charset=UTF-8");
-        assertThat(entityArgumentCaptor.getValue().getHeaders().get("Accept").get(0)).isEqualTo("application/json");
-        PayAmGoTokenRequest tokenBody = (PayAmGoTokenRequest) entityArgumentCaptor.getValue().getBody();
-        assertThat(tokenBody.getEmail()).isEqualTo("gw-username");
-        assertThat(tokenBody.getPassword()).isEqualTo("gw-password");
-        assertThat(clazzCaptor.getValue()).isEqualTo(PayAmGoTokenResponse.class);
+//        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/login");
+//        assertThat(entityArgumentCaptor.getValue().getHeaders().get("Content-Type").get(0)).isEqualTo("application/json;charset=UTF-8");
+//        assertThat(entityArgumentCaptor.getValue().getHeaders().get("Accept").get(0)).isEqualTo("application/json");
+//        PayAmGoTokenRequest tokenBody = (PayAmGoTokenRequest) entityArgumentCaptor.getValue().getBody();
+//        assertThat(tokenBody.getEmail()).isEqualTo("gw-username");
+//        assertThat(tokenBody.getPassword()).isEqualTo("gw-password");
+//        assertThat(clazzCaptor.getValue()).isEqualTo(PayAmGoTokenResponse.class);
 
-        assertThat(urlArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/protected/users/init_payment");
+        assertThat(urlArgumentCaptor.getValue()).isEqualTo("http://localhost/api/protected/users/init_payment");
         assertThat(payMethodCaptor.getValue()).isEqualTo(HttpMethod.POST);
         assertThat(payEntityArgumentCaptor.getValue().getHeaders().get("Content-Type").get(0)).isEqualTo("application/json;charset=UTF-8");
         assertThat(payEntityArgumentCaptor.getValue().getHeaders().get("Accept").get(0)).isEqualTo("application/json");
-        assertThat(payEntityArgumentCaptor.getValue().getHeaders().get("Authorization").get(0)).isEqualTo("Bearer access-token");
+        assertThat(payEntityArgumentCaptor.getValue().getHeaders().get("Client-Key").get(0)).isEqualTo("zebraMan");
+        assertThat(payEntityArgumentCaptor.getValue().getHeaders().get("Client-Hash").get(0)).isEqualTo(
+                Hashes.getClientInitiationHash(
+                       payAmGoRequestDTO.getAmount(), payAmGoRequestDTO.getCurrencyCode(), payAmGoRequestDTO.getAppTransactionNumber(),
+                        payAmGoRequestDTO.getAppUserPhoneNumber(), payAmGoRequestDTO.getPaymentResponseUrl(), payAmGoApiProps.getClientSecret()
+                )
+        );
         PayAmGoRequestDTO paymentRequestBody = (PayAmGoRequestDTO) payEntityArgumentCaptor.getValue().getBody();
         assertThat(paymentRequestBody.getAmount()).isEqualTo(100);
         assertThat(paymentRequestBody.getAppTransactionNumber()).isEqualTo("app-txn");
