@@ -106,6 +106,8 @@ jobs:
         APP_CLIENT_SECRET: ((app_client_secret))
         GW_DB_USER: ((gw_db_user))
         GW_DB_PWD: ((gw_db_pwd))
+        PAYAMGO_CLIENT_KEY: ((payamgo_client_key))
+        PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
 
 
 - name: major
