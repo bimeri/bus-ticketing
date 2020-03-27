@@ -629,10 +629,10 @@ public class JourneyServiceImpl implements JourneyService {
                                         TransitAndStop destinationLocation, LocalDateTime dateTime) {
         // users destination can either be journey destination or one of the journey stops location
         boolean anyStopMatch = journey.getJourneyStops().stream().anyMatch(
-                journeyStop -> journeyStop.getTransitAndStop().equals(destinationLocation)
+                journeyStop -> journeyStop.getTransitAndStop().getId().equals(destinationLocation.getId())
         );
         return (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime)) &&
-                journey.getDepartureLocation().equals(departureLocation) &&
-                (journey.getDestination().equals(destinationLocation) || anyStopMatch);
+                journey.getDepartureLocation().getId().equals(departureLocation.getId()) &&
+                (journey.getDestination().getId().equals(destinationLocation.getId()) || anyStopMatch);
     }
 }
