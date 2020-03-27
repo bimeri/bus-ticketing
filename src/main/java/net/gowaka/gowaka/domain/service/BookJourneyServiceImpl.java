@@ -134,8 +134,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         paymentTransaction.setAppUserPhoneNumber(bookJourneyRequest.getPhoneNumber());
 
         paymentTransaction.setCancelRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentCancelUrl());
-        paymentTransaction.setPaymentResponseUrl(paymentUrlResponseProps.getPayAmGoPaymentResponseUrl() + "?id=" + savedBookedJourney.getId());
-        paymentTransaction.setReturnRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentRedirectUrl() + "?id=" + savedBookedJourney.getId());
+        paymentTransaction.setPaymentResponseUrl(paymentUrlResponseProps.getPayAmGoPaymentResponseUrl() + "/" + savedBookedJourney.getId());
+        paymentTransaction.setReturnRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentRedirectUrl() + "/" + savedBookedJourney.getId());
 
         paymentTransaction.setLanguage("en");
         paymentTransaction.setTransactionStatus(INITIATED.toString());
@@ -209,13 +209,20 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 paymentTransaction.getProcessingNumber().equals(paymentStatusResponseDTO.getProcessingNumber())
                 && paymentTransaction.getAppTransactionNumber().equals(paymentStatusResponseDTO.getAppTransactionNumber())) {
 
-            paymentTransaction.setTransactionStatus(paymentStatusResponseDTO.getTransactionStatus().equals(COMPLETED.toString()) ? COMPLETED.toString() : DECLINED.toString());
+            boolean isCompleted = paymentStatusResponseDTO.getTransactionStatus().equals(COMPLETED.toString());
+
+            paymentTransaction.setTransactionStatus(isCompleted ? COMPLETED.toString() : DECLINED.toString());
             paymentTransaction.setPaymentChannelTransactionNumber(paymentStatusResponseDTO.getPaymentChannelTransactionNumber());
             paymentTransaction.setPaymentChannel(paymentStatusResponseDTO.getPaymentChannelCode());
             paymentTransaction.setPaymentDate(LocalDateTime.now());
-
             paymentTransactionRepository.save(paymentTransaction);
-            if(paymentStatusResponseDTO.getTransactionStatus().equals(COMPLETED.toString())){
+
+            if(!isCompleted){
+                bookedJourney.getPassenger().setSeatNumber(0);
+                bookedJourneyRepository.save(bookedJourney);
+            }
+
+            if(isCompleted){
                 BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
                 sendTicketEmail(bookedJourneyStatusDTO);
             }

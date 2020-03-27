@@ -403,8 +403,8 @@ public class BookJourneyServiceImplTest {
         assertThat(paymentTransactionValue.getCurrencyCode()).isEqualTo("XAF");
         assertThat(paymentTransactionValue.getLanguage()).isEqualTo("en");
         assertThat(paymentTransactionValue.getPaymentReason()).isEqualTo("Bus ticket for 123SW");
-        assertThat(paymentTransactionValue.getPaymentResponseUrl()).isEqualTo("http://localhost/response?id=101");
-        assertThat(paymentTransactionValue.getReturnRedirectUrl()).isEqualTo("http://localhost/redirect?id=101");
+        assertThat(paymentTransactionValue.getPaymentResponseUrl()).isEqualTo("http://localhost/response/101");
+        assertThat(paymentTransactionValue.getReturnRedirectUrl()).isEqualTo("http://localhost/redirect/101");
         assertThat(paymentTransactionValue.getTransactionStatus()).isEqualTo("INITIATED");
 
         assertThat(paymentTransactionAfterResponseValue.getTransactionStatus()).isEqualTo("WAITING");
@@ -503,8 +503,8 @@ public class BookJourneyServiceImplTest {
         assertThat(paymentTransactionValue.getCurrencyCode()).isEqualTo("XAF");
         assertThat(paymentTransactionValue.getLanguage()).isEqualTo("en");
         assertThat(paymentTransactionValue.getPaymentReason()).isEqualTo("Bus ticket for 123SW");
-        assertThat(paymentTransactionValue.getPaymentResponseUrl()).isEqualTo("http://localhost/response?id=101");
-        assertThat(paymentTransactionValue.getReturnRedirectUrl()).isEqualTo("http://localhost/redirect?id=101");
+        assertThat(paymentTransactionValue.getPaymentResponseUrl()).isEqualTo("http://localhost/response/101");
+        assertThat(paymentTransactionValue.getReturnRedirectUrl()).isEqualTo("http://localhost/redirect/101");
 
         assertThat(paymentTransactionAfterResponseValue.getTransactionStatus()).isEqualTo("WAITING");
         assertThat(paymentTransactionAfterResponseValue.getProcessingNumber()).isEqualTo("process002");
