@@ -221,7 +221,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 bookedJourneyRepository.save(bookedJourney);
             }
 
-            if (isCompleted || true) {
+            if (isCompleted) {
                 String storageFolder = QRCodeProvider.STORAGE_FOLDER;
                 String filename = bookedJourney.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
                 try {
