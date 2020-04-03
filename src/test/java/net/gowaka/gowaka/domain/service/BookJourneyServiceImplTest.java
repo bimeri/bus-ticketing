@@ -10,10 +10,7 @@ import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
-import net.gowaka.gowaka.service.BookJourneyService;
-import net.gowaka.gowaka.service.NotificationService;
-import net.gowaka.gowaka.service.PayAmGoService;
-import net.gowaka.gowaka.service.UserService;
+import net.gowaka.gowaka.service.*;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,6 +58,8 @@ public class BookJourneyServiceImplTest {
     @Mock
     private NotificationService mocKNotificationService;
     @Mock
+    private FileStorageService mockFileStorageService;
+    @Mock
     private EmailContentBuilder mockEmailContentBuilder;
 
     private BookJourneyService bookJourneyService;
@@ -71,6 +70,7 @@ public class BookJourneyServiceImplTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     private Journey journey;
+
     @Before
     public void setUp() {
 
@@ -82,7 +82,7 @@ public class BookJourneyServiceImplTest {
         bookJourneyService = new BookJourneyServiceImpl(mockBookedJourneyRepository, mockJourneyRepository,
                 mockUserRepository, mockPaymentTransactionRepository,
                 mockUserService, mockPayAmGoService,
-                mocKNotificationService, paymentUrlResponseProps,
+                mocKNotificationService, mockFileStorageService, paymentUrlResponseProps,
                 mockEmailContentBuilder);
 
         Location destinationLocation = new Location();
@@ -676,10 +676,13 @@ public class BookJourneyServiceImplTest {
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.of(bookedJourney));
 
+
         bookJourneyService.handlePaymentResponse(2L, paymentStatusResponseDTO);
         verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
         verify(mockEmailContentBuilder).buildTicketEmail(any());
         verify(mocKNotificationService).sendEmail(any());
+        verify(mockFileStorageService).savePublicFile(anyString(), any(), anyString());
+        verify(mockFileStorageService).getPublicFilePath(anyString(), anyString());
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getValue();
 
         assertThat(paymentTransactionValue.getTransactionStatus()).isEqualTo("COMPLETED");

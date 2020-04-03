@@ -14,6 +14,8 @@ import java.awt.image.BufferedImage;
  */
 public class QRCodeProvider {
 
+    public static final String STORAGE_FOLDER = "QR_Code";
+    public static final String STORAGE_FILE_FORMAT = "png";
 
     public static BufferedImage generateQRCodeImage(String text) {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();

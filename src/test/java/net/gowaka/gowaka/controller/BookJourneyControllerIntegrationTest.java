@@ -6,6 +6,7 @@ import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.BookJourneyRequest;
 import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
+import net.gowaka.gowaka.service.FileStorageService;
 import net.gowaka.gowaka.service.NotificationService;
 import net.gowaka.gowaka.service.PayAmGoService;
 import org.junit.Before;
@@ -66,6 +67,8 @@ public class BookJourneyControllerIntegrationTest {
 
     @MockBean
     private NotificationService notificationService;
+    @MockBean
+    private FileStorageService fileStorageService;
 
     @Value("${security.jwt.token.privateKey}")
     private String secretKey = "";
@@ -280,6 +283,9 @@ public class BookJourneyControllerIntegrationTest {
                 .andExpect(status().isNoContent())
                 .andReturn();
         verify(notificationService).sendEmail(any());
+        verify(fileStorageService).savePublicFile(any(), any(), any());
+        verify(fileStorageService).getPublicFilePath(any(), any());
+
     }
 
 }

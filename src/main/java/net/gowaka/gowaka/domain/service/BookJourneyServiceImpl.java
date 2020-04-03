@@ -16,10 +16,7 @@ import net.gowaka.gowaka.network.api.notification.model.SendEmailDTO;
 import net.gowaka.gowaka.network.api.payamgo.PayAmGoPaymentStatus;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
-import net.gowaka.gowaka.service.BookJourneyService;
-import net.gowaka.gowaka.service.NotificationService;
-import net.gowaka.gowaka.service.PayAmGoService;
-import net.gowaka.gowaka.service.UserService;
+import net.gowaka.gowaka.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,12 +55,13 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private UserService userService;
     private PayAmGoService payAmGoService;
     private NotificationService notificationService;
+    private FileStorageService fileStorageService;
     private PaymentUrlResponseProps paymentUrlResponseProps;
 
     private EmailContentBuilder emailContentBuilder;
 
     @Autowired
-    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, PaymentUrlResponseProps paymentUrlResponseProps, EmailContentBuilder emailContentBuilder) {
+    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, EmailContentBuilder emailContentBuilder) {
         this.bookedJourneyRepository = bookedJourneyRepository;
         this.journeyRepository = journeyRepository;
         this.userRepository = userRepository;
@@ -71,6 +69,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.userService = userService;
         this.payAmGoService = payAmGoService;
         this.notificationService = notificationService;
+        this.fileStorageService = fileStorageService;
         this.paymentUrlResponseProps = paymentUrlResponseProps;
         this.emailContentBuilder = emailContentBuilder;
     }
@@ -217,13 +216,25 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             paymentTransaction.setPaymentDate(LocalDateTime.now());
             paymentTransactionRepository.save(paymentTransaction);
 
-            if(!isCompleted){
+            if (!isCompleted) {
                 bookedJourney.getPassenger().setSeatNumber(0);
                 bookedJourneyRepository.save(bookedJourney);
             }
 
-            if(isCompleted){
+            if (isCompleted || true) {
+                String storageFolder = QRCodeProvider.STORAGE_FOLDER;
+                String filename = bookedJourney.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+                try {
+                    byte[] qrCodeBytes = getQRCodeBytes(bookedJourney);
+                    fileStorageService.savePublicFile(filename, qrCodeBytes, storageFolder);
+                } catch (IOException e) {
+                    logger.info("could not generate QR Code");
+                    e.printStackTrace();
+                }
+                String publicFilePath = fileStorageService.getPublicFilePath(filename, storageFolder);
+
                 BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
+                bookedJourneyStatusDTO.setQRCheckedInImageUrl(publicFilePath);
                 sendTicketEmail(bookedJourneyStatusDTO);
             }
         }
@@ -293,14 +304,20 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     private String getQREncodedImage(BookedJourney bookedJourney) throws IOException {
+        byte[] imageBytes = getQRCodeBytes(bookedJourney);
+
+        Base64.Encoder encoder = Base64.getEncoder();
+        return "data:image/png;base64," + encoder.encodeToString(imageBytes);
+    }
+
+    private byte[] getQRCodeBytes(BookedJourney bookedJourney) throws IOException {
         BufferedImage bufferedImage = QRCodeProvider.generateQRCodeImage(bookedJourney.getCheckedInCode());
         String pathname = "image" + bookedJourney.getId() + ".png";
         File file = new File(pathname);
         ImageIO.write(bufferedImage, "png", file);
         byte[] imageBytes = Files.readAllBytes(Paths.get(pathname));
-        Base64.Encoder encoder = Base64.getEncoder();
         file.delete();
-        return "data:image/png;base64," + encoder.encodeToString(imageBytes);
+        return imageBytes;
     }
 
     private PayAmGoRequestDTO getPayAmGoRequestDTO(PaymentTransaction savedPaymentTransaction) {

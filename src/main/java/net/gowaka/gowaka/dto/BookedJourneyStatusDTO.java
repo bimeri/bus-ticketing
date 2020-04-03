@@ -17,6 +17,7 @@ public class BookedJourneyStatusDTO {
     private String paymentStatus;
     private String checkedInCode;
     private String qRCheckedInImage;
+    private String qRCheckedInImageUrl;
     private String paymentReason;
     private String paymentChannel;
     private String paymentChannelTransactionNumber;
