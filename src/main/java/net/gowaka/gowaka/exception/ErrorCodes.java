@@ -17,6 +17,7 @@ public enum ErrorCodes {
     USER_ALREADY_IN_AN_AGENCY("User is already in this agency"),
     LICENSE_PLATE_NUMBER_ALREADY_IN_USE("License plate number is already in use."),
     TRANSIT_AND_STOP_ALREADY_IN_USE("Transit and stop is already in use."),
+    TRANSIT_AND_STOP_ALREADY_BOOKED("Transit and stop is already booked."),
     INVALID_FORMAT("Invalid Format"),
     JOURNEY_ALREADY_TERMINATED("This Journey is already terminated."),
     JOURNEY_ALREADY_STARTED("This Journey is already started."),

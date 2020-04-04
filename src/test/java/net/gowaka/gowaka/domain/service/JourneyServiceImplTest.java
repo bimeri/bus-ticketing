@@ -176,12 +176,19 @@ public class JourneyServiceImplTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setName("Muea boy");
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        bus1.setName("Happi");
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus1);
 
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.emptyList());
-        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(new Journey()));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+
         expectedException.expect(ApiException.class);
         expectedException.expectMessage("Car not found");
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
@@ -1109,8 +1116,114 @@ public class JourneyServiceImplTest {
 
     }
 
+    /**
+     * AGENCY_MANAGER or AGENCY_OPERATOR** can remove STOPS
+     * or Updating Journey  for Journey in their OfficialAgency  if  arrivalIndicator = false and NO booking
+     * #169112817
+     * Scenario: 1. Journeys NOT exist
+     */
+    @Test
+    public void given_journey_id_then_throw_not_found_exception_if_journey_not_exist() {
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.removeNonBookedStop(1L, 1L);
+    }
 
+    /**
+     * AGENCY_MANAGER or AGENCY_OPERATOR** can remove STOPS
+     * or Updating Journey  for Journey in their OfficialAgency  if  arrivalIndicator = false and NO booking
+     * #169112817
+     * Scenario: 2. Journey's arrivalIndicator is true
+     */
+    @Test
+    public void given_journey_arrival_indicator_true_then_throw_journey_already_terminated_exception(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(true);
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey already terminated");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
+        journeyService.removeNonBookedStop(1L, 1L);
+    }
 
+    /**
+     * AGENCY_MANAGER or AGENCY_OPERATOR** can remove STOPS
+     * or Updating Journey  for Journey in their OfficialAgency  if  arrivalIndicator = false and NO booking
+     * #169112817
+     * Scenario: 3. Journey's car is NOT in AuthUser Agency
+     */
+    @Test
+    public void given_journey_car_not_in_user_agency_then_throw_not_found_exception() {
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
 
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey\'s car not in AuthUser\'s Agency");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.removeNonBookedStop(1L, 1L);
+    }
+
+    /**
+     * AGENCY_MANAGER or AGENCY_OPERATOR** can remove STOPS
+     * or Updating Journey  for Journey in their OfficialAgency  if  arrivalIndicator = false and NO booking
+     * #169112817
+     * Scenario: 4. Some users already booked to that stop location
+     */
+    @Test
+    public void given_journey_has_booking_for_transit_and_stop_then_throw_transit_and_stop_already_booked_exception() {
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setId(1L);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(transitAndStop);
+        transitAndStop.setBookedJourneys(Collections.singletonList(bookedJourney));
+//        transitAndStop.setBookedJourneys(Collections.emptyList());
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
+
+        when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage(ErrorCodes.TRANSIT_AND_STOP_ALREADY_BOOKED.getMessage());
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.TRANSIT_AND_STOP_ALREADY_BOOKED.toString())));
+
+        journeyService.removeNonBookedStop(1L, 1L);
+    }
 
 }

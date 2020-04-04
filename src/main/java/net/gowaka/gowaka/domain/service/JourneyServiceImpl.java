@@ -63,8 +63,11 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
-    public JourneyResponseDTO updateJourney(JourneyDTO journey, Long journeyId, Long carId) {
-        return mapSaveAndGetJourneyResponseDTO(journey, getJourney(journeyId), getOfficialAgencyCarById(carId));
+    public JourneyResponseDTO updateJourney(JourneyDTO dto, Long journeyId, Long carId) {
+        Journey journey = getJourney(journeyId);
+        journeyTerminationFilter(journey);
+        checkJourneyCarInOfficialAgency(journey);
+        return mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
     }
 
     @Override
@@ -148,13 +151,38 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
+    public void removeNonBookedStop(Long journeyId, Long stopId) {
+        Journey journey = getJourney(journeyId);
+        journeyTerminationFilter(journey);
+        checkJourneyCarInOfficialAgency(journey);
+        TransitAndStop transitAndStop = getTransitAndStop(stopId);
+        if (isStopNotBooked(journey, transitAndStop)) {
+            List<JourneyStop> journeyStops = journey.getJourneyStops();
+            logger.info("removing all previous journeyStops");
+            if (journey.getId() != null)
+                journeyStopRepository.deleteAllByJourneyId(journey.getId());
+            logger.info("setting new journeyStops");
+            journey.setJourneyStops(journeyStops.stream().filter(
+                    j -> j.getTransitAndStop() != null && !j.getTransitAndStop().equals(transitAndStop)
+            ).collect(Collectors.toList()));
+            journeyRepository.save(journey);
+        } else {
+            throw new ApiException(ErrorCodes.TRANSIT_AND_STOP_ALREADY_BOOKED.getMessage(),
+                    ErrorCodes.TRANSIT_AND_STOP_ALREADY_BOOKED.toString(), HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @Override
     public JourneyResponseDTO addSharedJourney(JourneyDTO journeyDTO, Long carId) {
         return mapSaveAndGetJourneyResponseDTO(journeyDTO, new Journey(), getPersonalAgencyCarById(carId));
     }
 
     @Override
     public JourneyResponseDTO updateSharedJourney(JourneyDTO journeyDTO, Long journeyId, Long carId) {
-        return mapSaveAndGetJourneyResponseDTO(journeyDTO, getJourney(journeyId), getPersonalAgencyCarById(carId));
+        Journey journey = getJourney(journeyId);
+        journeyTerminationFilter(journey);
+        checkJourneyCarInPersonalAgency(journey);
+        return mapSaveAndGetJourneyResponseDTO(journeyDTO, journey, getPersonalAgencyCarById(carId));
     }
 
     @Override
@@ -545,7 +573,7 @@ public class JourneyServiceImpl implements JourneyService {
      * @return boolean
      */
     private boolean journeyTerminationFilter(Journey journey){
-        if (journey.getArrivalIndicator()){
+        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()){
             throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
         }
         return true;
@@ -634,5 +662,27 @@ public class JourneyServiceImpl implements JourneyService {
         return (journey.getDepartureTime().isAfter(dateTime) || journey.getDepartureTime().isEqual(dateTime)) &&
                 journey.getDepartureLocation().getId().equals(departureLocation.getId()) &&
                 (journey.getDestination().getId().equals(destinationLocation.getId()) || anyStopMatch);
+    }
+
+    private boolean isStopNotBooked(Journey journey, TransitAndStop transitAndStop) {
+        /*
+         * for a stop to be booked in a particular journey
+         * the stop should have booked journeys and
+         * that particular journey should be one of them
+         * since a stop can have booked journeys, and still be not booked for this particular journey
+         *
+         * an additional check is also to ensure that even if a booked journey exists for this stop
+         * and is equal to this particular journey in question,
+         * the stop should be the same as the destination of the booked journey
+         *
+         * this additional check can be gracefully ignored
+         * since the mapping between transitAndStops and bookedJourneys ensures that
+         * if a transitAndStop has a bookedJourney, then that transitAndStop should
+         * be the destination of the bookedJourney
+         */
+        return transitAndStop == null || transitAndStop.getBookedJourneys() == null || transitAndStop.getBookedJourneys().stream().noneMatch(
+                bookedJourney -> bookedJourney != null && bookedJourney.getJourney() != null && bookedJourney.getJourney().equals(journey)
+                        /*&& bookedJourney.getDestination() != null && bookedJourney.getDestination().equals(transitAndStop)*/
+        );
     }
 }

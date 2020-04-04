@@ -29,9 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static org.hamcrest.CoreMatchers.is;
@@ -68,6 +66,9 @@ public class JourneyControllerIntegrationTest {
 
     @Autowired
     private JourneyRepository journeyRepository;
+
+    @Autowired
+    private BookedJourneyRepository bookedJourneyRepository;
 
     @Autowired
     private MockMvc mockMvc;
@@ -1853,8 +1854,66 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
+    }
+
+    /**
+     * AGENCY_MANAGER or AGENCY_OPERATOR** can remove STOPS
+     * or Updating Journey  for Journey in their OfficialAgency  if  arrivalIndicator = false and NO booking
+     * #169112817
+     * Scenario: 5. Remove Journey Stops Success
+     */
+    @Test
+    public void given_journey_has_no_booking_for_transit_and_stop_then_remove_transit_and_stop() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+
+        Location location1 = new Location();
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
 
 
+        bus.setOfficialAgency(officialAgency);
+        carRepository.save(bus);
 
+
+        Journey journey = new Journey();
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus);
+        JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 2000.0);
+        JourneyStop journeyStop1 = new JourneyStop(journey, transitAndStop1, 300.0);
+        journey.setJourneyStops(new ArrayList<>(Arrays.asList(journeyStop, journeyStop1)));
+        journeyRepository.save(journey);
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setDestination(transitAndStop);
+        bookedJourney.setJourney(journey);
+        bookedJourneyRepository.save(bookedJourney);
+
+        Journey journey1 = new Journey();
+        journey1.setDepartureIndicator(false);
+        journey1.setArrivalIndicator(false);
+        JourneyStop journeyStop2 = new JourneyStop(journey1, transitAndStop1, 2500.0);
+        journey1.setJourneyStops(Collections.singletonList(journeyStop2));
+        journeyRepository.save(journey1);
+        BookedJourney bookedJourney1 = new BookedJourney();
+        bookedJourney1.setDestination(transitAndStop1);
+        bookedJourney1.setJourney(journey1);
+        bookedJourneyRepository.save(bookedJourney1);
+
+        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() + "/transitAndStops/" + transitAndStop1.getId() )
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
     }
 }

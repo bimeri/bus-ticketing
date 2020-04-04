@@ -85,6 +85,15 @@ public class JourneyController {
         journeyService.updateJourneyArrivalIndicator(journeyId, journeyArrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
     }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @DeleteMapping("/agency/journeys/{journeyId}/transitAndStops/{transitAndStopId}")
+    public ResponseEntity removeNonBookedStop(
+            @PathVariable("journeyId") Long journeyId, @PathVariable("transitAndStopId") Long stopId) {
+        journeyService.removeNonBookedStop(journeyId, stopId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/users/journeys/cars/{carId}")
     public ResponseEntity<JourneyResponseDTO> addSharedRideJourney(@PathVariable("carId") Long carId, @Valid @RequestBody JourneyDTO journeyDTO){
