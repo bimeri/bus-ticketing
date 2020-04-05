@@ -20,7 +20,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private final Logger logger = LoggerFactory.getLogger(NotificationRestClient.class);
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private RestTemplate restTemplate;
     private FileStorageProps fileStorageProps;
 

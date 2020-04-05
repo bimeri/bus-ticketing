@@ -143,6 +143,9 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setDestination(destination);
         bookedJourney.setPassengerCheckedInIndicator(false);
         bookedJourney.setCheckedInCode("1111-1599933993");
+        User user = new User();
+        user.setUserId("10");
+        bookedJourney.setUser(user);
 
         journey.setBookedJourneys(Collections.singletonList(bookedJourney));
 
@@ -613,6 +616,10 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.of(bookJourney));
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
         BookedJourneyStatusDTO bookJourneyStatus = bookJourneyService.getBookJourneyStatus(2L);
         assertThat(bookJourneyStatus.getAmount()).isEqualTo(2000.00);
         assertThat(bookJourneyStatus.getCurrencyCode()).isEqualTo("XAF");

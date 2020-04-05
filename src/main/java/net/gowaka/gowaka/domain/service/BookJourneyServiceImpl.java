@@ -189,6 +189,13 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         BookedJourney bookedJourney = bookedJourneyOptional.get();
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        if (currentAuthUser == null
+                || currentAuthUser.getId() == null
+                || bookedJourney.getUser() == null
+                || !currentAuthUser.getId().equals(bookedJourney.getUser().getUserId())) {
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
 
         BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
 
