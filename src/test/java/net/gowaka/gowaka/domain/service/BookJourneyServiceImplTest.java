@@ -611,6 +611,68 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
+    public void getUserBookedJourneyHistory_throwException_whenUserNotLogin() {
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(null);
+
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("message", is("Resource Not Found")));
+        expectedException.expect(hasProperty("errorCode", is("RESOURCE_NOT_FOUND")));
+
+        bookJourneyService.getUserBookedJourneyHistory();
+    }
+
+    @Test
+    public void getUserBookedJourneyHistory_returnListOfStatus_whenUserLogin() {
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockBookedJourneyRepository.findAllByUserUserId(anyString()))
+                .thenReturn(Collections.singletonList(journey.getBookedJourneys().get(0)));
+
+        BookedJourneyStatusDTO userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory().get(0);
+        assertThat(userBookedJourneyHistory.getAmount()).isEqualTo(2000.00);
+        assertThat(userBookedJourneyHistory.getCurrencyCode()).isEqualTo("XAF");
+        assertThat(userBookedJourneyHistory.getPaymentStatus()).isEqualTo("COMPLETED");
+        assertThat(userBookedJourneyHistory.getCheckedInCode()).isEqualTo("1111-1599933993");
+        assertThat(userBookedJourneyHistory.getQRCheckedInImage()).isEqualTo("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAAA10lEQVR42u3XSw7EIAgGYFx5DG/q46Yeg1UdATvJTOzavwnGRdtvQ0TQ0nga5OLi8g5hmiOMUSlVeUxIIo+NKXBq9yuOzHibRm0OJ0yFUWV0TNFspyuO/T44KVolEvK+fk7KGr089Z2DIlFLwq/Ys0wkkT1IRSvY0g4l2ZLMNEOuhCVB0WZgJJnFESfqWrIca0BiQz+Xb62AyN1dqqT6d0XPixaHxCszE5boSSvdhWbgceCJ3gL+so0iSZe2BzCxZrxwcz84KKtKrLW0TQWfE/+fc3F5qXwAkHCU9h+9LrYAAAAASUVORK5CYII=");
+        assertThat(userBookedJourneyHistory.getPaymentReason()).isEqualTo("Bus ticket");
+        assertThat(userBookedJourneyHistory.getPaymentChannel()).isEqualTo("MTN_MOBILE_MONEY");
+        assertThat(userBookedJourneyHistory.getPaymentDate()).isNotNull();
+        assertThat(userBookedJourneyHistory.isCheckedIn()).isFalse();
+        assertThat(userBookedJourneyHistory.getPassengerName()).isEqualTo("John Doe");
+        assertThat(userBookedJourneyHistory.getPassengerIdNumber()).isEqualTo("1234001");
+        assertThat(userBookedJourneyHistory.getPassengerSeatNumber()).isEqualTo(8);
+        assertThat(userBookedJourneyHistory.getCarName()).isEqualTo("Musango 30 Seater Bus");
+        assertThat(userBookedJourneyHistory.getCarDriverName()).isEqualTo("Michael John");
+        assertThat(userBookedJourneyHistory.getCarLicenseNumber()).isEqualTo("123SW");
+        assertThat(userBookedJourneyHistory.getDepartureLocation()).isEqualTo("Buea Moto Part, Buea SW, Cameroon");
+        assertThat(userBookedJourneyHistory.getDestinationLocation()).isEqualTo("Kumba Moto Part, Kumba SW, Cameroon");
+        assertThat(userBookedJourneyHistory.getId()).isEqualTo(2L);
+        assertThat(userBookedJourneyHistory.getDepartureTime()).isNotNull();
+        assertThat(userBookedJourneyHistory.getPassengerEmail()).isEqualTo("email@email.net");
+        assertThat(userBookedJourneyHistory.getPassengerPhoneNumber()).isEqualTo("999999");
+
+    }
+
+    @Test
+    public void getUserBookedJourneyHistory_returnListOfStatus_whenUserLoginAndNoCompletedTransaction() {
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        BookedJourney bookedJourney = journey.getBookedJourneys().get(0);
+        bookedJourney.getPaymentTransaction().setTransactionStatus("DECLINED");
+        when(mockBookedJourneyRepository.findAllByUserUserId(anyString()))
+                .thenReturn(Collections.singletonList(bookedJourney));
+
+        List<BookedJourneyStatusDTO> userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory();
+        assertThat(userBookedJourneyHistory.size()).isEqualTo(0);
+    }
+
+
+    @Test
     public void getBookJourneyStatus_returnStatusResponse_whenBookJourneyIdExit() {
 
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);

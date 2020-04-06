@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -100,6 +101,16 @@ public class BookJourneyControllerTest {
 
     }
 
+    @Test
+    public void bookedJourneyHistory_callsBookJourneyService() {
 
+        when(mockBookJourneyService.getUserBookedJourneyHistory())
+                .thenReturn(Collections.singletonList(new BookedJourneyStatusDTO()));
+
+        ResponseEntity<List<BookedJourneyStatusDTO>> listResponseEntity = bookJourneyController.bookedJourneyHistory();
+        assertThat(listResponseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(listResponseEntity.getBody()).isInstanceOf(List.class);
+
+    }
 
 }

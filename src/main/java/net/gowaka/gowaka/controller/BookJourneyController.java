@@ -52,5 +52,11 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @GetMapping("/protected/bookJourney/history")
+    ResponseEntity<List<BookedJourneyStatusDTO>> bookedJourneyHistory() {
+        return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory());
+    }
+
 
 }

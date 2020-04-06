@@ -19,6 +19,8 @@ public interface BookJourneyService {
 
     BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId);
 
+    List<BookedJourneyStatusDTO> getUserBookedJourneyHistory();
+
     void handlePaymentResponse(Long bookedJourneyId, PaymentStatusResponseDTO paymentStatusResponseDTO);
 
 }

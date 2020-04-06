@@ -203,6 +203,19 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
+    public List<BookedJourneyStatusDTO> getUserBookedJourneyHistory() {
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        if (currentAuthUser == null || currentAuthUser.getId() == null) {
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return bookedJourneyRepository.findAllByUserUserId(currentAuthUser.getId()).stream()
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString()))
+                .map(this::getBookedJourneyStatusDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void handlePaymentResponse(Long bookedJourneyId, PaymentStatusResponseDTO paymentStatusResponseDTO) {
 
         Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findById(bookedJourneyId);
