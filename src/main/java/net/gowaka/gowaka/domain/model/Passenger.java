@@ -19,5 +19,12 @@ public class Passenger {
     private String passengerName;
     private String passengerIdNumber;
     private Integer seatNumber;
+    private String passengerEmail;
+    private String passengerPhoneNumber;
 
+    public Passenger(String passengerName, String passengerIdNumber, Integer seatNumber) {
+        this.passengerName = passengerName;
+        this.passengerIdNumber = passengerIdNumber;
+        this.seatNumber = seatNumber;
+    }
 }

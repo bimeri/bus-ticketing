@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.BookJourneyRequest;
-import net.gowaka.gowaka.dto.BookedJourneyStatusDTO;
-import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
-import net.gowaka.gowaka.dto.PaymentUrlDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +53,12 @@ public class BookJourneyController {
     @GetMapping("/protected/bookJourney/history")
     ResponseEntity<List<BookedJourneyStatusDTO>> bookedJourneyHistory() {
         return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory());
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @GetMapping("/protected/checkIn_status")
+    public ResponseEntity<OnBoardingInfoDTO> getOnBoardingInfoResponse(@RequestParam("code") String code) {
+        return ResponseEntity.ok(bookJourneyService.getPassengerOnBoardingInfo(code));
     }
 
 

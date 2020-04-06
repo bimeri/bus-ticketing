@@ -6,6 +6,5 @@ package net.gowaka.gowaka.constant;
  */
 
 public class GlobalConstants {
-
-
+    public static final String paymentStatusCompleted = "COMPLETED";
 }

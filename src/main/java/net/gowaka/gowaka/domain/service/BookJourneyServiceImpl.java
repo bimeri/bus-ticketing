@@ -1,5 +1,6 @@
 package net.gowaka.gowaka.domain.service;
 
+import net.gowaka.gowaka.constant.GlobalConstants;
 import net.gowaka.gowaka.constant.notification.EmailFields;
 import net.gowaka.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gowaka.gowaka.domain.model.*;
@@ -29,14 +30,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static net.gowaka.gowaka.exception.ErrorCodes.RESOURCE_NOT_FOUND;
-import static net.gowaka.gowaka.exception.ErrorCodes.SEAT_ALREADY_TAKEN;
+import static net.gowaka.gowaka.exception.ErrorCodes.*;
 import static net.gowaka.gowaka.network.api.payamgo.PayAmGoPaymentStatus.*;
 
 /**
@@ -262,6 +261,18 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     }
 
+    @Override
+    public OnBoardingInfoDTO getPassengerOnBoardingInfo(String checkedInCode) {
+        BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
+        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
+                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) /* check journey state */
+                && paymentAcceptedOrElseReject(bookedJourney.getPaymentTransaction()) /* check payment status */
+        ) {
+            return new OnBoardingInfoDTO(bookedJourney);
+        }
+        throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+    }
+
     private void sendTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
 
         String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);
@@ -403,6 +414,48 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return journeyOptional.get();
+    }
+
+    private BookedJourney getBookedJourneyByCheckedInCode(String code) {
+        Optional<BookedJourney> optional = bookedJourneyRepository.findFirstByCheckedInCode(code);
+        if (!optional.isPresent()) {
+            logger.info("CheckedInCode not found code: {}", code);
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optional.get();
+    }
+
+    /**
+     * throw exception of journey is terminated
+     * @param journey
+     * @return boolean
+     */
+    private boolean journeyNotTerminatedOrElseReject(Journey journey){
+        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()){
+            throw new ApiException(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage(), ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
+        }
+        return true;
+    }
+
+
+    /**
+     * throw exception of journey is not started
+     * @param journey
+     * @return boolean
+     */
+    private boolean journeyNotStartedOrElseReject(Journey journey){
+        if (journey != null && journey.getDepartureIndicator() != null && journey.getDepartureIndicator()){
+            throw new ApiException(JOURNEY_ALREADY_STARTED.getMessage(), JOURNEY_ALREADY_STARTED.toString(), HttpStatus.CONFLICT);
+        }
+        return true;
+    }
+
+    private boolean paymentAcceptedOrElseReject(PaymentTransaction paymentTransaction) {
+        if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())){
+            logger.info("payment transaction declined: {}", paymentTransaction.getAppTransactionNumber());
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return true;
     }
 
 }

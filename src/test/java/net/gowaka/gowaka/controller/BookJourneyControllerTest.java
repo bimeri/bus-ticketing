@@ -1,9 +1,7 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.BookJourneyRequest;
-import net.gowaka.gowaka.dto.BookedJourneyStatusDTO;
-import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
-import net.gowaka.gowaka.dto.PaymentUrlDTO;
+import net.gowaka.gowaka.domain.model.BookedJourney;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,8 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -111,6 +108,16 @@ public class BookJourneyControllerTest {
         assertThat(listResponseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listResponseEntity.getBody()).isInstanceOf(List.class);
 
+    }
+
+    @Test
+    public void getOnBoardingInfoResponse_callsBookJourneyService() {
+        when(mockBookJourneyService.getPassengerOnBoardingInfo(anyString()))
+                .thenReturn(new OnBoardingInfoDTO(new BookedJourney()));
+        ResponseEntity<OnBoardingInfoDTO> responseEntity = bookJourneyController.getOnBoardingInfoResponse("someCode");
+        verify(mockBookJourneyService).getPassengerOnBoardingInfo("someCode");
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseEntity.getBody()).isInstanceOf(OnBoardingInfoDTO.class);
     }
 
 }

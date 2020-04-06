@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Author: Edward Tanko <br/>
@@ -14,4 +15,5 @@ import java.util.List;
 public interface BookedJourneyRepository extends JpaRepository<BookedJourney, Long> {
 
     List<BookedJourney> findAllByUserUserId(String userId);
+    Optional<BookedJourney> findFirstByCheckedInCode(String code);
 }
