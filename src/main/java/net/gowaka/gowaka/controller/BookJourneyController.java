@@ -61,5 +61,12 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.getPassengerOnBoardingInfo(code));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/checkIn")
+    public ResponseEntity checkInPassengerByCode(@RequestBody CodeDTO dto) {
+        bookJourneyService.checkInPassengerByCode(dto.getCode());
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

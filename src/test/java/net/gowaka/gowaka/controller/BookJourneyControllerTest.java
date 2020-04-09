@@ -120,4 +120,10 @@ public class BookJourneyControllerTest {
         assertThat(responseEntity.getBody()).isInstanceOf(OnBoardingInfoDTO.class);
     }
 
+    @Test
+    public void checkInPassengerByCode_callsBookJourneyService() {
+        bookJourneyController.checkInPassengerByCode(new CodeDTO("someCode"));
+        verify(mockBookJourneyService).checkInPassengerByCode("someCode");
+    }
+
 }

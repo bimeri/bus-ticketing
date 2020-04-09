@@ -273,6 +273,18 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
     }
 
+    @Override
+    public void checkInPassengerByCode(String checkedInCode) {
+        BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
+        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
+                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) &&
+                paymentAcceptedOrElseReject(bookedJourney.getPaymentTransaction())
+                && passengerNotCheckedInOrElseReject(bookedJourney.getPassengerCheckedInIndicator())) {
+            bookedJourney.setPassengerCheckedInIndicator(true);
+            bookedJourneyRepository.save(bookedJourney);
+        }
+    }
+
     private void sendTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
 
         String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);
@@ -450,10 +462,19 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return true;
     }
 
+
+
     private boolean paymentAcceptedOrElseReject(PaymentTransaction paymentTransaction) {
         if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())){
             logger.info("payment transaction declined: {}", paymentTransaction.getAppTransactionNumber());
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return true;
+    }
+
+    private boolean passengerNotCheckedInOrElseReject(boolean indicator) {
+        if (indicator) {
+            throw new ApiException(PASSENGER_ALREADY_CHECKED_IN.getMessage(), PASSENGER_ALREADY_CHECKED_IN.toString(), HttpStatus.CONFLICT);
         }
         return true;
     }

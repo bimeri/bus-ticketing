@@ -770,6 +770,7 @@ public class BookJourneyServiceImplTest {
         expectedException.expect(hasProperty("message", is(RESOURCE_NOT_FOUND.getMessage())));
         bookJourneyService.getPassengerOnBoardingInfo("someCode");
     }
+
     @Test
     public void getPassengerOnBoardingInfo_throwsException_whenJourneyAlreadyStarted(){
         Journey journey = new Journey();
@@ -865,5 +866,113 @@ public class BookJourneyServiceImplTest {
         assertThat(dto.getPassengerEmail()).isEqualTo("paul@gmail.com");
         assertThat(dto.getPassengerPhoneNumber()).isEqualTo("66887541");
     }
+
+    @Test
+    public void checkInPassenger_throwException_whenJourneyAlreadyStarted() {
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(true);
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
+        expectedException.expect(hasProperty("errorCode", is(JOURNEY_ALREADY_STARTED.toString())));
+        expectedException.expect(hasProperty("message", is(JOURNEY_ALREADY_STARTED.getMessage())));
+        bookJourneyService.checkInPassengerByCode("someCode");
+    }
+
+    @Test
+    public void checkInPassenger_throwException_whenJourneyAlreadyTerminated(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(true);
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
+        expectedException.expect(hasProperty("errorCode", is(JOURNEY_ALREADY_TERMINATED.toString())));
+        expectedException.expect(hasProperty("message", is(JOURNEY_ALREADY_TERMINATED.getMessage())));
+        bookJourneyService.checkInPassengerByCode("someCode");
+    }
+
+    @Test
+    public void checkInPassenger_throwException_whenPaymentDeclined(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(DECLINED.toString());
+        paymentTransaction.setAppTransactionNumber("apTxnNumber");
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
+        expectedException.expect(hasProperty("errorCode", is(RESOURCE_NOT_FOUND.toString())));
+        expectedException.expect(hasProperty("message", is(RESOURCE_NOT_FOUND.getMessage())));
+        bookJourneyService.checkInPassengerByCode("someCode");
+    }
+
+    @Test
+    public void checkInPassenger_throwException_whenCheckInCodeNotFound(){
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
+        expectedException.expect(hasProperty("errorCode", is(RESOURCE_NOT_FOUND.toString())));
+        expectedException.expect(hasProperty("message", is(RESOURCE_NOT_FOUND.getMessage())));
+        bookJourneyService.checkInPassengerByCode("someCode");
+    }
+
+    @Test
+    public void checkInPassenger_throwException_whenUserAlreadyCheckedIn(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(COMPLETED.toString());
+        paymentTransaction.setAppTransactionNumber("apTxnNumber");
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        bookedJourney.setPassengerCheckedInIndicator(true);
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
+        expectedException.expect(hasProperty("errorCode", is(PASSENGER_ALREADY_CHECKED_IN.toString())));
+        expectedException.expect(hasProperty("message", is(PASSENGER_ALREADY_CHECKED_IN.getMessage())));
+        bookJourneyService.checkInPassengerByCode("someCode");
+    }
+
+    @Test
+    public void checkInPassenger_checkIn_whenUserNotAlreadyCheckedIn(){
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(COMPLETED.toString());
+        paymentTransaction.setAppTransactionNumber("apTxnNumber");
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        bookedJourney.setPassengerCheckedInIndicator(false);
+        when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        bookJourneyService.checkInPassengerByCode("someCode");
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        assertThat(bookedJourneyArgumentCaptor.getValue().getPassengerCheckedInIndicator()).isEqualTo(true);
+    }
+
 
 }

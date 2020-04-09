@@ -22,4 +22,6 @@ public interface BookJourneyService {
 
     OnBoardingInfoDTO getPassengerOnBoardingInfo(String checkedInCode);
 
+    void checkInPassengerByCode(String checkedInCode);
+
 }

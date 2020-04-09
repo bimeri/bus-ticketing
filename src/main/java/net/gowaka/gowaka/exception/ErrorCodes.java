@@ -30,6 +30,7 @@ public enum ErrorCodes {
     SEAT_STRUCTURE_NOT_FOUND("The seat structure does not exist or may have been deleted"),
     MD5_HASH_FAILED("Failed to execute MD5 hashing"),
     FILE_NOT_FOUND("File not found "),
+    PASSENGER_ALREADY_CHECKED_IN("This passenger is already checked in"),
     SEAT_ALREADY_TAKEN("Seat already taken.");
 
     private String message;

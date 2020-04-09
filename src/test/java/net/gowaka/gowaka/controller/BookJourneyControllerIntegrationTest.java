@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.BookJourneyRequest;
+import net.gowaka.gowaka.dto.CodeDTO;
 import net.gowaka.gowaka.dto.OnBoardingInfoDTO;
 import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
@@ -14,6 +15,7 @@ import net.gowaka.gowaka.service.PayAmGoService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -361,6 +363,49 @@ public class BookJourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void checkInPassenger_success_return204() throws Exception {
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setUser(user);
+        bookedJourney.setPassenger(new Passenger("Edward Tanko", "1234033", 10));
+        bookedJourney.setDestination(journey.getDestination());
+        bookedJourney.setPassengerCheckedInIndicator(false);
+        bookedJourney.setCheckedInCode("2000-1599933988");
+        bookedJourney.setAmount(2000.00);
+
+        BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(COMPLETED.toString());
+        paymentTransaction.setAmount(2000.00);
+        paymentTransaction.setCurrencyCode("XAF");
+        paymentTransaction.setPaymentReason("Bus ticket");
+        paymentTransaction.setPaymentDate(LocalDateTime.now());
+        paymentTransaction.setPaymentChannel("MTN_MOBILE_MONEY");
+        paymentTransaction.setAppUserPhoneNumber("55555");
+        paymentTransaction.setAppUserEmail("tanko.edward@go-groups.net");
+        paymentTransaction.setAppUserLastName("Edward");
+        paymentTransaction.setAppUserLastName("Tanko");
+        paymentTransaction.setBookedJourney(savedBookJourney);
+        paymentTransaction.setProcessingNumber("1111111111");
+        paymentTransaction.setAppTransactionNumber("4444444444");
+        paymentTransactionRepository.save(paymentTransaction);
+
+        savedBookJourney.setPaymentTransaction(paymentTransaction);
+        bookedJourneyRepository.save(savedBookJourney);
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
+        RequestBuilder requestBuilder = post("/api/protected/checkIn")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(new CodeDTO("2000-1599933988")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
                 .andReturn();
     }
 
