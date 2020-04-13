@@ -1,16 +1,19 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.domain.model.BookedJourney;
+import net.gowaka.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -29,12 +32,14 @@ public class BookJourneyControllerTest {
 
     @Mock
     private BookJourneyService mockBookJourneyService;
+    @Mock
+    private HtmlToPdfGenarator mockHtmlToPdfGenarator;
 
     private BookJourneyController bookJourneyController;
 
     @Before
     public void setUp() {
-        bookJourneyController = new BookJourneyController(mockBookJourneyService);
+        bookJourneyController = new BookJourneyController(mockBookJourneyService, mockHtmlToPdfGenarator);
     }
 
     @Test
@@ -83,6 +88,28 @@ public class BookJourneyControllerTest {
         verify(mockBookJourneyService).getBookJourneyStatus(1L);
         assertThat(bookJourneyStatus.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(bookJourneyStatus.getBody()).isEqualTo(bookedJourneyStatus);
+
+    }
+
+    @Test
+    public void downloadReceipt_callsBookJourneyServiceAndHtmlToPdfGenarator() throws Exception {
+
+        ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(mockBookJourneyService.getHtmlReceipt(anyLong()))
+                .thenReturn("<html></html>");
+        when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
+                .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
+
+        ResponseEntity<byte[]> output = bookJourneyController.downloadReceipt(1L);
+        verify(mockBookJourneyService).getHtmlReceipt(1L);
+        verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
+
+        assertThat(htmlCaptor.getValue()).isEqualTo("<html></html>");
+        assertThat(filenameCaptor.getValue()).contains("GowakaReceipt_");
+
+        assertThat(output.getStatusCode()).isEqualTo(HttpStatus.OK);
 
     }
 

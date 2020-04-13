@@ -32,4 +32,11 @@ public class EmailContentBuilder {
         return templateEngine.process("ticket-email", context);
     }
 
+    public String buildTicketPdfHtml(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
+        Context context = new Context();
+        context.setVariable("journeyInfo", bookedJourneyStatusDTO);
+
+        return templateEngine.process("ticket-pdf", context);
+    }
+
 }

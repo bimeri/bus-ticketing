@@ -671,7 +671,6 @@ public class BookJourneyServiceImplTest {
         assertThat(userBookedJourneyHistory.size()).isEqualTo(0);
     }
 
-
     @Test
     public void getBookJourneyStatus_returnStatusResponse_whenBookJourneyIdExit() {
 
@@ -704,6 +703,23 @@ public class BookJourneyServiceImplTest {
         assertThat(bookJourneyStatus.getDepartureTime()).isNotNull();
         assertThat(bookJourneyStatus.getPassengerEmail()).isEqualTo("email@email.net");
         assertThat(bookJourneyStatus.getPassengerPhoneNumber()).isEqualTo("999999");
+
+    }
+
+    @Test
+    public void getHtmlReceipt_returnHtmlStringOfReceipt_whenBookJourneyIdExit() {
+
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        when(mockBookedJourneyRepository.findById(2L))
+                .thenReturn(Optional.of(bookJourney));
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        when(mockEmailContentBuilder.buildTicketPdfHtml(any()))
+                .thenReturn("<html></html>");
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(2L);
+        assertThat(htmlReceipt).isEqualTo("<html></html>");
 
     }
 

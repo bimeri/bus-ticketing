@@ -1,13 +1,21 @@
 package net.gowaka.gowaka.controller;
 
+import net.gowaka.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -19,10 +27,12 @@ import java.util.List;
 public class BookJourneyController {
 
     private BookJourneyService bookJourneyService;
+    private HtmlToPdfGenarator htmlToPdfGenarator;
 
     @Autowired
-    public BookJourneyController(BookJourneyService bookJourneyService) {
+    public BookJourneyController(BookJourneyService bookJourneyService, HtmlToPdfGenarator htmlToPdfGenarator) {
         this.bookJourneyService = bookJourneyService;
+        this.htmlToPdfGenarator = htmlToPdfGenarator;
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
@@ -41,6 +51,23 @@ public class BookJourneyController {
     @GetMapping("/protected/bookJourney/{bookedJourneyId}")
     ResponseEntity<BookedJourneyStatusDTO> getBookJourneyStatus(@PathVariable("bookedJourneyId") Long bookedJourneyId) {
         return ResponseEntity.ok(bookJourneyService.getBookJourneyStatus(bookedJourneyId));
+    }
+
+    @PreAuthorize("hasRole('ROLE_USERS')")
+    @GetMapping("/protected/bookJourney/{bookedJourneyId}/receipt")
+    ResponseEntity<byte[]> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId);
+        String filename = "GowakaReceipt_"+new Date();
+        File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
+
+        byte[] contents = Files.readAllBytes(Paths.get(pdfFIle.getAbsolutePath()));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData(filename, filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+        ResponseEntity<byte[]> response = new ResponseEntity<>(contents, headers, HttpStatus.OK);
+        return response;
     }
 
     @PostMapping("/public/booking/status/{bookedJourneyId}")

@@ -1,6 +1,5 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.constant.GlobalConstants;
 import net.gowaka.gowaka.constant.notification.EmailFields;
 import net.gowaka.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gowaka.gowaka.domain.model.*;
@@ -14,7 +13,6 @@ import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
 import net.gowaka.gowaka.network.api.notification.model.EmailAddress;
 import net.gowaka.gowaka.network.api.notification.model.SendEmailDTO;
-import net.gowaka.gowaka.network.api.payamgo.PayAmGoPaymentStatus;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gowaka.gowaka.service.*;
@@ -285,6 +283,13 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
     }
 
+    @Override
+    public String getHtmlReceipt(Long bookedJourneyId) {
+
+        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookJourneyStatus(bookedJourneyId);
+        return emailContentBuilder.buildTicketPdfHtml(bookedJourneyStatusDTO);
+    }
+
     private void sendTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
 
         String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);
@@ -439,11 +444,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     /**
      * throw exception of journey is terminated
+     *
      * @param journey
      * @return boolean
      */
-    private boolean journeyNotTerminatedOrElseReject(Journey journey){
-        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()){
+    private boolean journeyNotTerminatedOrElseReject(Journey journey) {
+        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()) {
             throw new ApiException(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage(), ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
         }
         return true;
@@ -452,20 +458,20 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     /**
      * throw exception of journey is not started
+     *
      * @param journey
      * @return boolean
      */
-    private boolean journeyNotStartedOrElseReject(Journey journey){
-        if (journey != null && journey.getDepartureIndicator() != null && journey.getDepartureIndicator()){
+    private boolean journeyNotStartedOrElseReject(Journey journey) {
+        if (journey != null && journey.getDepartureIndicator() != null && journey.getDepartureIndicator()) {
             throw new ApiException(JOURNEY_ALREADY_STARTED.getMessage(), JOURNEY_ALREADY_STARTED.toString(), HttpStatus.CONFLICT);
         }
         return true;
     }
 
 
-
     private boolean paymentAcceptedOrElseReject(PaymentTransaction paymentTransaction) {
-        if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())){
+        if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())) {
             logger.info("payment transaction declined: {}", paymentTransaction.getAppTransactionNumber());
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
