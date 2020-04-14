@@ -61,6 +61,8 @@ public class BookJourneyServiceImplTest {
     private FileStorageService mockFileStorageService;
     @Mock
     private EmailContentBuilder mockEmailContentBuilder;
+    @Mock
+    private JourneyServiceImpl journeyService;
 
     private BookJourneyService bookJourneyService;
     private ArgumentCaptor<BookedJourney> bookedJourneyArgumentCaptor = ArgumentCaptor.forClass(BookedJourney.class);
@@ -794,6 +796,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -811,6 +814,7 @@ public class BookJourneyServiceImplTest {
         journey.setArrivalIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -831,6 +835,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -864,6 +869,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureLocation(transitAndStop);
         journey.setDriver(new Driver());
         journey.setCar(new Bus());
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         OnBoardingInfoDTO dto = bookJourneyService.getPassengerOnBoardingInfo("someCode");
@@ -890,6 +896,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -907,6 +914,7 @@ public class BookJourneyServiceImplTest {
         journey.setArrivalIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -928,6 +936,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -961,6 +970,7 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setPassengerCheckedInIndicator(true);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -983,6 +993,7 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setPassengerCheckedInIndicator(false);
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         bookJourneyService.checkInPassengerByCode("someCode");

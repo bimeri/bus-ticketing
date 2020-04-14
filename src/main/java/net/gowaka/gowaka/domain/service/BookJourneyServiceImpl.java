@@ -54,6 +54,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private NotificationService notificationService;
     private FileStorageService fileStorageService;
     private PaymentUrlResponseProps paymentUrlResponseProps;
+    private JourneyService journeyService;
 
     private EmailContentBuilder emailContentBuilder;
 
@@ -69,6 +70,11 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.fileStorageService = fileStorageService;
         this.paymentUrlResponseProps = paymentUrlResponseProps;
         this.emailContentBuilder = emailContentBuilder;
+    }
+
+    @Autowired
+    public void setJourneyService(JourneyService journeyService) {
+        this.journeyService = journeyService;
     }
 
     @Override
@@ -262,8 +268,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public OnBoardingInfoDTO getPassengerOnBoardingInfo(String checkedInCode) {
         BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
-        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
-                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) /* check journey state */
+        Journey journey = bookedJourney.getJourney();
+        // check if the journey's car is in user's official agency
+        // borrow this method from journeyService
+        journeyService.checkJourneyCarInOfficialAgency(journey);
+        if (journeyNotStartedOrElseReject(journey) &&
+                journeyNotTerminatedOrElseReject(journey) /* check journey state */
                 && paymentAcceptedOrElseReject(bookedJourney.getPaymentTransaction()) /* check payment status */
         ) {
             return new OnBoardingInfoDTO(bookedJourney);
@@ -274,8 +284,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public void checkInPassengerByCode(String checkedInCode) {
         BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
-        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
-                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) &&
+        Journey journey = bookedJourney.getJourney();
+        // check if the journey's car is in user's official agency
+        // borrow this method from journeyService
+        journeyService.checkJourneyCarInOfficialAgency(journey);
+        if (journeyNotStartedOrElseReject(journey) &&
+                journeyNotTerminatedOrElseReject(journey) &&
                 paymentAcceptedOrElseReject(bookedJourney.getPaymentTransaction())
                 && passengerNotCheckedInOrElseReject(bookedJourney.getPassengerCheckedInIndicator())) {
             bookedJourney.setPassengerCheckedInIndicator(true);
@@ -484,5 +498,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
         return true;
     }
+
+
 
 }

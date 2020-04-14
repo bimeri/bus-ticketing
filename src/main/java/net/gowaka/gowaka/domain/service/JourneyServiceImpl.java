@@ -583,7 +583,7 @@ public class JourneyServiceImpl implements JourneyService {
      * throw exception if journey car is not in official agency
      * @param journey
      */
-    private void checkJourneyCarInOfficialAgency(Journey journey) {
+    public void checkJourneyCarInOfficialAgency(Journey journey) {
         List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
                 .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
         if (cars.isEmpty()) {

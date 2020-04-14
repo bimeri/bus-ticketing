@@ -1,5 +1,6 @@
 package net.gowaka.gowaka.service;
 
+import net.gowaka.gowaka.domain.model.Journey;
 import net.gowaka.gowaka.dto.*;
 
 import java.util.List;
@@ -27,4 +28,7 @@ public interface JourneyService {
     void deleteNonBookedSharedJourney(Long journeyId);
     void addStopToPersonalAgency(Long journeyId, AddStopDTO addStopDTO);
     List<JourneyResponseDTO> searchJourney(Long departureLocationId, Long destinationLocationId, String time);
+
+    // service level methods
+    void checkJourneyCarInOfficialAgency(Journey journey);
 }

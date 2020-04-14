@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 import static net.gowaka.gowaka.TestUtils.createToken;
 import static net.gowaka.gowaka.network.api.payamgo.PayAmGoPaymentStatus.COMPLETED;
@@ -65,6 +66,8 @@ public class BookJourneyControllerIntegrationTest {
     @Autowired
     private UserRepository userRepository;
     @Autowired
+    private OfficialAgencyRepository officialAgencyRepository;
+    @Autowired
     private MockMvc mockMvc;
     @MockBean
     private PayAmGoService payAmGoService;
@@ -82,10 +85,14 @@ public class BookJourneyControllerIntegrationTest {
 
     @Before
     public void setUp() {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG Express");
+        officialAgencyRepository.save(officialAgency);
 
         User newUser = new User();
         newUser.setUserId("12");
         newUser.setTimestamp(LocalDateTime.now());
+        newUser.setOfficialAgency(officialAgency);
 
         this.user = userRepository.save(newUser);
 
@@ -114,7 +121,11 @@ public class BookJourneyControllerIntegrationTest {
         car.setLicensePlateNumber("123SW");
         car.setName("Musango 30 Seater Bus");
         car.setNumberOfSeats(10);
+        car.setOfficialAgency(officialAgency);
         Bus savedCar = carRepository.save(car);
+
+        officialAgency.setBuses(Collections.singletonList(car));
+        officialAgencyRepository.save(officialAgency);
 
         Journey newJourney = new Journey();
         newJourney.setCar(savedCar);
@@ -326,16 +337,78 @@ public class BookJourneyControllerIntegrationTest {
 
     @Test
     public void getOnBoardingInfoResponse_success_return200() throws Exception {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("GG kingston");
+        officialAgencyRepository.save(officialAgency);
+
+        User newUser = new User();
+        newUser.setUserId("11");
+        newUser.setTimestamp(LocalDateTime.now());
+        newUser.setOfficialAgency(officialAgency);
+
+        newUser = userRepository.save(newUser);
+
+        Location destinationLocation = new Location();
+        destinationLocation.setAddress("Kosalla Moto Part");
+        destinationLocation.setCity("KumbaMbeng");
+        destinationLocation.setState("SW");
+        destinationLocation.setCountry("Cameroon");
+
+        Location departureLocation = new Location();
+        departureLocation.setAddress("Buea Sawa Moto Part");
+        departureLocation.setCity("Sawa");
+        departureLocation.setState("SW");
+        departureLocation.setCountry("Cameroon");
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setLocation(destinationLocation);
+
+        TransitAndStop departure = new TransitAndStop();
+        departure.setLocation(departureLocation);
+
+        TransitAndStop savedDeparture = transitAndStopRepository.save(departure);
+        TransitAndStop savedDestination = transitAndStopRepository.save(destination);
+
+        Bus car = new Bus();
+        car.setLicensePlateNumber("1232233SW");
+        car.setName("Musango 35 Seater Bus");
+        car.setNumberOfSeats(35);
+        car.setOfficialAgency(officialAgency);
+        carRepository.save(car);
+
+        officialAgency.setBuses(Collections.singletonList(car));
+        officialAgencyRepository.save(officialAgency);
+
+        Journey newJourney = new Journey();
+        Car bus = carRepository.findById(car.getId()).get();
+        newJourney.setCar(bus);
+        newJourney.setArrivalIndicator(false);
+        newJourney.setDepartureIndicator(false);
+        newJourney.setAmount(2000.00);
+        newJourney.setDestination(savedDestination);
+        newJourney.setDepartureLocation(savedDeparture);
+        newJourney.setDepartureTime(LocalDateTime.of(2020, 3, 26, 9, 35));
+        newJourney.setEstimatedArrivalTime(LocalDateTime.of(2020, 3, 26, 10, 35));
+
+        Driver driver = new Driver();
+        driver.setDriverLicenseNumber("321SW");
+        driver.setDriverName("Michael John");
+        newJourney.setDriver(driver);
+
+        newJourney = journeyRepository.save(newJourney);
         BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setJourney(journey);
-        bookedJourney.setUser(user);
+        bookedJourney.setJourney(newJourney);
+        bookedJourney.setUser(newUser);
         bookedJourney.setPassenger(new Passenger("Edward Tanko", "1234033", 10));
-        bookedJourney.setDestination(journey.getDestination());
+        bookedJourney.setDestination(newJourney.getDestination());
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("2111-1599933988");
+        bookedJourney.setCheckedInCode("24755hsyw08jaja");
         bookedJourney.setAmount(2000.00);
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
+        newJourney.setBookedJourneys(Collections.singletonList(bookedJourney));
+        journeyRepository.save(newJourney);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
@@ -359,20 +432,18 @@ public class BookJourneyControllerIntegrationTest {
         String expectedResponse = "{\"amount\":2000.0," +
                 "\"currencyCode\":\"XAF\"," +
                 "\"carDriverName\":\"Michael John\"," +
-                "\"carLicenseNumber\":\"123SW\"," +
-                "\"carName\":\"Musango 30 Seater Bus\"," +
-                "\"departureLocation\":\"Buea Moto Part, Buea, SW, Cameroon\"," +
+                "\"carLicenseNumber\":\"1232233SW\"," +
+                "\"carName\":\"Musango 35 Seater Bus\"," +
+                "\"departureLocation\":\"Buea Sawa Moto Part, Sawa, SW, Cameroon\"," +
                 "\"departureTime\":\"2020-03-26T09:35:00\"," +
-                "\"destinationLocation\":\"Kumba Moto Part, Kumba, SW, Cameroon\"," +
-                "\"passengerEmail\":null," +
-                "\"passengerIdNumber\":\"1234033\"," +
+                "\"destinationLocation\":\"Kosalla Moto Part, KumbaMbeng, SW, Cameroon\"," +
+                "\"passengerEmail\":null,\"passengerIdNumber\":\"1234033\"," +
                 "\"passengerName\":\"Edward Tanko\"," +
                 "\"passengerPhoneNumber\":null," +
                 "\"passengerSeatNumber\":10," +
-                "\"checkedInCode\":\"2111-1599933988\"," +
-                "\"passengerCheckedInIndicator\":false}";
+                "\"checkedInCode\":\"24755hsyw08jaja\",\"passengerCheckedInIndicator\":false}";
 
-        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
+        String jwtToken = createToken(newUser.getUserId(), "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
         RequestBuilder requestBuilder = get("/api/protected/checkIn_status?code=" + savedBookJourney.getCheckedInCode())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
@@ -395,6 +466,9 @@ public class BookJourneyControllerIntegrationTest {
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
 
+        journey.setBookedJourneys(Collections.singletonList(bookedJourney));
+        journeyRepository.save(journey);
+
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
         paymentTransaction.setAmount(2000.00);
@@ -414,7 +488,7 @@ public class BookJourneyControllerIntegrationTest {
         savedBookJourney.setPaymentTransaction(paymentTransaction);
         bookedJourneyRepository.save(savedBookJourney);
 
-        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
+        String jwtToken = createToken(user.getUserId(), "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
         RequestBuilder requestBuilder = post("/api/protected/checkIn")
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
