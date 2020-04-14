@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -102,7 +103,7 @@ public class BookJourneyControllerTest {
         when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
                 .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
 
-        ResponseEntity<byte[]> output = bookJourneyController.downloadReceipt(1L);
+        ResponseEntity<Resource> output = bookJourneyController.downloadReceipt(1L);
         verify(mockBookJourneyService).getHtmlReceipt(1L);
         verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
 

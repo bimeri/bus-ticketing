@@ -4,6 +4,8 @@ import net.gowaka.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.BookJourneyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -55,18 +57,18 @@ public class BookJourneyController {
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/{bookedJourneyId}/receipt")
-    ResponseEntity<byte[]> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
+    ResponseEntity<Resource> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
         String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId);
         String filename = "GowakaReceipt_"+new Date();
         File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
 
-        byte[] contents = Files.readAllBytes(Paths.get(pdfFIle.getAbsolutePath()));
+        Resource resource = new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData(filename, filename);
         headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-        ResponseEntity<byte[]> response = new ResponseEntity<>(contents, headers, HttpStatus.OK);
+        ResponseEntity<Resource> response = new ResponseEntity<>(resource, headers, HttpStatus.OK);
         return response;
     }
 
