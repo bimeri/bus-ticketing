@@ -253,7 +253,6 @@ public class BookJourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-//                .andExpect(content().json("{\"id\":" + bookedJourney.getId() + ",\"amount\":2000.0,\"currencyCode\":\"XAF\",\"paymentStatus\":\"COMPLETED\",\"checkedInCode\":\"1111-1599933993\",\"paymentReason\":\"Bus ticket\",\"paymentChannel\":\"MTN_MOBILE_MONEY\",\"paymentChannelTransactionNumber\":null,\"paymentDate\":\"2020-03-26T09:30:00\",\"checkedIn\":false,\"passengerName\":\"John Doe\",\"passengerIdNumber\":\"1234001\",\"passengerSeatNumber\":8,\"passengerEmail\":\"email@email.net\",\"passengerPhoneNumber\":\"999999\",\"carName\":\"Musango 30 Seater Bus\",\"carLicenseNumber\":\"123SW\",\"carDriverName\":\"Michael John\",\"departureLocation\":\"Buea Moto Part, Buea SW, Cameroon\",\"departureTime\":\"2020-03-26T09:35:00\",\"estimatedArrivalTime\":\"2020-03-26T10:35:00\",\"destinationLocation\":\"Kumba Moto Part, Kumba SW, Cameroon\",\"qrcheckedInImage\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAAA10lEQVR42u3XSw7EIAgGYFx5DG/q46Yeg1UdATvJTOzavwnGRdtvQ0TQ0nga5OLi8g5hmiOMUSlVeUxIIo+NKXBq9yuOzHibRm0OJ0yFUWV0TNFspyuO/T44KVolEvK+fk7KGr089Z2DIlFLwq/Ys0wkkT1IRSvY0g4l2ZLMNEOuhCVB0WZgJJnFESfqWrIca0BiQz+Xb62AyN1dqqT6d0XPixaHxCszE5boSSvdhWbgceCJ3gL+so0iSZe2BzCxZrxwcz84KKtKrLW0TQWfE/+fc3F5qXwAkHCU9h+9LrYAAAAASUVORK5CYII=\"}"))
                 .andReturn();
     }
 
