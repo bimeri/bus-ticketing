@@ -396,7 +396,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         String publicFilePath = fileStorageService.getPublicFilePath(filename, storageFolder);
 
         bookedJourneyStatusDTO.setQRCheckedInImageUrl(publicFilePath);
-        sendTicketEmail(bookedJourneyStatusDTO);
     }
 
     private PayAmGoRequestDTO getPayAmGoRequestDTO(PaymentTransaction savedPaymentTransaction) {
