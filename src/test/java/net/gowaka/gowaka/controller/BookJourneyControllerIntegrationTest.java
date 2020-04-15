@@ -1,12 +1,10 @@
 package net.gowaka.gowaka.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.BookJourneyRequest;
 import net.gowaka.gowaka.dto.CodeDTO;
-import net.gowaka.gowaka.dto.OnBoardingInfoDTO;
 import net.gowaka.gowaka.dto.PaymentStatusResponseDTO;
 import net.gowaka.gowaka.network.api.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gowaka.gowaka.service.FileStorageService;
@@ -15,7 +13,6 @@ import net.gowaka.gowaka.service.PayAmGoService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

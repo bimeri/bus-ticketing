@@ -201,7 +201,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
 
         BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
-
+        addQRCheckedInImageUrl(bookedJourneyStatusDTO);
         return bookedJourneyStatusDTO;
     }
 
@@ -388,6 +388,15 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         byte[] imageBytes = Files.readAllBytes(Paths.get(pathname));
         file.delete();
         return imageBytes;
+    }
+
+    private void addQRCheckedInImageUrl(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
+        String storageFolder = QRCodeProvider.STORAGE_FOLDER;
+        String filename = bookedJourneyStatusDTO.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+        String publicFilePath = fileStorageService.getPublicFilePath(filename, storageFolder);
+
+        bookedJourneyStatusDTO.setQRCheckedInImageUrl(publicFilePath);
+        sendTicketEmail(bookedJourneyStatusDTO);
     }
 
     private PayAmGoRequestDTO getPayAmGoRequestDTO(PaymentTransaction savedPaymentTransaction) {
