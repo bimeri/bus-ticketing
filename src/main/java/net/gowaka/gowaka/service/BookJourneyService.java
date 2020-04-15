@@ -25,4 +25,6 @@ public interface BookJourneyService {
     void checkInPassengerByCode(String checkedInCode);
 
     String getHtmlReceipt(Long bookedJourneyId);
+
+    List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId);
 }

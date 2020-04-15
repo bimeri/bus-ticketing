@@ -304,6 +304,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return emailContentBuilder.buildTicketPdfHtml(bookedJourneyStatusDTO);
     }
 
+    @Override
+    public List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId) {
+        journeyService.checkJourneyCarInOfficialAgency(getJourney(journeyId));
+        return bookedJourneyRepository.findAllByJourneyId(journeyId).stream().map(
+                OnBoardingInfoDTO::new
+        ).collect(Collectors.toList());
+    }
+
     private void sendTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
 
         String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);

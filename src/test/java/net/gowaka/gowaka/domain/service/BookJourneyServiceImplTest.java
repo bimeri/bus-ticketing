@@ -1001,5 +1001,49 @@ public class BookJourneyServiceImplTest {
         assertThat(bookedJourneyArgumentCaptor.getValue().getPassengerCheckedInIndicator()).isEqualTo(true);
     }
 
+    @Test
+    public void getAllPassengerOnBoardingInfo_returnOnBoardingDTOList() {
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(COMPLETED.toString());
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        bookedJourney.setPassenger(new Passenger("paul", "12345678", 16,
+                "paul@gmail.com", "66887541"));
+        Location location = new Location();
+        location.setCountry("Cameroon");
+        location.setState("SW");
+        location.setCity("Buea");
+        location.setAddress("Malingo");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        journey.setDestination(transitAndStop);
+        journey.setDepartureLocation(transitAndStop);
+        journey.setDriver(new Driver());
+        journey.setCar(new Bus());
+        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
+        when(mockBookedJourneyRepository.findAllByJourneyId(anyLong()))
+                .thenReturn(Collections.singletonList(bookedJourney));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        List<OnBoardingInfoDTO> dto = bookJourneyService.getAllPassengerOnBoardingInfo(journey.getId());
+        assertThat(dto.get(0).getAmount()).isEqualTo(bookedJourney.getAmount());
+        assertThat(dto.get(0).getCurrencyCode()).isEqualTo(paymentTransaction.getCurrencyCode());
+        assertThat(dto.get(0).getDepartureTime()).isEqualTo(journey.getDepartureTime());
+        assertThat(dto.get(0).getCheckedInCode()).isEqualTo(bookedJourney.getCheckedInCode());
+        assertThat(dto.get(0).getCarDriverName()).isEqualTo(journey.getDriver().getDriverName());
+        assertThat(dto.get(0).getCarLicenseNumber()).isEqualTo(journey.getCar().getLicensePlateNumber());
+        assertThat(dto.get(0).getCarName()).isEqualTo(journey.getCar().getName());
+        assertThat(dto.get(0).getDepartureLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
+        assertThat(dto.get(0).getDestinationLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
+        assertThat(dto.get(0).getPassengerName()).isEqualTo("paul");
+        assertThat(dto.get(0).getPassengerIdNumber()).isEqualTo("12345678");
+        assertThat(dto.get(0).getPassengerSeatNumber()).isEqualTo(16);
+        assertThat(dto.get(0).getPassengerEmail()).isEqualTo("paul@gmail.com");
+        assertThat(dto.get(0).getPassengerPhoneNumber()).isEqualTo("66887541");
+    }
 
 }

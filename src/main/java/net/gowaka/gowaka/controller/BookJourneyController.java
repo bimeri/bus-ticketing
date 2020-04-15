@@ -97,5 +97,11 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @GetMapping("/protected/agency/journeys/{journeyId}/booking_history")
+    public ResponseEntity getAllOnBoardingInfoByJourney(@PathVariable("journeyId") Long journeyId) {
+        return ResponseEntity.ok(bookJourneyService.getAllPassengerOnBoardingInfo(journeyId));
+    }
+
 
 }
