@@ -2,25 +2,42 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta name="x-apple-disable-message-reformatting"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title></title>
 </head>
 <body>
 <div>
+    <div>
+        <table>
+            <tr>
+                <td></td>
+                <td style="vertical-align: bottom; text-align: right;">
+                    <strong>GoWaka Cameroon</strong><br/>
+                    Buea, Cameroon<br/>
+                    P.O Box 412 Buea.<br/>
+                    <b>E-Mail:</b>info@gowaka.net<br/>
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: bottom;text-align: left;">
+                    <div style="float: left; border: 2px solid #6b7d90; text-align: center">
+                        <img th:src="${journeyInfo.qRCheckedInImageUrl}"
+                             alt="QR Code"/>
+                        <div th:text="${journeyInfo.checkedInCode}"></div>
+                    </div>
+                </td>
+                <td style="vertical-align: bottom; text-align: right;">
+                    Printed Date: <span th:text="${#calendars.format(#calendars.createNow(), 'dd MMM yyyy')}"></span>
+                </td>
+            </tr>
+        </table>
+        <hr/>
+    </div>
     <h2 style="text-align: center">Gowaka ETicket</h2>
     <table align="center" width="570">
         <tr>
             <td class="content-cell">
                 <div class="f-fallback">
-                    <!--Ticket here -->
-                    <div style="float: right; border: 2px solid #6b7d90; text-align: center">
-                        <img style=""
-                             th:src="${journeyInfo.qRCheckedInImageUrl}"
-                             alt="QR Code"/>
-                        <div th:text="${journeyInfo.checkedInCode}"></div>
-                    </div>
                     <div style="text-align: left">
                         <table>
                             <tbody>
