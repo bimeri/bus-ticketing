@@ -10,4 +10,6 @@ public interface FileStorageService {
 
     String getPublicFilePath(String filename, String storageFolder);
 
+    String getLogo();
+
 }

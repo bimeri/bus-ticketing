@@ -65,4 +65,11 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     }
 
+    @Override
+    public String getLogo() {
+        return fileStorageProps.getHostUrl() + fileStorageProps.getGetPublicFilePath()
+                + "?file=" + fileStorageProps.getBucket() + "/logo.ico" + "&identifier=PUBLIC";
+
+    }
+
 }
