@@ -1,6 +1,5 @@
 package net.gowaka.gowaka.network.api.storage;
 
-import net.gowaka.gowaka.network.api.notification.service.NotificationRestClient;
 import net.gowaka.gowaka.network.api.storage.config.FileStorageProps;
 import net.gowaka.gowaka.service.FileStorageService;
 import org.slf4j.Logger;

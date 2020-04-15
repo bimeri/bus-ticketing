@@ -68,4 +68,10 @@ public class FileStorageServiceImplTest {
         assertThat(filePath).isEqualTo("http://localhost/get/file?file=bucket/storage-folder/my-file.png&identifier=PUBLIC");
     }
 
+    @Test
+    public void getLogo() {
+        String filePath = fileStorageService.getLogo();
+        assertThat(filePath).isEqualTo("http://localhost/get/file?file=bucket/logo.ico&identifier=PUBLIC");
+    }
+
 }
