@@ -1,6 +1,5 @@
 package net.gowaka.gowaka.domain.service;
 
-import net.gowaka.gowaka.constant.GlobalConstants;
 import net.gowaka.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gowaka.gowaka.domain.model.*;
 import net.gowaka.gowaka.domain.repository.BookedJourneyRepository;
@@ -395,7 +394,10 @@ public class BookJourneyServiceImplTest {
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(5000.0);
         assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("10119-");
         assertThat(bookedJourneyValue.getPassengerCheckedInIndicator()).isEqualTo(false);
-        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(new Passenger("Jesus Christ", "1234567890", 9));
+        Passenger jesusChristPassenger = new Passenger("Jesus Christ", "1234567890", 9);
+        jesusChristPassenger.setPassengerPhoneNumber("676767676");
+        jesusChristPassenger.setPassengerEmail("email@email.com");
+        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(jesusChristPassenger);
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
 
         assertThat(paymentTransactionValue.getAmount()).isEqualTo(5000.0);
@@ -495,7 +497,11 @@ public class BookJourneyServiceImplTest {
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(2000.0);
         assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("10119-");
         assertThat(bookedJourneyValue.getPassengerCheckedInIndicator()).isEqualTo(false);
-        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(new Passenger("Jesus Christ", "1234567890", 9));
+        Passenger jesusChristPassenger = new Passenger("Jesus Christ", "1234567890", 9);
+        jesusChristPassenger.setPassengerPhoneNumber("676767676");
+        jesusChristPassenger.setPassengerEmail("email@email.com");
+        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(jesusChristPassenger);
+
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(100L);
 
         assertThat(paymentTransactionValue.getAmount()).isEqualTo(2000.0);
