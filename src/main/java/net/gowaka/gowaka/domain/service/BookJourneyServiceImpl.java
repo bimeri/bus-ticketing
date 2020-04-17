@@ -433,6 +433,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         passenger.setPassengerIdNumber(bookJourneyRequest.getPassengerIdNumber());
         passenger.setPassengerName(bookJourneyRequest.getPassengerName());
         passenger.setSeatNumber(bookJourneyRequest.getSeatNumber());
+        passenger.setPassengerEmail(bookJourneyRequest.getEmail());
+        passenger.setPassengerPhoneNumber(bookJourneyRequest.getPhoneNumber());
         return passenger;
     }
 
