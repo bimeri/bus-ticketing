@@ -13,6 +13,7 @@ public class OnBoardingInfoDTO {
     private String carDriverName;
     private String carLicenseNumber;
     private String carName;
+    private String agencyName;
     private String departureLocation;
     private LocalDateTime departureTime;
     private String destinationLocation;
@@ -43,6 +44,9 @@ public class OnBoardingInfoDTO {
                 if (car != null) {
                     this.carLicenseNumber = car.getLicensePlateNumber();
                     this.carName = car.getName();
+                    if(car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator()){
+                        this.agencyName = ((Bus)car).getOfficialAgency().getAgencyName();
+                    }
                 }
                 // location
                 TransitAndStop transitAndStopDest = journey.getDestination();
