@@ -307,7 +307,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId) {
         journeyService.checkJourneyCarInOfficialAgency(getJourney(journeyId));
-        return bookedJourneyRepository.findAllByJourneyId(journeyId).stream().map(
+        return bookedJourneyRepository.findAllByJourneyId(journeyId).stream().filter(
+                bookedJourney -> bookedJourney != null &&
+                        filterCompletedPayments(bookedJourney.getPaymentTransaction())
+        ).map(
                 OnBoardingInfoDTO::new
         ).collect(Collectors.toList());
     }
@@ -503,7 +506,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
 
     private boolean paymentAcceptedOrElseReject(PaymentTransaction paymentTransaction) {
-        if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())) {
+        if (paymentTransaction == null) {
+            logger.info("No transaction");
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }else if (!paymentTransaction.getTransactionStatus().equals(COMPLETED.toString())) {
             logger.info("payment transaction declined: {}", paymentTransaction.getAppTransactionNumber());
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
@@ -517,6 +523,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return true;
     }
 
+    private boolean filterCompletedPayments(PaymentTransaction paymentTransaction) {
+        return paymentTransaction != null && paymentTransaction.getTransactionStatus().equals(COMPLETED.toString());
+    }
 
 
 }
