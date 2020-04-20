@@ -1843,6 +1843,7 @@ public class JourneyControllerIntegrationTest {
                 "\"name\":\"Kumba One Chances\"," +
                 "\"licensePlateNumber\":\"123454387\"," +
                 "\"isOfficialAgencyIndicator\":true," +
+                "\"agencyName\":\"Malingo Major\"," +
                 "\"isCarApproved\":true," +
                 "\"timestamp\":\"" + currentDateTime + "\"" +
                 "}}]";

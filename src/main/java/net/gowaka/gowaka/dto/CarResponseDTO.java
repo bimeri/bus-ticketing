@@ -11,11 +11,11 @@ import java.util.Date;
  */
 @Data
 public class CarResponseDTO {
-
     private Long id;
     private String name;
     private String licensePlateNumber;
     private Boolean isOfficialAgencyIndicator;
+    private String agencyName;
     private Boolean isCarApproved;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timestamp;

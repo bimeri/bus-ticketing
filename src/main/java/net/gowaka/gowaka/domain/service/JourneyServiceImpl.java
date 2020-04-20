@@ -503,6 +503,13 @@ public class JourneyServiceImpl implements JourneyService {
             carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
             carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
             carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+            if (car instanceof Bus) {
+                OfficialAgency officialAgency = ((Bus) car).getOfficialAgency();
+                if (officialAgency != null) carDTO.setAgencyName(officialAgency.getAgencyName());
+            } else if (car instanceof SharedRide) {
+                PersonalAgency personalAgency = ((SharedRide) car).getPersonalAgency();
+                if (personalAgency != null) carDTO.setAgencyName(personalAgency.getName());
+            }
             carDTO.setTimestamp(car.getTimestamp() == null ? null :
                     Date.from(car.getTimestamp().atZone(zoneId).toInstant()));
         }
