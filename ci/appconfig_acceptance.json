@@ -1,0 +1,8 @@
+{
+  "name":"GoWakaAPI",
+  "appType":"jar",
+  "port":"9081",
+  "env": "GoWakaEnvAcceptance",
+  "services":[],
+  "hostServers":["GoLabTest"]
+}
