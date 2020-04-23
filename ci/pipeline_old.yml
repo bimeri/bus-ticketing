@@ -7,13 +7,13 @@ resources:
     username: ((gitlab_username))
     password: ((gitlab_password))
     branch: master
-#- name: ui-source-code-from-gitlab
-#  type: git
-#  source:
-#    uri: http://golab.live/dengun/gowaka-ui
-#    username: ((gitlab_username))
-#    password: ((gitlab_password))
-#    branch: master
+- name: ui-source-code-from-gitlab
+  type: git
+  source:
+    uri: http://golab.live/dengun/gowaka-ui
+    username: ((gitlab_username))
+    password: ((gitlab_password))
+    branch: master
 
 - name: minio-s3
   type: s3
@@ -45,8 +45,8 @@ jobs:
   plan:
   - get: source-code-from-gitlab
     trigger: true
-#  - get: ui-source-code-from-gitlab
-#    trigger: true
+  - get: ui-source-code-from-gitlab
+    trigger: true
   - get: version
     params: {pre: rc}
   - task: run-test-and-build-jar-file
@@ -59,7 +59,7 @@ jobs:
           tag: latest
       inputs:
       - name: source-code-from-gitlab
-#      - name: ui-source-code-from-gitlab
+      - name: ui-source-code-from-gitlab
       - name: version
       outputs:
       - name: jar-file
