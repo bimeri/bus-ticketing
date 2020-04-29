@@ -12,6 +12,8 @@ public class TokenDTO {
     private String header;
     private String issuer;
     private String accessToken;
+    private String refreshToken;
+    private Long expiredIn;
     private String type;
     private UserDTO userDetails;
 }

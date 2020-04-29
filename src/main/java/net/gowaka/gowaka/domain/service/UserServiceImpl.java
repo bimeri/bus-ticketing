@@ -14,12 +14,12 @@ import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.NotificationService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
         userDTO.setId(user.getUserId());
         userDTO.setFullName(createUserRequest.getFullName());
         userDTO.setEmail(createUserRequest.getEmail());
-        userDTO.setRoles(Arrays.asList(roles));
+        userDTO.setRoles(Collections.singletonList(roles));
 
         sendWelcomeEmail(createUserRequest);
 
@@ -101,13 +101,8 @@ public class UserServiceImpl implements UserService {
         UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
         UserDTO userDTO = getUserDTO(userDetails);
 
-        TokenDTO tokenDTO = new TokenDTO();
-        tokenDTO.setHeader(userToken.getHeader());
-        tokenDTO.setIssuer(userToken.getIssuer());
-        tokenDTO.setType(userToken.getType());
-        tokenDTO.setAccessToken(userToken.getToken());
+        TokenDTO tokenDTO = getTokenDTO(userToken);
         tokenDTO.setUserDetails(userDTO);
-
         return tokenDTO;
     }
 
@@ -141,10 +136,20 @@ public class UserServiceImpl implements UserService {
         userDTO.setFullName(userDetails.getFullName());
         userDTO.setEmail(userDetails.getUsername());
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         userDTO.setRoles(roles);
         return userDTO;
+    }
+
+    @Override
+    public TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO) {
+        ApiRefreshToken apiRefreshToken = new ApiRefreshToken();
+        apiRefreshToken.setRefreshToken(refreshTokenDTO.getRefreshToken());
+        ApiSecurityAccessToken userToken = apiSecurityService.getNewUserToken(apiRefreshToken);
+        TokenDTO tokenDTO = getTokenDTO(userToken);
+        tokenDTO.setUserDetails(null);
+        return tokenDTO;
     }
 
     private ApiSecurityAccessToken getApiSecurityAccessToken() {
@@ -161,7 +166,7 @@ public class UserServiceImpl implements UserService {
         userDTO.setFullName(userDetails.getFullName());
         userDTO.setEmail(userDetails.getUsername());
         userDTO.setRoles(userDetails.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())
         );
         return userDTO;
@@ -183,6 +188,17 @@ public class UserServiceImpl implements UserService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
+    }
+
+    private TokenDTO getTokenDTO(ApiSecurityAccessToken userToken) {
+        TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setHeader(userToken.getHeader());
+        tokenDTO.setIssuer(userToken.getIssuer());
+        tokenDTO.setType(userToken.getType());
+        tokenDTO.setAccessToken(userToken.getToken());
+        tokenDTO.setRefreshToken(userToken.getRefreshToken());
+        tokenDTO.setExpiredIn(userToken.getExpiredIn());
+        return tokenDTO;
     }
 
 }

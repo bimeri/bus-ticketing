@@ -62,13 +62,6 @@ public class UserControllerIntegrationTest {
             "  \"version\": \"v1\",\n" +
             "  \"token\": \"jwt-token\"\n" +
             "}";
-    private String successUserTokenResponse = "{\n" +
-            "  \"header\": \"Authorization\",\n" +
-            "  \"type\": \"Bearer\",\n" +
-            "  \"issuer\": \"API-Security\",\n" +
-            "  \"version\": \"v1\",\n" +
-            "  \"token\": \"jwt-token-user\"\n" +
-            "}";
 
     private String successNotificationTokenResponse = "{\n" +
             "  \"header\": \"Some Header\",\n" +

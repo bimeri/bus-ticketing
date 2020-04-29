@@ -22,4 +22,5 @@ public class ApiSecurityConfig {
     private String getUserByUsernamePath;
     private String getUserByUserIdPath;
     private String updateUserInfo;
+    private String refreshTokenPath;
 }

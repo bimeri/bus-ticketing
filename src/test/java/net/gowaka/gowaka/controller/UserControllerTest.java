@@ -1,9 +1,6 @@
 package net.gowaka.gowaka.controller;
 
-import net.gowaka.gowaka.dto.ChangePasswordDTO;
-import net.gowaka.gowaka.dto.CreateUserRequest;
-import net.gowaka.gowaka.dto.EmailDTO;
-import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +23,7 @@ public class UserControllerTest {
     private UserController userController;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         userController = new UserController(mockUserService);
     }
 
@@ -42,6 +39,13 @@ public class UserControllerTest {
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
         userController.loginUser(emailPasswordDTO);
         verify(mockUserService).loginUser(emailPasswordDTO);
+    }
+
+    @Test
+    public void getNewToken_calls_UserService() {
+        RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO();
+        userController.getNewToken(refreshTokenDTO);
+        verify(mockUserService).getNewToken(refreshTokenDTO);
     }
 
     @Test
