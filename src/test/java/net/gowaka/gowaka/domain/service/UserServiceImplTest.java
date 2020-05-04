@@ -9,7 +9,6 @@ import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityUser;
-import net.gowaka.gowaka.network.api.notification.service.NotificationServiceImpl;
 import net.gowaka.gowaka.security.AppGrantedAuthority;
 import net.gowaka.gowaka.security.JwtTokenProvider;
 import net.gowaka.gowaka.security.UserDetailsImpl;
@@ -134,6 +133,8 @@ public class UserServiceImplTest {
         accessToken.setHeader("Authorization");
         accessToken.setIssuer("Api-Security");
         accessToken.setType("Bearer");
+        accessToken.setRefreshToken("refresh-token");
+        accessToken.setExpiredIn(1000L);
         accessToken.setVersion("v1");
 
         when(mockApiSecurityService.getUserToken(any()))
@@ -153,9 +154,40 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getHeader()).isEqualTo("Authorization");
         assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
+        assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
+        assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
         assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY])");
 
+    }
 
+    @Test
+    public void getNewToken_calls_ApiSecurityService() {
+
+        RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO();
+        refreshTokenDTO.setRefreshToken("refresh-token-1");
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        accessToken.setHeader("Authorization");
+        accessToken.setIssuer("Api-Security");
+        accessToken.setType("Bearer");
+        accessToken.setRefreshToken("refresh-token");
+        accessToken.setExpiredIn(1000L);
+        accessToken.setVersion("v1");
+
+        when(mockApiSecurityService.getNewUserToken(any()))
+                .thenReturn(accessToken);
+
+        TokenDTO tokenDTO = userService.getNewToken(refreshTokenDTO);
+
+        verify(mockApiSecurityService).getNewUserToken(any());
+        assertThat(tokenDTO.getAccessToken()).isEqualTo("jwt-token");
+        assertThat(tokenDTO.getHeader()).isEqualTo("Authorization");
+        assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
+        assertThat(tokenDTO.getType()).isEqualTo("Bearer");
+        assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
+        assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
+        assertThat(tokenDTO.getUserDetails()).isEqualTo(null);
 
     }
 

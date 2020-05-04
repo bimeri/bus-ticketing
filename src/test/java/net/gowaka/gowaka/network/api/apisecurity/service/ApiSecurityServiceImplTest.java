@@ -40,12 +40,13 @@ public class ApiSecurityServiceImplTest {
 
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         apiSecurityConfig = new ApiSecurityConfig();
         apiSecurityConfig.setHost("http://localhost");
         apiSecurityConfig.setPort("8080");
         apiSecurityConfig.setClientAuthorizationPath("/api/public/v1/clients/authorized");
         apiSecurityConfig.setUserAuthorizationPath("/api/public/v1/users/authorized");
+        apiSecurityConfig.setRefreshTokenPath("/api/public/v1/users/authorized/refresh");
         apiSecurityConfig.setRegisterUserPath("/api/protected/v1/users");
         apiSecurityConfig.setChangeUserPasswordPath("/api/public/v1/users/password");
         apiSecurityConfig.setForgotPasswordPath("/api/public/v1/users/otp");
@@ -68,9 +69,9 @@ public class ApiSecurityServiceImplTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<ApiSecurityClientUser> expectedRequest = new HttpEntity<>(apiSecurityClientUser,headers);
+        HttpEntity<ApiSecurityClientUser> expectedRequest = new HttpEntity<>(apiSecurityClientUser, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityAccessToken(), HttpStatus.OK));
 
         apiSecurityService.getClientToken(apiSecurityClientUser);
@@ -94,9 +95,9 @@ public class ApiSecurityServiceImplTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<ApiSecurityUsernamePassword> expectedRequest = new HttpEntity<>(apiSecurityUsernamePassword,headers);
+        HttpEntity<ApiSecurityUsernamePassword> expectedRequest = new HttpEntity<>(apiSecurityUsernamePassword, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityAccessToken(), HttpStatus.OK));
 
         apiSecurityService.getUserToken(apiSecurityUsernamePassword);
@@ -121,15 +122,15 @@ public class ApiSecurityServiceImplTest {
         apiSecurityUser.setRoles("users;agency");
         apiSecurityUser.setUsername("jchrist");
 
-        String token  = "jwt-token";
+        String token = "jwt-token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth(token);
         headers.set("grant_type", "client_credentials");
-        HttpEntity<ApiSecurityUser> expectedRequest = new HttpEntity<>(apiSecurityUser,headers);
+        HttpEntity<ApiSecurityUser> expectedRequest = new HttpEntity<>(apiSecurityUser, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
 
         apiSecurityService.registerUser(apiSecurityUser, token);
@@ -154,9 +155,9 @@ public class ApiSecurityServiceImplTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<ApiSecurityChangePassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword,headers);
+        HttpEntity<ApiSecurityChangePassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityChangePassword(), HttpStatus.NO_CONTENT));
 
         apiSecurityService.changePassword(apiSecurityChangePassword);
@@ -180,9 +181,9 @@ public class ApiSecurityServiceImplTest {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<ApiSecurityForgotPassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword,headers);
+        HttpEntity<ApiSecurityForgotPassword> expectedRequest = new HttpEntity<>(apiSecurityChangePassword, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityForgotPassword(), HttpStatus.NO_CONTENT));
 
         apiSecurityService.forgotPassword(apiSecurityChangePassword);
@@ -204,9 +205,9 @@ public class ApiSecurityServiceImplTest {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth("token");
         headers.set("grant_type", "client_credentials");
-        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
 
         apiSecurityService.getUserByUsername("example@example.com", "token");
@@ -229,9 +230,9 @@ public class ApiSecurityServiceImplTest {
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth("token");
         headers.set("grant_type", "client_credentials");
-        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(new ApiSecurityUser(), HttpStatus.OK));
 
         apiSecurityService.getUserByUserId("12", "token");
@@ -253,18 +254,18 @@ public class ApiSecurityServiceImplTest {
         String userId = "12";
         String field = "ROLES";
         String value = "user;agency_user";
-        String token  = "jwt-token";
+        String token = "jwt-token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         headers.setBearerAuth(token);
         headers.set("grant_type", "client_credentials");
-        HttpEntity<Void> expectedRequest = new HttpEntity<>(null,headers);
+        HttpEntity<Void> expectedRequest = new HttpEntity<>(null, headers);
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class),any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
 
-        apiSecurityService.updateUserInfo(userId,field, value, token);
+        apiSecurityService.updateUserInfo(userId, field, value, token);
 
         verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
                 httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
@@ -276,4 +277,30 @@ public class ApiSecurityServiceImplTest {
 
 
     }
+
+    @Test
+    public void getNewToken_calls_RestTemplate() {
+
+        ApiRefreshToken apiRefreshToken = new ApiRefreshToken();
+        apiRefreshToken.setRefreshToken("refresh-token");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<ApiRefreshToken> expectedRequest = new HttpEntity<>(apiRefreshToken, headers);
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
+                .thenReturn(new ResponseEntity<>(new ApiSecurityAccessToken(), HttpStatus.OK));
+
+        apiSecurityService.getNewUserToken(apiRefreshToken);
+
+        verify(mockRestTemplate).exchange(stringArgumentCaptor.capture(), httpMethodArgumentCaptor.capture(),
+                httpEntityArgumentCaptor.capture(), classArgumentCaptor.capture());
+
+        assertThat(stringArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/v1/users/authorized/refresh");
+        assertThat(httpMethodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
+        assertThat(httpEntityArgumentCaptor.getValue()).isEqualTo(expectedRequest);
+        assertThat(classArgumentCaptor.getValue()).isEqualTo(ApiSecurityAccessToken.class);
+
+    }
+
 }

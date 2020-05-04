@@ -38,6 +38,10 @@ public class UserController {
     ResponseEntity<TokenDTO> loginUser(@RequestBody EmailPasswordDTO emailPasswordDTO){
         return ResponseEntity.ok(userService.loginUser(emailPasswordDTO));
     }
+    @PostMapping("/public/get_token")
+    ResponseEntity<TokenDTO> getNewToken(@RequestBody RefreshTokenDTO refreshTokenDTO){
+        return ResponseEntity.ok(userService.getNewToken(refreshTokenDTO));
+    }
     @PostMapping("/public/change_password")
     ResponseEntity<?> changeUserPassword(@RequestBody ChangePasswordDTO changePasswordDTO){
         userService.changeUserPassword(changePasswordDTO);

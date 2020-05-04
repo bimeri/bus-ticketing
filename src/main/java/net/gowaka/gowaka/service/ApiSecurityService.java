@@ -16,5 +16,5 @@ public interface ApiSecurityService {
     ApiSecurityUser getUserByUsername(String username, String clientToken);
     ApiSecurityUser getUserByUserId(String userId, String clientToken);
     void updateUserInfo(String userId, String field, String value, String clientToken);
-
+    ApiSecurityAccessToken getNewUserToken(ApiRefreshToken apiRefreshToken);
 }

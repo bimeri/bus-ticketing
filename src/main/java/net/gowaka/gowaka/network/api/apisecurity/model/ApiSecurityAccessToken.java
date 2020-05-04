@@ -13,4 +13,7 @@ public class ApiSecurityAccessToken {
     private String issuer;
     private String version;
     private String token;
+    private String refreshToken;
+    private Long expiredIn;
+
 }

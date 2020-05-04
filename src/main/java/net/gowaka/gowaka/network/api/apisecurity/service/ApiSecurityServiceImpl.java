@@ -5,7 +5,10 @@ import net.gowaka.gowaka.network.api.apisecurity.model.*;
 import net.gowaka.gowaka.service.ApiSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -100,7 +103,7 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.setBearerAuth(clientToken);
         headers.set("grant_type", "client_credentials");
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort()
-                + apiSecurityConfig.getGetUserByUsernamePath()+"?username="+username;
+                + apiSecurityConfig.getGetUserByUsernamePath() + "?username=" + username;
 
         HttpEntity<Void> request = new HttpEntity<>(null, headers);
 
@@ -129,8 +132,8 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         headers.setBearerAuth(token);
         headers.set("grant_type", "client_credentials");
 
-        String userIdPath = apiSecurityConfig.getUpdateUserInfo().replace("{userId}",userId);
-        String finalPath = userIdPath.replace("{field}",field)+"?value="+value;
+        String userIdPath = apiSecurityConfig.getUpdateUserInfo().replace("{userId}", userId);
+        String finalPath = userIdPath.replace("{field}", field) + "?value=" + value;
 
         String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + finalPath;
 
@@ -139,6 +142,17 @@ public class ApiSecurityServiceImpl implements ApiSecurityService {
         restTemplate.exchange(url, HttpMethod.PATCH, request, Void.class);
 
 
+    }
+
+    @Override
+    public ApiSecurityAccessToken getNewUserToken(ApiRefreshToken apiRefreshToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        String url = apiSecurityConfig.getHost() + ":" + apiSecurityConfig.getPort() + apiSecurityConfig.getRefreshTokenPath();
+
+        HttpEntity<ApiRefreshToken> request = new HttpEntity<>(apiRefreshToken, headers);
+
+        return restTemplate.exchange(url, HttpMethod.POST, request, ApiSecurityAccessToken.class).getBody();
     }
 
 
