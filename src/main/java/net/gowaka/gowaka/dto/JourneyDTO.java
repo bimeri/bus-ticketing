@@ -3,6 +3,7 @@ package net.gowaka.gowaka.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
+import javax.validation.constraints.Future;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.List;
@@ -14,8 +15,10 @@ import java.util.List;
 @Data
 public class JourneyDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Future(message = "departureTime must be in the future")
     private Date departureTime;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @Future(message = "estimatedArrivalTime must be in the future")
     private Date estimatedArrivalTime;
     private DriverDTO driver;
     @NotNull(message = "departureLocation is required")

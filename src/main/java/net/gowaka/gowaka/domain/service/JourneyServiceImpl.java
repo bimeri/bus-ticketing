@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.repository.JourneyRepository;
 import net.gowaka.gowaka.domain.repository.JourneyStopRepository;
 import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
 import net.gowaka.gowaka.domain.repository.UserRepository;
+import net.gowaka.gowaka.domain.service.utilities.DTFFromDateStr;
 import net.gowaka.gowaka.domain.service.utilities.TimeProvider;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
@@ -273,7 +274,7 @@ public class JourneyServiceImpl implements JourneyService {
     public List<JourneyResponseDTO> searchJourney(Long departureLocationId, Long destinationLocationId, String time) {
         LocalDateTime dateTime;
         try {
-            dateTime = LocalDateTime.parse(time, getDateTimeFormatterFromString(time));
+            dateTime = LocalDateTime.parse(time, DTFFromDateStr.getDateTimeFormatterFromString(time));
         } catch (Exception ex) {
             //Validation Error
             throw new ApiException("Invalid date time format. Try yyyy-MM-dd HH:mm",
@@ -634,22 +635,6 @@ public class JourneyServiceImpl implements JourneyService {
             throw new ApiException("Bookings Exist for this Journey, cannot delete", ErrorCodes.OPERATION_NOT_ALLOWED.toString(), HttpStatus.METHOD_NOT_ALLOWED);
         }
         return true;
-    }
-
-    private DateTimeFormatter getDateTimeFormatterFromString(String time) {
-        if(time.contains(":")) {
-            String t = time.substring(time.indexOf(":") + 1);
-            if(t.contains(":")) {
-                // the time string has seconds
-                return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            } else {
-                // the time string does not have seconds but has only minutes
-                return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-            }
-        } else {
-            // time string does not have minutes nor seconds
-            return DateTimeFormatter.ofPattern("yyyy-MM-dd HH");
-        }
     }
 
     /**

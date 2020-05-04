@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -151,7 +152,8 @@ public class JourneyControllerIntegrationTest {
 
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
-        String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String currentDateTime = localDateTime.plusDays(3).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String currentTimeStamp = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         bus.setTimestamp(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -159,7 +161,7 @@ public class JourneyControllerIntegrationTest {
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
                 "\"departureIndicator\":false," +
                 "\"arrivalIndicator\":false," +
-                "\"timestamp\":\"" + currentDateTime + "\"," +
+                "\"timestamp\":\"" + currentTimeStamp + "\"," +
                 "\"amount\": 1000.0," +
                 "\"driver\":{" +
                 "\"driverName\":\"John Doe\"," +
@@ -203,7 +205,7 @@ public class JourneyControllerIntegrationTest {
                 "\"licensePlateNumber\":\"123454387\"," +
                 "\"isOfficialAgencyIndicator\":true," +
                 "\"isCarApproved\":true," +
-                "\"timestamp\":\"" + currentDateTime + "\"" +
+                "\"timestamp\":\"" + currentTimeStamp + "\"" +
                 "}}";
         String reqBody = "{\n" +
                 "  \"departureTime\": \"" + currentDateTime + "\",\n" +
@@ -232,9 +234,11 @@ public class JourneyControllerIntegrationTest {
 
     @Test
     public void add_journey_should_return_validation_date_time_error() throws Exception{
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String reqBody = "{\n" +
-                "  \"departureTime\": \" 27-02-29 \",\n" +
-                "  \"estimatedArrivalTime\": \" 27-0-20 \",\n" +
+                "  \"departureTime\": \"" + depTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \"" + depTime + "\",\n" +
                 "  \"driver\": {\n" +
                 "    \"driverName\": \"John Doe\",\n" +
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
@@ -901,9 +905,11 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void personal_agency_add_journey_shared_rides_should_return_bad_request_with_validation_errors() throws Exception {
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String badRequest = "{\n" +
-                "  \"departureTime\": \"2019-02-20 11:11:11\",\n" +
-                "  \"estimatedArrivalTime\": \"2019-02-20 11:11:11\",\n" +
+                "  \"departureTime\": \""+ depTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \""+ depTime +"\",\n" +
                 "  \"driver\": {\n" +
                 "    \"driverName\": \"John Doe\",\n" +
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
@@ -1079,9 +1085,11 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void personal_agency_update_journey_shared_rides_should_return_bad_request_with_validation_errors() throws Exception {
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String badRequest = "{\n" +
-                "  \"departureTime\": \"2019-02-20 11:11:11\",\n" +
-                "  \"estimatedArrivalTime\": \"2019-02-20 11:11:11\",\n" +
+                "  \"departureTime\": \""+ depTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \""+ depTime +"\",\n" +
                 "  \"driver\": {\n" +
                 "    \"driverName\": \"John Doe\",\n" +
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
