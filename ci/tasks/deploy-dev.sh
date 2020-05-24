@@ -2,6 +2,7 @@
 
 set -e
 ls -l
+ls -l source-code-from-gitlab/ci
 #
 #lc login -t $LDC_TARGET -u $LDC_USERNAME -p $LDC_PASSWORD
 #lc add-env GoWakaEnv -n APP_NAME -v $APP_NAME
