@@ -1,0 +1,10 @@
+name: GoWakaAPI
+appType: jar
+port: 8040
+teamId: 1
+hostServers:
+  - GoLabTestServer
+workspace: DEVELOPMENT
+environments:
+  - name: "SPRING_PROFILES_ACTIVE"
+    value: "cloud"
