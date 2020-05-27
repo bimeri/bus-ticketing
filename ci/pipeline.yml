@@ -91,7 +91,7 @@ jobs:
         type: docker-image
         source:
           repository: eddytnk/lc
-          tag: 0.0.1
+          tag: latest
       inputs:
       - name: source-code-from-gitlab
       - name: minio-s3
