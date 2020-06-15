@@ -14,6 +14,6 @@ lc add-env GoWakaEnv -n GW_DB_PWD -v $GW_DB_PWD
 lc add-env GoWakaEnv -n PAYAMGO_CLIENT_SECRET -v $PAYAMGO_CLIENT_SECRET
 lc add-env GoWakaEnv -n PAYAMGO_CLIENT_KEY -v $PAYAMGO_CLIENT_KEY
 lc add-env GoWakaEnv -n AS_PUBLIC_KEY -v $AS_PUBLIC_KEY
-lc get-env GoWakaEnv
+
 lc push  --app-dir minio-s3/*.jar --config source-code-from-gitlab/ci/appconfig.json
 
