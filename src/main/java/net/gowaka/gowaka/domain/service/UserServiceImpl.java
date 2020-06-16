@@ -101,7 +101,9 @@ public class UserServiceImpl implements UserService {
 
         ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
         UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
-        UserDTO userDTO = getUserDTO(userDetails);
+
+        User user = userRepository.findById(userDetails.getId()).get();
+        UserDTO userDTO = getUserDTO(userDetails, user);
 
         TokenDTO tokenDTO = getTokenDTO(userToken);
         tokenDTO.setUserDetails(userDTO);
@@ -179,11 +181,13 @@ public class UserServiceImpl implements UserService {
         return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
-    private UserDTO getUserDTO(UserDetailsImpl userDetails) {
+    private UserDTO getUserDTO(UserDetailsImpl userDetails, User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(userDetails.getId());
         userDTO.setFullName(userDetails.getFullName());
         userDTO.setEmail(userDetails.getUsername());
+        userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setIdCardNumber(user.getIdCardNumber());
         userDTO.setRoles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())
