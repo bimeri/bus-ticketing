@@ -1,10 +1,14 @@
 package net.gowaka.gowaka.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gowaka.gowaka.domain.model.User;
+import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.CreateUserRequest;
 import net.gowaka.gowaka.dto.EmailDTO;
 import net.gowaka.gowaka.dto.EmailPasswordDTO;
+import net.gowaka.gowaka.dto.UpdateProfileDTO;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +59,11 @@ public class UserControllerIntegrationTest {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private String jwtToken;
+
     private String successClientTokenResponse = "{\n" +
             "  \"header\": \"Authorization\",\n" +
             "  \"type\": \"Bearer\",\n" +
@@ -101,8 +110,9 @@ public class UserControllerIntegrationTest {
     private MockRestServiceServer mockServer;
 
     @Before
-    public void setUp() {
+    public void setUp() throws JsonProcessingException {
         mockServer = MockRestServiceServer.createServer(restTemplate);
+        jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
     @After
@@ -112,7 +122,7 @@ public class UserControllerIntegrationTest {
 
     private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
-                .andExpect(header("content-type", "application/json;charset=UTF-8"))
+//                .andExpect(header("content-type", "application/json;charset=UTF-8"))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
@@ -289,6 +299,34 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
                 .andReturn();
+    }
+
+    @Test
+    public void updateProfile_success_return_204() throws Exception {
+
+        User user = new User();
+        user.setUserId("12");
+        userRepository.save(user);
+
+        startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
+                HttpStatus.OK, successClientTokenResponse);
+
+        startMockServerWith("http://localhost:8082/api/protected/v1/users/12/FULL_NAME?value=John%20Doe",
+                HttpStatus.NO_CONTENT, "{}");
+
+        UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
+        updateProfileDTO.setPhoneNumber("676767676");
+        updateProfileDTO.setIdCardNumber("1234567890");
+        updateProfileDTO.setFullName("John Doe");
+
+        RequestBuilder requestBuilder = post("/api/protected/users/profile")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(updateProfileDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+
     }
 
 }

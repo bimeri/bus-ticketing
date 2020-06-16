@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
+import net.gowaka.gowaka.exception.ResourceNotFoundException;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityAccessToken;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityChangePassword;
 import net.gowaka.gowaka.network.api.apisecurity.model.ApiSecurityForgotPassword;
@@ -16,7 +17,9 @@ import net.gowaka.gowaka.service.ApiSecurityService;
 import net.gowaka.gowaka.service.NotificationService;
 import net.gowaka.gowaka.service.UserService;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -25,12 +28,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Author: Edward Tanko <br/>
@@ -52,6 +55,10 @@ public class UserServiceImplTest {
     @Mock
     private NotificationService mockNotificationService;
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+
     ArgumentCaptor<ApiSecurityUser> apiSecurityUserArgumentCaptor;
     ArgumentCaptor<String> stringArgumentCaptor;
     ArgumentCaptor<User> userArgumentCaptor;
@@ -68,7 +75,7 @@ public class UserServiceImplTest {
 
         userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig, mockJwtTokenProvider, mockEmailContentBuilder);
 
-        apiSecurityUserArgumentCaptor =ArgumentCaptor.forClass(ApiSecurityUser.class);
+        apiSecurityUserArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityUser.class);
         stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
         userArgumentCaptor = ArgumentCaptor.forClass(User.class);
         ((UserServiceImpl) userService).setNotificationService(mockNotificationService);
@@ -246,4 +253,93 @@ public class UserServiceImplTest {
         assertThat(currentAuthUser.getRoles()).isEqualTo(Arrays.asList("users"));
 
     }
+
+    @Test
+    public void updateProfile_throwException_whenAuthUserNotFound() {
+
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setId("12");
+        userDetails.setFullName("Jesus Christ");
+        userDetails.setUsername("example@example.com");
+        userDetails.setPassword("secret");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+
+        when(mockUserRepository.findById(any()))
+                .thenReturn(Optional.empty());
+
+        expectedException.expect(ResourceNotFoundException.class);
+        expectedException.expectMessage("User not found.");
+
+        UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
+        userService.updateProfile(updateProfileDTO);
+        verify(mockUserRepository).findById("12");
+    }
+
+    @Test
+    public void updateProfile_updateIDCardAndPhoneNumberButNotFullName_whenAuthUserFound() {
+
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setId("12");
+        userDetails.setFullName("Jesus Christ");
+        userDetails.setUsername("example@example.com");
+        userDetails.setPassword("secret");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+
+        User user = new User();
+        when(mockUserRepository.findById(any()))
+                .thenReturn(Optional.of(user));
+
+        UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
+        updateProfileDTO.setFullName("Jesus Christ");
+        updateProfileDTO.setIdCardNumber("123456789");
+        updateProfileDTO.setPhoneNumber("67676767676");
+        userService.updateProfile(updateProfileDTO);
+        verify(mockUserRepository).findById("12");
+        verify(mockUserRepository).save(userArgumentCaptor.capture());
+        verifyZeroInteractions(mockApiSecurityService);
+
+        User userValue = userArgumentCaptor.getValue();
+        assertThat(userValue.getIdCardNumber()).isEqualTo("123456789");
+        assertThat(userValue.getPhoneNumber()).isEqualTo("67676767676");
+    }
+
+    @Test
+    public void updateProfile_updateIDCardAndPhoneNumberAndFullName_whenAuthUserFound() {
+
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setId("12");
+        userDetails.setFullName("Jesus Christ");
+        userDetails.setUsername("example@example.com");
+        userDetails.setPassword("secret");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
+
+        User user = new User();
+        user.setUserId("12");
+        when(mockUserRepository.findById(any()))
+                .thenReturn(Optional.of(user));
+        ApiSecurityAccessToken token = new ApiSecurityAccessToken();
+        token.setToken("my-token");
+        when(mockApiSecurityService.getClientToken(any()))
+                .thenReturn(token);
+
+        UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
+        updateProfileDTO.setFullName("New Name");
+        updateProfileDTO.setIdCardNumber("123456789");
+        updateProfileDTO.setPhoneNumber("67676767676");
+        userService.updateProfile(updateProfileDTO);
+        verify(mockUserRepository).findById("12");
+        verify(mockUserRepository).save(userArgumentCaptor.capture());
+        verify(mockApiSecurityService).updateUserInfo("12", "FULL_NAME", "New Name", "my-token");
+
+        User userValue = userArgumentCaptor.getValue();
+        assertThat(userValue.getIdCardNumber()).isEqualTo("123456789");
+        assertThat(userValue.getPhoneNumber()).isEqualTo("67676767676");
+    }
+
 }

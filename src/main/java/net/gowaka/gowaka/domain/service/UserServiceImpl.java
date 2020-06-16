@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
+import net.gowaka.gowaka.exception.ResourceNotFoundException;
 import net.gowaka.gowaka.network.api.apisecurity.model.*;
 import net.gowaka.gowaka.network.api.notification.model.EmailAddress;
 import net.gowaka.gowaka.network.api.notification.model.SendEmailDTO;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.constant.UserRoles.USERS;
@@ -140,6 +142,23 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
         userDTO.setRoles(roles);
         return userDTO;
+    }
+
+    @Override
+    public void updateProfile(UpdateProfileDTO updateProfileDTO) {
+        UserDTO currentAuthUser = getCurrentAuthUser();
+        Optional<User> userOptional = userRepository.findById(currentAuthUser.getId());
+        if (!userOptional.isPresent()) {
+            throw new ResourceNotFoundException("User not found.");
+        }
+        User user = userOptional.get();
+        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
+        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
+        userRepository.save(user);
+        if (!currentAuthUser.getFullName().equals(updateProfileDTO.getFullName())) {
+            ApiSecurityAccessToken apiSecurityAccessToken = getApiSecurityAccessToken();
+            apiSecurityService.updateUserInfo(user.getUserId(), "FULL_NAME", updateProfileDTO.getFullName(), apiSecurityAccessToken.getToken());
+        }
     }
 
     @Override

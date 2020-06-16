@@ -16,6 +16,8 @@ import java.util.List;
 public class User {
     @Id
     private String userId;
+    private String phoneNumber;
+    private String idCardNumber;
     private LocalDateTime timestamp;
 
     @OneToMany(mappedBy = "user")

@@ -5,8 +5,10 @@ import net.gowaka.gowaka.service.JourneyService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -50,6 +52,13 @@ public class UserController {
     @PostMapping("/public/forgot_password")
     ResponseEntity<?> forgotUserPassword(@RequestBody EmailDTO emailDTO){
         userService.forgotUserPassword(emailDTO);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_USERS')")
+    @PostMapping("/protected/users/profile")
+    ResponseEntity<?> updateProfile(@RequestBody @Valid UpdateProfileDTO updateProfileDTO){
+        userService.updateProfile(updateProfileDTO);
         return ResponseEntity.noContent().build();
     }
 
