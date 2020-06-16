@@ -153,6 +153,9 @@ public class UserServiceImplTest {
         userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("USERS"), new AppGrantedAuthority("AGENCY")));
         when(mockJwtTokenProvider.getUserDetails(any()))
                 .thenReturn(userDetails);
+        User user = new User();
+        when(mockUserRepository.findById(any()))
+                .thenReturn(Optional.of(user));
 
         TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO);
 
@@ -163,7 +166,7 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
         assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY])");
+        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null)");
 
     }
 

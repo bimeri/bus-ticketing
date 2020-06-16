@@ -102,7 +102,11 @@ public class UserServiceImpl implements UserService {
         ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
         UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
 
-        User user = userRepository.findById(userDetails.getId()).get();
+        Optional<User> userOptional = userRepository.findById(userDetails.getId());
+        if(!userOptional.isPresent()){
+            throw new ResourceNotFoundException("User not found.");
+        }
+        User user = userOptional.get();
         UserDTO userDTO = getUserDTO(userDetails, user);
 
         TokenDTO tokenDTO = getTokenDTO(userToken);

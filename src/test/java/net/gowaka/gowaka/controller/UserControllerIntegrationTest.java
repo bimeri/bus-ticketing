@@ -116,7 +116,7 @@ public class UserControllerIntegrationTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         mockServer.reset();
     }
 
@@ -190,7 +190,9 @@ public class UserControllerIntegrationTest {
     @Test
     public void loginUser_success_returns_200() throws Exception {
 
-
+        User user = new User();
+        user.setUserId("12");
+        userRepository.save(user);
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
 
         ApiSecurityAccessToken apiSecurityAccessToken = new ApiSecurityAccessToken();
