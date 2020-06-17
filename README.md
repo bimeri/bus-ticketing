@@ -16,7 +16,7 @@ The GoWaka service aim at providing an online booking system in Africa and other
 
 ## System Context Diagram
 
-![GoWaka System Context Diagram](./docs/GoWaka-Context-Diagram.png)
+![GoWaka System Context Diagram](./docs/gowaka-high-level.png)
 
 ### To run your unit an Integration Tests
 ./mvnw clean package

@@ -5,6 +5,7 @@ import net.gowaka.gowaka.domain.config.ClientUserCredConfig;
 import net.gowaka.gowaka.domain.model.User;
 import net.gowaka.gowaka.domain.repository.UserRepository;
 import net.gowaka.gowaka.dto.*;
+import net.gowaka.gowaka.exception.ResourceNotFoundException;
 import net.gowaka.gowaka.network.api.apisecurity.model.*;
 import net.gowaka.gowaka.network.api.notification.model.EmailAddress;
 import net.gowaka.gowaka.network.api.notification.model.SendEmailDTO;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static net.gowaka.gowaka.constant.UserRoles.USERS;
@@ -99,7 +101,13 @@ public class UserServiceImpl implements UserService {
 
         ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
         UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
-        UserDTO userDTO = getUserDTO(userDetails);
+
+        Optional<User> userOptional = userRepository.findById(userDetails.getId());
+        if(!userOptional.isPresent()){
+            throw new ResourceNotFoundException("User not found.");
+        }
+        User user = userOptional.get();
+        UserDTO userDTO = getUserDTO(userDetails, user);
 
         TokenDTO tokenDTO = getTokenDTO(userToken);
         tokenDTO.setUserDetails(userDTO);
@@ -143,6 +151,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void updateProfile(UpdateProfileDTO updateProfileDTO) {
+        UserDTO currentAuthUser = getCurrentAuthUser();
+        Optional<User> userOptional = userRepository.findById(currentAuthUser.getId());
+        if (!userOptional.isPresent()) {
+            throw new ResourceNotFoundException("User not found.");
+        }
+        User user = userOptional.get();
+        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
+        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
+        userRepository.save(user);
+        if (!currentAuthUser.getFullName().equals(updateProfileDTO.getFullName())) {
+            ApiSecurityAccessToken apiSecurityAccessToken = getApiSecurityAccessToken();
+            apiSecurityService.updateUserInfo(user.getUserId(), "FULL_NAME", updateProfileDTO.getFullName(), apiSecurityAccessToken.getToken());
+        }
+    }
+
+    @Override
     public TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO) {
         ApiRefreshToken apiRefreshToken = new ApiRefreshToken();
         apiRefreshToken.setRefreshToken(refreshTokenDTO.getRefreshToken());
@@ -160,11 +185,13 @@ public class UserServiceImpl implements UserService {
         return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
-    private UserDTO getUserDTO(UserDetailsImpl userDetails) {
+    private UserDTO getUserDTO(UserDetailsImpl userDetails, User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(userDetails.getId());
         userDTO.setFullName(userDetails.getFullName());
         userDTO.setEmail(userDetails.getUsername());
+        userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setIdCardNumber(user.getIdCardNumber());
         userDTO.setRoles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())

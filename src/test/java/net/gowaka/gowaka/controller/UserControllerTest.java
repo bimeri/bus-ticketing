@@ -61,4 +61,11 @@ public class UserControllerTest {
         verify(mockUserService).forgotUserPassword(emailDTO);
     }
 
+    @Test
+    public void updateProfile_calls_UserService() {
+        UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
+        userController.updateProfile(updateProfileDTO);
+        verify(mockUserService).updateProfile(updateProfileDTO);
+    }
+
 }

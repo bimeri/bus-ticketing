@@ -15,4 +15,9 @@ public class UserDTO {
     private String fullName;
     private String email;
     private List<String> roles;
+
+    //These fields are not present in the token or ApiSecurity
+    // there are additional fields on Gowka Database
+    private String phoneNumber;
+    private String idCardNumber;
 }

@@ -174,6 +174,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     long untilMinute = paymentTransaction.getCreateAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
                     if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
                             && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
+                        //TODO: should look for the next available seat and set
                         bookedJourney.getPassenger().setSeatNumber(0);
                         bookedJourneyRepository.save(bookedJourney);
                         return 0;

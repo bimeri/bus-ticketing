@@ -505,8 +505,10 @@ public class JourneyServiceImpl implements JourneyService {
             carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
             carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
             if (car instanceof Bus) {
-                OfficialAgency officialAgency = ((Bus) car).getOfficialAgency();
+                Bus bus = (Bus) car;
+                OfficialAgency officialAgency = bus.getOfficialAgency();
                 if (officialAgency != null) carDTO.setAgencyName(officialAgency.getAgencyName());
+                carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {
                 PersonalAgency personalAgency = ((SharedRide) car).getPersonalAgency();
                 if (personalAgency != null) carDTO.setAgencyName(personalAgency.getName());

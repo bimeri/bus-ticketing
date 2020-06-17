@@ -14,4 +14,5 @@ public interface UserService {
     void forgotUserPassword(EmailDTO emailDTO);
     UserDTO getCurrentAuthUser();
     TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO);
+    void updateProfile(UpdateProfileDTO updateProfileDTO);
 }
