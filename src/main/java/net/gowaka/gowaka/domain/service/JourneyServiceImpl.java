@@ -1,10 +1,8 @@
 package net.gowaka.gowaka.domain.service;
 
+import lombok.Builder;
 import net.gowaka.gowaka.domain.model.*;
-import net.gowaka.gowaka.domain.repository.JourneyRepository;
-import net.gowaka.gowaka.domain.repository.JourneyStopRepository;
-import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
-import net.gowaka.gowaka.domain.repository.UserRepository;
+import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.domain.service.utilities.DTFFromDateStr;
 import net.gowaka.gowaka.domain.service.utilities.TimeProvider;
 import net.gowaka.gowaka.dto.*;
@@ -18,11 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -30,32 +30,26 @@ import java.util.stream.Collectors;
  * @date 17 Oct 2019
  */
 @Service
+@Builder
 public class JourneyServiceImpl implements JourneyService {
     private UserService userService;
     private UserRepository userRepository;
     private TransitAndStopRepository transitAndStopRepository;
     private JourneyRepository journeyRepository;
     private JourneyStopRepository journeyStopRepository;
-    private EntityManager entityManager;
-    private ZoneId zoneId = ZoneId.of("GMT");
-    private Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
+    private BookedJourneyRepository bookedJourneyRepository;
+    private final ZoneId zoneId = ZoneId.of("GMT");
+    private final Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
+
 
     @Autowired
-    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository) {
+    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.transitAndStopRepository = transitAndStopRepository;
         this.journeyRepository = journeyRepository;
-    }
-
-    @Autowired
-    public void setJourneyStopRepository(JourneyStopRepository journeyStopRepository) {
         this.journeyStopRepository = journeyStopRepository;
-    }
-
-    @Autowired
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
+        this.bookedJourneyRepository = bookedJourneyRepository;
     }
 
     @Override
@@ -78,8 +72,8 @@ public class JourneyServiceImpl implements JourneyService {
                 .filter(journey -> {
                     Car car = journey.getCar();
                     if (car == null) return false;
-                    if (car instanceof Bus){
-                        if (((Bus)car).getOfficialAgency() == null) return false;
+                    if (car instanceof Bus) {
+                        if (((Bus) car).getOfficialAgency() == null) return false;
                         return ((Bus) car).getOfficialAgency().equals(officialAgency);
                     }
                     return false;
@@ -92,7 +86,7 @@ public class JourneyServiceImpl implements JourneyService {
         List<Bus> buses = getOfficialAgency(verifyCurrentAuthUser())
                 .getBuses().stream()
                 .filter(bus1 -> journey.getCar().equals(bus1)).collect(Collectors.toList());
-        if (buses.isEmpty()){
+        if (buses.isEmpty()) {
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return mapToJourneyResponseDTO(journey);
@@ -101,7 +95,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void addStop(Long journeyId, AddStopDTO addStopDTO) {
         Journey journey = getJourney(journeyId);
-        if (journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             List<JourneyStop> journeyStops = journey.getJourneyStops();
             List<TransitAndStop> transitAndStops = journeyStops.stream().map(
@@ -110,7 +104,7 @@ public class JourneyServiceImpl implements JourneyService {
             // save only if transit and stop does not already exist
             if (transitAndStops.stream()
                     .noneMatch(transitAndStop -> transitAndStop.getId()
-                            .equals(addStopDTO.getTransitAndStopId()))){
+                            .equals(addStopDTO.getTransitAndStopId()))) {
                 JourneyStop journeyStop = new JourneyStop();
                 journeyStop.setAmount(addStopDTO.getAmount());
                 journeyStop.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
@@ -125,7 +119,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void deleteNonBookedJourney(Long journeyId) {
         Journey journey = getJourney(journeyId);
-        if (journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
         }
@@ -134,7 +128,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
         Journey journey = getJourney(journeyId);
-        if(journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
             journeyRepository.save(journey);
@@ -144,7 +138,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
         Journey journey = getJourney(journeyId);
-        if (journeyDepartureFilter(journey)){
+        if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
@@ -193,7 +187,7 @@ public class JourneyServiceImpl implements JourneyService {
                 .stream()
                 .filter(sharedRide -> journey.getCar().getId().equals(sharedRide.getId()))
                 .collect(Collectors.toList());
-        if (sharedRides.isEmpty()){
+        if (sharedRides.isEmpty()) {
             throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return mapToJourneyResponseDTO(journey);
@@ -207,8 +201,8 @@ public class JourneyServiceImpl implements JourneyService {
                         journey -> {
                             Car car = journey.getCar();
                             if (car == null) return false;
-                            if (car instanceof SharedRide){
-                                if (((SharedRide)car).getPersonalAgency() == null) return false;
+                            if (car instanceof SharedRide) {
+                                if (((SharedRide) car).getPersonalAgency() == null) return false;
                                 return ((SharedRide) car).getPersonalAgency().equals(personalAgency);
                             }
                             return false;
@@ -220,7 +214,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
         Journey journey = getJourney(journeyId);
-        if (journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
             journey = journeyRepository.save(journey);
@@ -232,7 +226,7 @@ public class JourneyServiceImpl implements JourneyService {
     public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
         Journey journey = getJourney(journeyId);
         logger.info("Arrival Indicator: {}", journey.getArrivalIndicator());
-        if (journeyDepartureFilter(journey)){
+        if (journeyDepartureFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicator.getArrivalIndicator());
             journey = journeyRepository.save(journey);
@@ -243,7 +237,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void deleteNonBookedSharedJourney(Long journeyId) {
         Journey journey = getJourney(journeyId);
-        if (journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
         }
@@ -252,7 +246,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void addStopToPersonalAgency(Long journeyId, AddStopDTO addStopDTO) {
         Journey journey = getJourney(journeyId);
-        if (journeyTerminationFilter(journey)){
+        if (journeyTerminationFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             List<JourneyStop> journeyStops = journey.getJourneyStops();
             List<TransitAndStop> transitAndStops = journeyStops.stream().map(
@@ -267,7 +261,7 @@ public class JourneyServiceImpl implements JourneyService {
                 journeyStops.add(journeyStop);
                 journeyRepository.save(journey);
             }
-            }
+        }
     }
 
     @Override
@@ -281,30 +275,53 @@ public class JourneyServiceImpl implements JourneyService {
                     ErrorCodes.INVALID_FORMAT.toString(), HttpStatus.BAD_REQUEST);
         }
 
-        List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
-        TransitAndStop departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure");
-        TransitAndStop destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination");
-            return journeyList.stream().filter(
-                    journey -> journeySearchFilter(journey, departureLocation, destinationLocation, dateTime)
-            ).map(this::mapToJourneyResponseDTO)
-                            .collect(Collectors.toList());
+        return getJourneyResponseDTOS(departureLocationId, destinationLocationId, dateTime);
     }
 
     @Override
     public List<JourneyResponseDTO> searchJourney() {
-        return null;
+
+        LocalDateTime today = LocalDate.now().atStartOfDay();
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findTopByUser_UserIdOrderByIdDesc(currentAuthUser.getId());
+        Long departureLocationId = null;
+        Long destinationLocationId = null;
+        List<JourneyResponseDTO> journeys = new ArrayList<>();
+        if (bookedJourneyOptional.isPresent()) {
+            BookedJourney bookedJourney = bookedJourneyOptional.get();
+            departureLocationId = bookedJourney.getJourney().getDepartureLocation().getId();
+            destinationLocationId = bookedJourney.getDestination().getId();
+            //swap trip departure and destination to suggest return trip
+            journeys.addAll(getJourneyResponseDTOS(destinationLocationId, departureLocationId, today));
+        }
+        if (journeys.size() < 10 && departureLocationId != null && destinationLocationId != null) {
+            journeys.addAll(getJourneyResponseDTOS(departureLocationId, destinationLocationId, today));
+        }
+        return journeys;
     }
 
+    private List<JourneyResponseDTO> getJourneyResponseDTOS(Long departureLocationId, Long destinationLocationId, LocalDateTime dateTime) {
+
+        TransitAndStop departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure");
+        TransitAndStop destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination");
+
+        List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
+        return journeyList.stream().filter(
+                journey -> journeySearchFilter(journey, departureLocation, destinationLocation, dateTime)
+        ).map(this::mapToJourneyResponseDTO)
+                .collect(Collectors.toList());
+    }
 
     /**
      * verify and return the current user in cases where user id is relevant
+     *
      * @return user
      */
-    private User verifyCurrentAuthUser(){
+    private User verifyCurrentAuthUser() {
         UserDTO authUser = userService.getCurrentAuthUser();
         // get user entity
         Optional<User> optionalUser = userRepository.findById(authUser.getId());
-        if (!optionalUser.isPresent()){
+        if (!optionalUser.isPresent()) {
             throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalUser.get();
@@ -312,12 +329,13 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * Get the personal agency of user or throw api exception if agency is not found
+     *
      * @param user
      * @return officialAgency
      */
     private OfficialAgency getOfficialAgency(User user) {
         OfficialAgency officialAgency = user.getOfficialAgency();
-        if (officialAgency == null){
+        if (officialAgency == null) {
             throw new ApiException("No Official Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return officialAgency;
@@ -325,7 +343,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     private PersonalAgency getPersonalAgency(User user) {
         PersonalAgency personalAgency = user.getPersonalAgency();
-        if (personalAgency == null){
+        if (personalAgency == null) {
             throw new ApiException("No Personal Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return personalAgency;
@@ -333,23 +351,24 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * Gets car in user's official agency. if car not found, throw car not found api exception
+     *
      * @param carId
      * @return Car
      */
-    private Car getOfficialAgencyCarById(Long carId){
+    private Car getOfficialAgencyCarById(Long carId) {
         List<Car> cars = getOfficialAgency(verifyCurrentAuthUser()).getBuses()
                 .stream().filter(bus -> bus.getId().equals(carId)).collect(Collectors.toList());
-        if (cars.isEmpty()){
+        if (cars.isEmpty()) {
             throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return cars.get(0);
     }
 
-    private Car getPersonalAgencyCarById(Long carId){
+    private Car getPersonalAgencyCarById(Long carId) {
         List<Car> cars = getPersonalAgency(verifyCurrentAuthUser()).getSharedRides()
                 .stream().filter(sharedRide -> sharedRide.getId().equals(carId))
                 .collect(Collectors.toList());
-        if (cars.isEmpty()){
+        if (cars.isEmpty()) {
             throw new ApiException("Journey\'s Car not in AuthUser\'s PersonalAgency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return cars.get(0);
@@ -357,12 +376,13 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * throws exception if transitAndStop is not found
+     *
      * @param id
      * @return transitAndStop
      */
-    private TransitAndStop getTransitAndStop(Long id){
+    private TransitAndStop getTransitAndStop(Long id) {
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
-        if (!optionalTransitAndStop.isPresent()){
+        if (!optionalTransitAndStop.isPresent()) {
             throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalTransitAndStop.get();
@@ -371,28 +391,29 @@ public class JourneyServiceImpl implements JourneyService {
     /**
      * Throws exception if transitAndStop is not found but appends message to indicate the category
      * of the transitAndStop
+     *
      * @param id
      * @param errMsg
      * @return transitAndStop
      */
-    private TransitAndStop getTransitAndStopCanAppendErrMsg(Long id, String errMsg){
+    private TransitAndStop getTransitAndStopCanAppendErrMsg(Long id, String errMsg) {
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findById(id);
-        if (!optionalTransitAndStop.isPresent()){
+        if (!optionalTransitAndStop.isPresent()) {
             throw new ApiException(errMsg + " TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalTransitAndStop.get();
     }
 
-    private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car){
+    private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car) {
         journey.setCar(car);
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
-                journeyDTO.getDestination() == null ? null: journeyDTO.getDestination().getTransitAndStopId()
+                journeyDTO.getDestination() == null ? null : journeyDTO.getDestination().getTransitAndStopId()
                 , "Destination");
         journey.setDestination(destinationTransitAndStop);
         TransitAndStop departureTransitAndStop = getTransitAndStopCanAppendErrMsg(journeyDTO.getDepartureLocation(), "Departure");
         journey.setDepartureLocation(departureTransitAndStop);
         List<JourneyStop> journeyStops = new ArrayList<>();
-        for (AddStopDTO addStopDTO: journeyDTO.getTransitAndStops()) {
+        for (AddStopDTO addStopDTO : journeyDTO.getTransitAndStops()) {
             JourneyStop journeyStop1 = new JourneyStop();
             journeyStop1.setTransitAndStop(getTransitAndStop(addStopDTO.getTransitAndStopId()));
             journeyStop1.setAmount(addStopDTO.getAmount());
@@ -401,7 +422,7 @@ public class JourneyServiceImpl implements JourneyService {
         }
         logger.info("removing all previous journeyStops");
         if (journey.getId() != null)
-        journeyStopRepository.deleteAllByJourneyId(journey.getId());
+            journeyStopRepository.deleteAllByJourneyId(journey.getId());
         logger.info("setting new journeyStops");
         journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
@@ -450,7 +471,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     private DriverDTO getDriverDTO(Driver driver) {
         DriverDTO driverDTO = new DriverDTO();
-        if (driver == null){
+        if (driver == null) {
             return null;
         }
         driverDTO.setDriverName(driver.getDriverName());
@@ -458,7 +479,7 @@ public class JourneyServiceImpl implements JourneyService {
         return driverDTO;
     }
 
-    private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop){
+    private LocationResponseDTO getLocationResponseDTO(TransitAndStop transitAndStop) {
         Location location = transitAndStop.getLocation() != null ? transitAndStop.getLocation() : new Location();
         LocationResponseDTO locationResponseDTO = new LocationResponseDTO();
         locationResponseDTO.setId(transitAndStop.getId());
@@ -471,11 +492,12 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * get a response dto with the location and amount attached
+     *
      * @param transitAndStop
      * @param amount
      * @return
      */
-    private LocationStopResponseDTO getLocationStopResponseDTO(TransitAndStop transitAndStop, double amount){
+    private LocationStopResponseDTO getLocationStopResponseDTO(TransitAndStop transitAndStop, double amount) {
         Location location = transitAndStop.getLocation() != null ? transitAndStop.getLocation() : new Location();
         LocationStopResponseDTO locationStopResponseDTO = new LocationStopResponseDTO();
         locationStopResponseDTO.setId(transitAndStop.getId());
@@ -489,18 +511,19 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * gets the journey by journey id, throws api exception if journey not found
+     *
      * @param id
      * @return Journey
      */
-    private Journey getJourney(Long id){
+    private Journey getJourney(Long id) {
         Optional<Journey> journeyOptional = journeyRepository.findById(id);
-        if (!journeyOptional.isPresent()){
+        if (!journeyOptional.isPresent()) {
             throw new ApiException("Journey not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return journeyOptional.get();
     }
 
-    private CarResponseDTO getCarResponseDTO(Car car){
+    private CarResponseDTO getCarResponseDTO(Car car) {
         CarResponseDTO carDTO = new CarResponseDTO();
         if (car != null) {
             carDTO.setId(car.getId());
@@ -525,10 +548,11 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * Maps journey to JourneyResponseDTO
+     *
      * @param journey
      * @return JourneyResponseDTO
      */
-    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey){
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey) {
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
@@ -555,7 +579,7 @@ public class JourneyServiceImpl implements JourneyService {
                             )
                     ).collect(Collectors.toList())
             );
-            journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null:
+            journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null :
                     Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
 
             journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
@@ -568,14 +592,16 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setAmount(journey.getAmount());
         return journeyResponseDTO;
     }
+
     /**
      * Gets the transitAndStop for a particular location
+     *
      * @param location
      * @return
      */
-    private TransitAndStop getTransitAndStopByLocation(Location location){
+    private TransitAndStop getTransitAndStopByLocation(Location location) {
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
-        if (!optionalTransitAndStop.isPresent()){
+        if (!optionalTransitAndStop.isPresent()) {
             throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalTransitAndStop.get();
@@ -583,11 +609,12 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * throw exception of journey is terminated
+     *
      * @param journey
      * @return boolean
      */
-    private boolean journeyTerminationFilter(Journey journey){
-        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()){
+    private boolean journeyTerminationFilter(Journey journey) {
+        if (journey != null && journey.getArrivalIndicator() != null && journey.getArrivalIndicator()) {
             throw new ApiException("Journey already terminated", ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
         }
         return true;
@@ -595,6 +622,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * throw exception if journey car is not in official agency
+     *
      * @param journey
      */
     public void checkJourneyCarInOfficialAgency(Journey journey) {
@@ -607,17 +635,20 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * throw exception of journey is not started
+     *
      * @param journey
      * @return boolean
      */
-    private boolean journeyDepartureFilter(Journey journey){
-        if (!journey.getDepartureIndicator()){
+    private boolean journeyDepartureFilter(Journey journey) {
+        if (!journey.getDepartureIndicator()) {
             throw new ApiException("Journey not started", ErrorCodes.JOURNEY_NOT_STARTED.toString(), HttpStatus.CONFLICT);
         }
         return true;
     }
+
     /**
      * throw exception if journey car is not in official agency
+     *
      * @param journey
      */
     private void checkJourneyCarInPersonalAgency(Journey journey) {
@@ -632,12 +663,13 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * Returns true if journey has been booked, false otherwise
+     *
      * @param journey
      * @return boolean
      */
     private boolean isJourneyNotBooked(Journey journey) {
         List<BookedJourney> bookedJourneys = journey.getBookedJourneys();
-        if (!bookedJourneys.isEmpty()){
+        if (!bookedJourneys.isEmpty()) {
             throw new ApiException("Bookings Exist for this Journey, cannot delete", ErrorCodes.OPERATION_NOT_ALLOWED.toString(), HttpStatus.METHOD_NOT_ALLOWED);
         }
         return true;
@@ -645,6 +677,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     /**
      * filter for journey search includes destination location, departure location and journey stops
+     *
      * @param journey
      * @param departureLocation
      * @param destinationLocation
@@ -680,7 +713,7 @@ public class JourneyServiceImpl implements JourneyService {
          */
         return transitAndStop == null || transitAndStop.getBookedJourneys() == null || transitAndStop.getBookedJourneys().stream().noneMatch(
                 bookedJourney -> bookedJourney != null && bookedJourney.getJourney() != null && bookedJourney.getJourney().equals(journey)
-                        /*&& bookedJourney.getDestination() != null && bookedJourney.getDestination().equals(transitAndStop)*/
+                /*&& bookedJourney.getDestination() != null && bookedJourney.getDestination().equals(transitAndStop)*/
         );
     }
 }

@@ -1,9 +1,7 @@
 package net.gowaka.gowaka.domain.service;
 
 import net.gowaka.gowaka.domain.model.*;
-import net.gowaka.gowaka.domain.repository.JourneyRepository;
-import net.gowaka.gowaka.domain.repository.TransitAndStopRepository;
-import net.gowaka.gowaka.domain.repository.UserRepository;
+import net.gowaka.gowaka.domain.repository.*;
 import net.gowaka.gowaka.dto.*;
 import net.gowaka.gowaka.exception.ApiException;
 import net.gowaka.gowaka.exception.ErrorCodes;
@@ -46,6 +44,12 @@ public class JourneyServiceImplTest {
     @Mock
     private JourneyRepository mockJourneyRepository;
 
+    @Mock
+    private JourneyStopRepository mockJourneyStopRepository;
+
+    @Mock
+    private BookedJourneyRepository mockBookedJourneyRepository;
+
     private JourneyService journeyService;
 
     @Mock
@@ -58,8 +62,15 @@ public class JourneyServiceImplTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
-    public void setup() throws Exception{
-        journeyService = new JourneyServiceImpl(mockUserService, mockUserRepository, mockTransitAndStopRepository, mockJourneyRepository);
+    public void setup() {
+        journeyService = JourneyServiceImpl.builder()
+        .userService(mockUserService)
+                .userRepository(mockUserRepository)
+                .transitAndStopRepository(mockTransitAndStopRepository)
+                .journeyRepository(mockJourneyRepository)
+                .journeyStopRepository(mockJourneyStopRepository)
+                .bookedJourneyRepository(mockBookedJourneyRepository)
+                .build();
     }
 
     @Test
@@ -1222,4 +1233,43 @@ public class JourneyServiceImplTest {
         journeyService.removeNonBookedStop(1L, 1L);
     }
 
+    @Test
+    public void searchJourney_noParam() {
+
+        UserDTO userDto = new UserDTO();
+        userDto.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        BookedJourney bookedJourney = new BookedJourney();
+        TransitAndStop destination = new TransitAndStop();
+        TransitAndStop departure = new TransitAndStop();
+        Journey journey = new Journey();
+
+        journey.setDepartureLocation(departure);
+        journey.setDestination(destination);
+        journey.setDepartureTime(LocalDateTime.now());
+        destination.setId(2L);
+        departure.setId(1L);
+        bookedJourney.setDestination(destination);
+        bookedJourney.setJourney(journey);
+
+        when(mockBookedJourneyRepository.findTopByUser_UserIdOrderByIdDesc(anyString()))
+                .thenReturn(Optional.of(bookedJourney));
+        when(mockJourneyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc())
+                .thenReturn(Collections.singletonList(journey));
+
+        when(mockTransitAndStopRepository.findById(1L))
+                .thenReturn(Optional.of(departure));
+        when(mockTransitAndStopRepository.findById(2L))
+                .thenReturn(Optional.of(destination));
+
+        List<JourneyResponseDTO> journeyResponseDTOS = journeyService.searchJourney();
+
+        verify(mockUserService).getCurrentAuthUser();
+        verify(mockTransitAndStopRepository, times(2)).findById(1L);
+        verify(mockTransitAndStopRepository, times(2)).findById(2L);
+        verify(mockBookedJourneyRepository).findTopByUser_UserIdOrderByIdDesc("12");
+
+        assertThat(journeyResponseDTOS.size(), is(1));
+    }
 }

@@ -1920,4 +1920,16 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
+
+    @Test
+    public void searchJourney_makesJourney_search() throws Exception {
+
+        RequestBuilder requestBuilder = get("/api/protected/journey/search")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andReturn();
+    }
+
 }

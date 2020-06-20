@@ -17,4 +17,6 @@ public interface BookedJourneyRepository extends JpaRepository<BookedJourney, Lo
     List<BookedJourney> findAllByUserUserId(String userId);
     Optional<BookedJourney> findFirstByCheckedInCode(String code);
     List<BookedJourney> findAllByJourneyId(Long journeyId);
+    Optional<BookedJourney> findTopByUser_UserIdOrderByIdDesc(String userId);
+
 }
