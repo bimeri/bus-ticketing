@@ -53,9 +53,6 @@ public class JourneyServiceImplTest {
     @Mock
     private PersonalAgency mockPersonalAgency;
 
-    /*@Spy
-    private LocalDateTime spyMockLocalDateTime;*/
-
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -1209,7 +1206,6 @@ public class JourneyServiceImplTest {
         bookedJourney.setJourney(journey);
         bookedJourney.setDestination(transitAndStop);
         transitAndStop.setBookedJourneys(Collections.singletonList(bookedJourney));
-//        transitAndStop.setBookedJourneys(Collections.emptyList());
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));

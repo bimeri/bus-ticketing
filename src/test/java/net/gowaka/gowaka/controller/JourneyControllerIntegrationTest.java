@@ -80,7 +80,6 @@ public class JourneyControllerIntegrationTest {
 
     private User user;
 
-    private MockRestServiceServer mockServer;
 
 
     private String successClientTokenResponse = "{\n" +
@@ -95,7 +94,6 @@ public class JourneyControllerIntegrationTest {
     @Before
     public void setUp() throws Exception {
 
-        mockServer = MockRestServiceServer.createServer(restTemplate);
         User newUser = new User();
         newUser.setUserId("12");
         newUser.setTimestamp(LocalDateTime.now());
@@ -1731,7 +1729,6 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
-
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
         Location location = new Location();
@@ -1795,7 +1792,6 @@ public class JourneyControllerIntegrationTest {
         journeyStops.add(journeyStop);
         journeyStops.add(journeyStop1);
 
-
         Driver driver = new Driver();
         driver.setDriverName("John Doe");
         driver.setDriverLicenseNumber("1234567899");
@@ -1857,7 +1853,6 @@ public class JourneyControllerIntegrationTest {
                 "}}]";
 
         RequestBuilder requestBuilder = get("/api/public/journey/search/departure/" + transitAndStop1.getId() + "/destination/" + transitAndStop.getId() + "?time=" + currentShortDateTime)
-                .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())

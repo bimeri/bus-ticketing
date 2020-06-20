@@ -281,7 +281,7 @@ public class JourneyServiceImpl implements JourneyService {
                     ErrorCodes.INVALID_FORMAT.toString(), HttpStatus.BAD_REQUEST);
         }
 
-        List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByEstimatedArrivalTimeAsc();
+        List<Journey> journeyList = journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
         TransitAndStop departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure");
         TransitAndStop destinationLocation = getTransitAndStopCanAppendErrMsg(destinationLocationId, "Destination");
             return journeyList.stream().filter(
@@ -290,6 +290,10 @@ public class JourneyServiceImpl implements JourneyService {
                             .collect(Collectors.toList());
     }
 
+    @Override
+    public List<JourneyResponseDTO> searchJourney() {
+        return null;
+    }
 
 
     /**
