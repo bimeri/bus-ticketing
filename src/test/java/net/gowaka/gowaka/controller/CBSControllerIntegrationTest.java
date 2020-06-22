@@ -82,9 +82,8 @@ public class CBSControllerIntegrationTest {
         startMockServerWith("http://localhost:9087/api/protected/benefits",
                 HttpStatus.OK, benefitResponse);
 
-        RequestBuilder requestBuilder = get("/api/protected/cbs/benefits")
+        RequestBuilder requestBuilder = get("/api/public/cbs/benefits")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())

@@ -17,7 +17,7 @@ import java.util.List;
  * Date: 6/21/20 5:48 PM <br/>
  */
 @RestController
-@RequestMapping("/api/protected/cbs")
+@RequestMapping("/api")
 public class CBSController {
 
     private CBSService cbsService;
@@ -29,14 +29,13 @@ public class CBSController {
         this.userService = userService;
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_USERS')")
-    @GetMapping("/benefits")
+    @GetMapping("/public/cbs/benefits")
     public ResponseEntity<List<CBSBenefitDTO>> getAllBenefits() {
         return ResponseEntity.ok(cbsService.getAllAvailableBenefit());
     }
 
     @PreAuthorize("hasAnyRole('ROLE_USERS')")
-    @GetMapping("/benefits/user")
+    @GetMapping("/protected/cbs/benefits/user")
     public ResponseEntity<List<CBSBenefitDTO>> getAllUserBenefits() {
         String userId = userService.getCurrentAuthUser().getId();
         return ResponseEntity.ok(cbsService.getAllUserAvailableBenefit(userId));
