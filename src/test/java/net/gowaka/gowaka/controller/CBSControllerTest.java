@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class CBSControllerTest {
 
-
     @Mock
     private CBSService mockCbsService;
     @Mock

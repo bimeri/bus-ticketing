@@ -1,4 +1,4 @@
-package net.gowaka.gowaka.network.api.cbs;
+package net.gowaka.gowaka.network.api.cbs.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.gowaka.gowaka.network.api.cbs.config.CBSProps;
@@ -28,7 +28,7 @@ public class CBSServiceImpl implements CBSService {
     private CBSProps cbsProps;
 
     @Autowired
-    public CBSServiceImpl(@Qualifier("apiSecurityRestTemplate") RestTemplate restTemplate, CBSProps cbsProps) {
+    public CBSServiceImpl(@Qualifier("cbsApiRestTemplate") RestTemplate restTemplate, CBSProps cbsProps) {
         this.cbsProps = cbsProps;
         this.restTemplate = restTemplate;
     }

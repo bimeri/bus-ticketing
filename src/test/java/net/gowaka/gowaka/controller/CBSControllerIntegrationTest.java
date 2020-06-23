@@ -40,7 +40,7 @@ public class CBSControllerIntegrationTest {
     @Value("${security.jwt.token.privateKey}")
     private String secretKey = "";
 
-    @Qualifier("apiSecurityRestTemplate")
+    @Qualifier("cbsApiRestTemplate")
     @Autowired
     private RestTemplate restTemplate;
 
@@ -61,6 +61,12 @@ public class CBSControllerIntegrationTest {
             "    \"id\": 2\n" +
             "  }\n" +
             "]";
+
+    private String benefit404Response = "{\n" +
+            "  \"code\": \"RESOURCE_NOT_FOUND\",\n" +
+            "  \"message\": \"User not found.\",\n" +
+            "  \"endpoint\": \"/api/protected/benefits/user\"\n" +
+            "}";
 
     @Before
     public void setUp() throws JsonProcessingException {
@@ -106,6 +112,24 @@ public class CBSControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andExpect(content().json("[{\"coveragePercentage\":5.0,\"description\":\"UB Student\",\"id\":2}]"))
+                .andReturn();
+    }
+
+    @Test
+    public void getAllUserBenefits_return_404_whenUserIdNotfound() throws Exception {
+        startMockServerWith("http://localhost:9087/api/public/login",
+                HttpStatus.OK, successTokenResponse);
+
+        startMockServerWith("http://localhost:9087/api/protected/benefits/user?goWakaUserId=12",
+                HttpStatus.NOT_FOUND, benefit404Response);
+
+        RequestBuilder requestBuilder = get("/api/protected/cbs/benefits/user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNotFound())
+                .andExpect(content().json("{\"code\":\"CBS_USER_RESOURCE_NOT_FOUND\",\"message\":\"User not found.\",\"endpoint\":\"/api/protected/cbs/benefits/user\"}"))
                 .andReturn();
     }
 

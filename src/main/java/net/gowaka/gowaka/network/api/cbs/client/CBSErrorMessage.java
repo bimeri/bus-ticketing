@@ -1,4 +1,4 @@
-package net.gowaka.gowaka.network.client.model;
+package net.gowaka.gowaka.network.api.cbs.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -9,8 +9,10 @@ import lombok.Data;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GlobalErrorMessage {
+public class CBSErrorMessage {
 
     private String code;
     private String message;
+    private String endpoint;
+
 }

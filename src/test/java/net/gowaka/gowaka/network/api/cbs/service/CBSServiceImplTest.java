@@ -1,9 +1,10 @@
-package net.gowaka.gowaka.network.api.cbs;
+package net.gowaka.gowaka.network.api.cbs.service;
 
 import net.gowaka.gowaka.network.api.cbs.config.CBSProps;
 import net.gowaka.gowaka.network.api.cbs.model.CBSAccessToken;
 import net.gowaka.gowaka.network.api.cbs.model.CBSBenefitDTO;
 import net.gowaka.gowaka.network.api.cbs.model.CBSEmailPassword;
+import net.gowaka.gowaka.network.api.cbs.service.CBSServiceImpl;
 import net.gowaka.gowaka.service.CBSService;
 import org.junit.Before;
 import org.junit.Test;
