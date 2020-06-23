@@ -43,8 +43,9 @@ public class CBSServiceImpl implements CBSService {
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        return (List<CBSBenefitDTO>) restTemplate.postForEntity(
+        return (List<CBSBenefitDTO>) restTemplate.exchange(
                 getRequestUri(cbsProps.getAvailableBenefitsPath()),
+                HttpMethod.GET,
                 request,
                 List.class).getBody();
 
@@ -59,15 +60,16 @@ public class CBSServiceImpl implements CBSService {
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        return (List<CBSBenefitDTO>) restTemplate.postForEntity(
+        return (List<CBSBenefitDTO>) restTemplate.exchange(
                 String.format(getRequestUri(cbsProps.getUserBenefitsPath()), userId),
+                HttpMethod.GET,
                 request,
                 List.class).getBody();
     }
 
     private CBSAccessToken login() {
         HttpEntity<CBSEmailPassword> request = new HttpEntity<>(new CBSEmailPassword(cbsProps.getEmail(), cbsProps.getPassword()));
-        return restTemplate.exchange(getRequestUri(cbsProps.getLoginPath()), HttpMethod.POST, request, CBSAccessToken.class).getBody();
+        return restTemplate.postForEntity(getRequestUri(cbsProps.getLoginPath()), request, CBSAccessToken.class).getBody();
     }
 
     private String getRequestUri(String path) {

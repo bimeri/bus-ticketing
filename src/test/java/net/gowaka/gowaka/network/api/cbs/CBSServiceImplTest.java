@@ -64,24 +64,24 @@ public class CBSServiceImplTest {
         cbsAccessToken.setAccessToken("my-token");
         cbsAccessToken.setIssuer("APISecurity");
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.postForEntity(anyString(), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(ResponseEntity.ok(cbsAccessToken));
 
-        when(mockRestTemplate.postForEntity(anyString(), any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(ResponseEntity.ok(Arrays.asList(new CBSBenefitDTO())));
         cbsService.getAllAvailableBenefit();
 
-        verify(mockRestTemplate).exchange(strArgumentCaptor.capture(), methodArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+        verify(mockRestTemplate).postForEntity(strArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
 
         assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/login");
-        assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
         assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getEmail()).isEqualTo("example@example.com");
         assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getPassword()).isEqualTo("secret");
         assertThat(clazzCaptor.getValue()).isEqualTo(CBSAccessToken.class);
 
-        verify(mockRestTemplate).postForEntity(strArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+        verify(mockRestTemplate).exchange(strArgumentCaptor.capture(), methodArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
 
         assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/protected/benefits");
+        assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
         assertThat(entityArgumentCaptor.getValue().getHeaders().get("Authorization").get(0)).isEqualTo("Bearer my-token");
         assertThat(clazzCaptor.getValue()).isEqualTo(List.class);
 
@@ -94,25 +94,25 @@ public class CBSServiceImplTest {
         cbsAccessToken.setAccessToken("my-token");
         cbsAccessToken.setIssuer("APISecurity");
 
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.postForEntity(anyString(), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(ResponseEntity.ok(cbsAccessToken));
 
-        when(mockRestTemplate.postForEntity(anyString(), any(HttpEntity.class), any(Class.class)))
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
                 .thenReturn(ResponseEntity.ok(Arrays.asList(new CBSBenefitDTO())));
 
         cbsService.getAllUserAvailableBenefit("12345");
 
-        verify(mockRestTemplate).exchange(strArgumentCaptor.capture(), methodArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+        verify(mockRestTemplate).postForEntity(strArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
 
         assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/login");
-        assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.POST);
         assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getEmail()).isEqualTo("example@example.com");
         assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getPassword()).isEqualTo("secret");
         assertThat(clazzCaptor.getValue()).isEqualTo(CBSAccessToken.class);
 
-        verify(mockRestTemplate).postForEntity(strArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+        verify(mockRestTemplate).exchange(strArgumentCaptor.capture(), methodArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
 
         assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/protected/benefits/users?gowakaUserId=12345");
+        assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
         assertThat(entityArgumentCaptor.getValue().getHeaders().get("Authorization").get(0)).isEqualTo("Bearer my-token");
         assertThat(clazzCaptor.getValue()).isEqualTo(List.class);
     }
