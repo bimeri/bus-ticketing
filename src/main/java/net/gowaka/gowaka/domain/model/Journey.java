@@ -21,20 +21,12 @@ public class Journey {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    /*@Embedded
-    private Location destination;*/
+
     @ManyToOne
     @JoinColumn(name = "destination_stop_id")
     private TransitAndStop destination;
     private double amount;
-    /*@Embedded
-    @AttributeOverrides(value = {
-            @AttributeOverride(name = "country", column = @Column(name = "departure_country")),
-            @AttributeOverride(name = "state", column = @Column(name = "departure_state")),
-            @AttributeOverride(name = "city", column = @Column(name = "departure_city")),
-            @AttributeOverride(name = "address", column = @Column(name = "departure_address")),
-    })
-    private Location departureLocation;*/
+
     @ManyToOne
     @JoinColumn(name = "departure_stop_id")
     private TransitAndStop departureLocation;

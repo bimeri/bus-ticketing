@@ -28,6 +28,7 @@ public interface JourneyService {
     void deleteNonBookedSharedJourney(Long journeyId);
     void addStopToPersonalAgency(Long journeyId, AddStopDTO addStopDTO);
     List<JourneyResponseDTO> searchJourney(Long departureLocationId, Long destinationLocationId, String time);
+    List<JourneyResponseDTO> searchJourney();
 
     // service level methods
     void checkJourneyCarInOfficialAgency(Journey journey);

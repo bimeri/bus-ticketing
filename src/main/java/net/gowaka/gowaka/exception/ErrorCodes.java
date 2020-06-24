@@ -6,6 +6,7 @@ package net.gowaka.gowaka.exception;
  */
 public enum ErrorCodes {
     RESOURCE_NOT_FOUND("Resource Not Found"),
+    CBS_USER_RESOURCE_NOT_FOUND("User not found CBS."),
     ACCESS_DENIED("Access is denied"),
     ACCESS_FORBIDDEN("Access is forbidden"),
     VALIDATION_ERROR("Validation Error"),
