@@ -5,6 +5,7 @@ import net.gowaka.gowaka.network.api.cbs.config.CBSProps;
 import net.gowaka.gowaka.network.api.cbs.model.CBSAccessToken;
 import net.gowaka.gowaka.network.api.cbs.model.CBSBenefitDTO;
 import net.gowaka.gowaka.network.api.cbs.model.CBSEmailPassword;
+import net.gowaka.gowaka.network.api.cbs.model.CBSRewardPointDTO;
 import net.gowaka.gowaka.service.CBSService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -65,6 +66,22 @@ public class CBSServiceImpl implements CBSService {
                 HttpMethod.GET,
                 request,
                 List.class).getBody();
+    }
+
+    @Override
+    public CBSRewardPointDTO getUserRewardPoints(String userId) {
+        CBSAccessToken cbsAccessToken = login();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(cbsAccessToken.getAccessToken());
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        return restTemplate.exchange(
+                String.format(getRequestUri(cbsProps.getUserRewardPointsPath()), userId),
+                HttpMethod.GET,
+                request,
+                CBSRewardPointDTO.class).getBody();
     }
 
     private CBSAccessToken login() {

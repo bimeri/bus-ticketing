@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.service;
 
 import net.gowaka.gowaka.network.api.cbs.model.CBSBenefitDTO;
+import net.gowaka.gowaka.network.api.cbs.model.CBSRewardPointDTO;
 
 import java.util.List;
 
@@ -13,5 +14,7 @@ public interface CBSService {
     List<CBSBenefitDTO> getAllAvailableBenefit();
 
     List<CBSBenefitDTO> getAllUserAvailableBenefit(String userId);
+
+    CBSRewardPointDTO getUserRewardPoints(String userId);
 
 }

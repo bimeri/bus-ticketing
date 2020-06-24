@@ -48,4 +48,16 @@ public class CBSControllerTest {
         verify(mockUserService).getCurrentAuthUser();
         verify(mockCbsService).getAllUserAvailableBenefit("123456");
     }
+
+    @Test
+    public void getUserRewardPoints() {
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("123456");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        cbsController.getUserRewardPoints();
+        verify(mockUserService).getCurrentAuthUser();
+        verify(mockCbsService).getUserRewardPoints("123456");
+    }
 }

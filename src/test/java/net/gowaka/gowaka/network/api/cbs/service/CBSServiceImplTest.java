@@ -4,6 +4,7 @@ import net.gowaka.gowaka.network.api.cbs.config.CBSProps;
 import net.gowaka.gowaka.network.api.cbs.model.CBSAccessToken;
 import net.gowaka.gowaka.network.api.cbs.model.CBSBenefitDTO;
 import net.gowaka.gowaka.network.api.cbs.model.CBSEmailPassword;
+import net.gowaka.gowaka.network.api.cbs.model.CBSRewardPointDTO;
 import net.gowaka.gowaka.network.api.cbs.service.CBSServiceImpl;
 import net.gowaka.gowaka.service.CBSService;
 import org.junit.Before;
@@ -54,6 +55,7 @@ public class CBSServiceImplTest {
         cbsProps.setAvailableBenefitsPath("/api/protected/benefits");
         cbsProps.setUserBenefitsPath("/api/protected/benefits/users?gowakaUserId=%s");
         cbsProps.setLoginPath("/api/public/login");
+        cbsProps.setUserRewardPointsPath("/api/protected/reward_points/users/%s");
 
         cbsService = new CBSServiceImpl(mockRestTemplate, cbsProps);
     }
@@ -116,6 +118,36 @@ public class CBSServiceImplTest {
         assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
         assertThat(entityArgumentCaptor.getValue().getHeaders().get("Authorization").get(0)).isEqualTo("Bearer my-token");
         assertThat(clazzCaptor.getValue()).isEqualTo(List.class);
+    }
+
+    @Test
+    public void getUserRewardPoints_callsRestTemplate() {
+
+        CBSAccessToken cbsAccessToken = new CBSAccessToken();
+        cbsAccessToken.setAccessToken("my-token");
+        cbsAccessToken.setIssuer("APISecurity");
+
+        when(mockRestTemplate.postForEntity(anyString(), any(HttpEntity.class), any(Class.class)))
+                .thenReturn(ResponseEntity.ok(cbsAccessToken));
+
+        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), any(Class.class)))
+                .thenReturn(ResponseEntity.ok(new CBSRewardPointDTO()));
+
+        cbsService.getUserRewardPoints("123456");
+
+        verify(mockRestTemplate).postForEntity(strArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+
+        assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/public/login");
+        assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getEmail()).isEqualTo("example@example.com");
+        assertThat(((CBSEmailPassword) entityArgumentCaptor.getValue().getBody()).getPassword()).isEqualTo("secret");
+        assertThat(clazzCaptor.getValue()).isEqualTo(CBSAccessToken.class);
+
+        verify(mockRestTemplate).exchange(strArgumentCaptor.capture(), methodArgumentCaptor.capture(), entityArgumentCaptor.capture(), clazzCaptor.capture());
+
+        assertThat(strArgumentCaptor.getValue()).isEqualTo("http://localhost:8080/api/protected/reward_points/users/123456");
+        assertThat(methodArgumentCaptor.getValue()).isEqualTo(HttpMethod.GET);
+        assertThat(entityArgumentCaptor.getValue().getHeaders().get("Authorization").get(0)).isEqualTo("Bearer my-token");
+        assertThat(clazzCaptor.getValue()).isEqualTo(CBSRewardPointDTO.class);
     }
 
 

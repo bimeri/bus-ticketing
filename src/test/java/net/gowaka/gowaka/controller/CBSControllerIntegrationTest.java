@@ -68,6 +68,16 @@ public class CBSControllerIntegrationTest {
             "  \"endpoint\": \"/api/protected/benefits/user\"\n" +
             "}";
 
+    private String rewardPointsResponse = "{\n" +
+            "  \"point\": 0\n" +
+            "}";
+
+    private String reward404Response = "{\n" +
+            "  \"code\": \"RESOURCE_NOT_FOUND\",\n" +
+            "  \"message\": \"User not found.\",\n" +
+            "  \"endpoint\": \"/api/protected/cbs/reward_points/user\"\n" +
+            "}";
+
     @Before
     public void setUp() throws JsonProcessingException {
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -130,6 +140,42 @@ public class CBSControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNotFound())
                 .andExpect(content().json("{\"code\":\"CBS_USER_RESOURCE_NOT_FOUND\",\"message\":\"User not found.\",\"endpoint\":\"/api/protected/cbs/benefits/user\"}"))
+                .andReturn();
+    }
+
+    @Test
+    public void getUserRewardPoints_thenReturnRewardPointDTO() throws Exception {
+        startMockServerWith("http://localhost:9087/api/public/login",
+                HttpStatus.OK, successTokenResponse);
+
+        startMockServerWith("http://localhost:9087/api/protected/reward_points/users/12",
+                HttpStatus.OK, rewardPointsResponse);
+
+        RequestBuilder requestBuilder = get("/api/protected/cbs/reward_points/user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"point\": 0}"))
+                .andReturn();
+    }
+
+    @Test
+    public void getUserRewardPoints_return_404_whenUserIdNotfound() throws Exception {
+        startMockServerWith("http://localhost:9087/api/public/login",
+                HttpStatus.OK, successTokenResponse);
+
+        startMockServerWith("http://localhost:9087/api/protected/reward_points/users/12",
+                HttpStatus.NOT_FOUND, reward404Response);
+
+        RequestBuilder requestBuilder = get("/api/protected/cbs/reward_points/user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNotFound())
+                .andExpect(content().json("{\"code\":\"CBS_USER_RESOURCE_NOT_FOUND\",\"message\":\"User not found.\",\"endpoint\":\"/api/protected/cbs/reward_points/user\"}"))
                 .andReturn();
     }
 

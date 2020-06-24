@@ -19,6 +19,7 @@ public class CBSProps {
     private String loginPath;
     private String availableBenefitsPath;
     private String userBenefitsPath;
+    private String userRewardPointsPath;
 
 
 }

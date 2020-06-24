@@ -1,6 +1,7 @@
 package net.gowaka.gowaka.controller;
 
 import net.gowaka.gowaka.network.api.cbs.model.CBSBenefitDTO;
+import net.gowaka.gowaka.network.api.cbs.model.CBSRewardPointDTO;
 import net.gowaka.gowaka.service.CBSService;
 import net.gowaka.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,13 @@ public class CBSController {
     public ResponseEntity<List<CBSBenefitDTO>> getAllUserBenefits() {
         String userId = userService.getCurrentAuthUser().getId();
         return ResponseEntity.ok(cbsService.getAllUserAvailableBenefit(userId));
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_USERS')")
+    @GetMapping("/protected/cbs/reward_points/user")
+    public ResponseEntity<CBSRewardPointDTO> getUserRewardPoints() {
+        String userId = userService.getCurrentAuthUser().getId();
+        return ResponseEntity.ok(cbsService.getUserRewardPoints(userId));
     }
 
 
