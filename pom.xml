@@ -155,7 +155,7 @@
 
     <repositories>
         <repository>
-            <id>maven-public</id>
+            <id>maven-snapshots</id>
             <url>http://ggs2.space:9001/repository/maven-public/</url>
         </repository>
     </repositories>
