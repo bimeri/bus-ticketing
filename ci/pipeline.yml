@@ -7,24 +7,16 @@ resources:
     username: ((gitlab_username))
     password: ((gitlab_password))
     branch: master
-#- name: ui-source-code-from-gitlab
-#  type: git
-#  source:
-#    uri: http://golab.live/dengun/gowaka-ui
-#    username: ((gitlab_username))
-#    password: ((gitlab_password))
-#    branch: master
 
 - name: minio-s3
   type: s3
   source:
     regexp: gowaka-(.*).jar
-    endpoint: ((minio_endpoint_url)) # work out how to configure this per-worker
+    endpoint: ((minio_endpoint_url))
     bucket: ((minio_bucket))
     access_key_id: ((minio_access_key))
     secret_access_key: ((minio_secret_key))
     region_name: ((minio_region_name))
-#    disable_ssl: true
     skip_ssl_verification: true
 
 - name: version
