@@ -3,10 +3,10 @@ resources:
 - name: source-code-from-gitlab
   type: git
   source:
-    uri: http://golab.live/eddytnk/gowaka-api
+    uri: http://golab.live/gowaka/gowaka-service
     username: ((gitlab_username))
     password: ((gitlab_password))
-    branch: master
+    branch: develop
 
 - name: minio-s3
   type: s3
@@ -23,7 +23,7 @@ resources:
   type: semver
   source:
     driver: git
-    uri: http://golab.live/eddytnk/gowaka-api
+    uri: http://golab.live/gowaka/gowaka-service
     username: ((gitlab_username))
     password: ((gitlab_password))
     branch: version
@@ -37,8 +37,6 @@ jobs:
   plan:
   - get: source-code-from-gitlab
     trigger: true
-#  - get: ui-source-code-from-gitlab
-#    trigger: true
   - get: version
     params: {pre: rc}
   - task: run-test-and-build-jar-file
@@ -47,11 +45,10 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: eddytnk/java8-node13
-          tag: latest
+          repository: java
+          tag: 8
       inputs:
       - name: source-code-from-gitlab
-#      - name: ui-source-code-from-gitlab
       - name: version
       outputs:
       - name: jar-file
@@ -103,45 +100,6 @@ jobs:
         PAYAMGO_CLIENT_KEY: ((payamgo_client_key))
         PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
         AS_PUBLIC_KEY: ((as_public_key))
-
-
-- name: deploy-acceptance
-  build_log_retention:
-    builds: 10
-  public: true
-  plan:
-    - get: minio-s3
-      passed: [deploy-dev]
-    - get: source-code-from-gitlab
-    - get: version
-    - task: run-deploy-acceptance-script
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: eddytnk/lc
-            tag: latest
-        inputs:
-          - name: source-code-from-gitlab
-          - name: minio-s3
-        run:
-          path: ./source-code-from-gitlab/ci/tasks/deploy-acceptance.sh
-        params:
-          LDC_TARGET: ((ldc_target))
-          LDC_USERNAME: ((ldc_username))
-          LDC_PASSWORD: ((ldc_password))
-          APP_NAME: ((app_name_acceptance))
-          APP_CLIENT_URL: ((app_client_url_acceptance))
-          APP_CLIENT_ID: ((app_client_id))
-          APP_CLIENT_SECRET: ((app_client_secret))
-          GW_DB_NAME: ((gw_db_name_acceptance))
-          GW_DB_USER: ((gw_db_user))
-          GW_DB_PWD: ((gw_db_pwd))
-          PAYAMGO_CLIENT_KEY: ((payamgo_client_key))
-          PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
-          AS_PUBLIC_KEY: ((as_public_key))
-
 
 - name: major
   plan:
