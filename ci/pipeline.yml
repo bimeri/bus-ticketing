@@ -1,112 +1,122 @@
-
 resources:
-- name: source-code-from-gitlab
-  type: git
-  source:
-    uri: http://golab.live/gowaka/gowaka-service
-    username: ((gitlab_username))
-    password: ((gitlab_password))
-    branch: develop
+  - name: source-code-from-gitlab
+    type: git
+    source:
+      uri: http://golab.live/gowaka/gowaka-service
+      username: ((gitlab_username))
+      password: ((gitlab_password))
+      branch: develop
 
-- name: minio-s3
-  type: s3
-  source:
-    regexp: gowaka-(.*).jar
-    endpoint: ((minio_endpoint_url))
-    bucket: ((minio_bucket))
-    access_key_id: ((minio_access_key))
-    secret_access_key: ((minio_secret_key))
-    region_name: ((minio_region_name))
-    skip_ssl_verification: true
+  - name: minio-s3
+    type: s3
+    source:
+      regexp: gowaka-(.*).jar
+      endpoint: ((minio_endpoint_url))
+      bucket: ((minio_bucket))
+      access_key_id: ((minio_access_key))
+      secret_access_key: ((minio_secret_key))
+      region_name: ((minio_region_name))
+      skip_ssl_verification: true
 
-- name: version
-  type: semver
-  source:
-    driver: git
-    uri: http://golab.live/gowaka/gowaka-service
-    username: ((gitlab_username))
-    password: ((gitlab_password))
-    branch: version
-    file: version
+  - name: version
+    type: semver
+    source:
+      driver: git
+      uri: http://golab.live/gowaka/gowaka-service
+      username: ((gitlab_username))
+      password: ((gitlab_password))
+      branch: version
+      file: version
 
+  - name: nexus-settings
+    type: git
+    source:
+      driver: git
+      uri: http://golab.live/gg-cicd-credentails/nexus-pipeline-creds-files
+      username: ((gitlab_username))
+      password: ((gitlab_password))
+      branch: master
 jobs:
-- name: test-and-build
-  build_log_retention:
-    builds: 10
-  public: true
-  plan:
-  - get: source-code-from-gitlab
-    trigger: true
-  - get: version
-    params: {pre: rc}
-  - task: run-test-and-build-jar-file
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: java
-          tag: 8
-      inputs:
-      - name: source-code-from-gitlab
-      - name: version
-      outputs:
-      - name: jar-file
-      caches:
-      - path: source-code-from-gitlab/.m2
-      run:
-        path: source-code-from-gitlab/ci/tasks/test-and-build.sh
+  - name: test-and-build
+    build_log_retention:
+      builds: 10
+    public: true
+    plan:
+      - get: source-code-from-gitlab
+        trigger: true
+      - get: version
+        params: { pre: rc }
+      - get: nexus-settings
+        trigger: false
+      - task: run-test-and-build-jar-file
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: java
+              tag: 8
+          inputs:
+            - name: source-code-from-gitlab
+            - name: version
+            - name: nexus-settings
+          outputs:
+            - name: jar-file
+          caches:
+            - path: source-code-from-gitlab/.m2
+          run:
+            path: source-code-from-gitlab/ci/tasks/test-and-build.sh
 
-  - put: minio-s3
-    params:
-      file: jar-file/*.jar
-  - put: version
-    params: { file: version/version }
+      - put: minio-s3
+        params:
+          file: jar-file/*.jar
+      - put: version
+        params: { file: version/version }
 
-- name: deploy-dev
-  build_log_retention:
-    builds: 10
-  public: true
-  plan:
-  - get: minio-s3
-    passed: [test-and-build]
-    trigger: true
-  - get: source-code-from-gitlab
-  - get: version
-  - task: run-deploy-dev-script
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: eddytnk/lc
-          tag: latest
-      inputs:
-      - name: source-code-from-gitlab
-      - name: minio-s3
-      run:
-        path: ./source-code-from-gitlab/ci/tasks/deploy-dev.sh
-      params:
-        LDC_TARGET: ((ldc_target))
-        LDC_USERNAME: ((ldc_username))
-        LDC_PASSWORD: ((ldc_password))
-        APP_NAME: ((app_name))
-        APP_CLIENT_URL: ((app_client_url))
-        APP_CLIENT_ID: ((app_client_id))
-        APP_CLIENT_SECRET: ((app_client_secret))
-        GW_DB_NAME: ((gw_db_name))
-        GW_DB_USER: ((gw_db_user))
-        GW_DB_PWD: ((gw_db_pwd))
-        PAYAMGO_CLIENT_KEY: ((payamgo_client_key))
-        PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
-        AS_PUBLIC_KEY: ((as_public_key))
+  - name: deploy-dev
+    build_log_retention:
+      builds: 10
+    public: true
+    plan:
+      - get: minio-s3
+        passed: [ test-and-build ]
+        trigger: true
+      - get: source-code-from-gitlab
+      - get: version
+      - task: run-deploy-dev-script
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: eddytnk/lc
+              tag: latest
+          inputs:
+            - name: source-code-from-gitlab
+            - name: minio-s3
+          run:
+            path: ./source-code-from-gitlab/ci/tasks/deploy-dev.sh
+          params:
+            LDC_TARGET: ((ldc_target))
+            LDC_USERNAME: ((ldc_username))
+            LDC_PASSWORD: ((ldc_password))
+            APP_NAME: ((app_name))
+            APP_CLIENT_URL: ((app_client_url))
+            APP_CLIENT_ID: ((app_client_id))
+            APP_CLIENT_SECRET: ((app_client_secret))
+            GW_DB_NAME: ((gw_db_name))
+            GW_DB_USER: ((gw_db_user))
+            GW_DB_PWD: ((gw_db_pwd))
+            PAYAMGO_CLIENT_KEY: ((payamgo_client_key))
+            PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
+            AS_PUBLIC_KEY: ((as_public_key))
 
-- name: major
-  plan:
-  - put: version
-    params: {bump: major, pre: rc}
+  - name: major
+    plan:
+      - put: version
+        params: { bump: major, pre: rc }
 
-- name: minor
-  plan:
-  - put: version
-    params: {bump: minor, pre: rc}
+  - name: minor
+    plan:
+      - put: version
+        params: { bump: minor, pre: rc }
