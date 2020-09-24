@@ -143,13 +143,6 @@
         </dependency>
 
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>maven-snapshots</id>
-            <url>http://ggs2.space:9001/repository/maven-public/</url>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
@@ -159,4 +152,11 @@
         </plugins>
     </build>
 
+
+    <repositories>
+        <repository>
+            <id>maven-public</id>
+            <url>http://ggs2.space:9001/repository/maven-public/</url>
+        </repository>
+    </repositories>
 </project>
