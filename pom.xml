@@ -17,6 +17,15 @@
     <properties>
         <java.version>1.8</java.version>
         <spring-cloud.version>Greenwich.RELEASE</spring-cloud.version>
+        <swagger.version>2.9.2</swagger.version>
+        <httpcomponents-version>4.4.1</httpcomponents-version>
+        <zxing.version>3.3.0</zxing.version>
+        <xhtmlrenderer.version>9.1.4</xhtmlrenderer.version>
+        <jtidy.version>r938</jtidy.version>
+        <gg-api-security-client.version>0.0.1-SNAPSHOT</gg-api-security-client.version>
+        <gg-notification-client.version>0.0.1-SNAPSHOT</gg-notification-client.version>
+        <gg-file-storage.version>0.0.1-SNAPSHOT</gg-file-storage.version>
+        <payamgo-client.version>0.0.1-SNAPSHOT</payamgo-client.version>
     </properties>
 
     <dependencies>
@@ -32,7 +41,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -57,20 +65,16 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger-ui -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
-            <version>2.9.2</version>
+            <version>${swagger.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger2 -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
-            <version>2.9.2</version>
+            <version>${swagger.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
@@ -83,7 +87,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.4.1</version>
+            <version>${httpcomponents-version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -92,45 +96,43 @@
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
-            <version>3.3.0</version>
+            <version>${zxing.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
-            <version>3.3.0</version>
+            <version>${zxing.version}</version>
         </dependency>
-        <!-- flying saucer pdf -->
         <dependency>
             <groupId>org.xhtmlrenderer</groupId>
             <artifactId>flying-saucer-pdf</artifactId>
-            <version>9.1.4</version>
+            <version>${xhtmlrenderer.version}</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jtidy</groupId>
             <artifactId>jtidy</artifactId>
-            <version>r938</version>
+            <version>${jtidy.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-notification-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-notification-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-api-security-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-api-security-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>payamgo-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${payamgo-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-file-storage</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-file-storage.version}</version>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>
@@ -140,8 +142,6 @@
             </plugin>
         </plugins>
     </build>
-
-
     <repositories>
         <repository>
             <id>maven-public</id>

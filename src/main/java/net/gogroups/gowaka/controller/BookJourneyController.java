@@ -61,14 +61,11 @@ public class BookJourneyController {
         String filename = "GowakaReceipt_"+new Date();
         File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
 
-        Resource resource = new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri());
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData(filename, filename);
         headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-        ResponseEntity<Resource> response = new ResponseEntity<>(resource, headers, HttpStatus.OK);
-        return response;
+        return new ResponseEntity<>(new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri()), headers, HttpStatus.OK);
     }
 
     @PostMapping("/public/booking/status/{bookedJourneyId}")
@@ -91,14 +88,14 @@ public class BookJourneyController {
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/checkIn")
-    public ResponseEntity checkInPassengerByCode(@RequestBody CodeDTO dto) {
+    public ResponseEntity<?> checkInPassengerByCode(@RequestBody CodeDTO dto) {
         bookJourneyService.checkInPassengerByCode(dto.getCode());
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
     @GetMapping("/protected/agency/journeys/{journeyId}/booking_history")
-    public ResponseEntity getAllOnBoardingInfoByJourney(@PathVariable("journeyId") Long journeyId) {
+    public ResponseEntity<List<OnBoardingInfoDTO>> getAllOnBoardingInfoByJourney(@PathVariable("journeyId") Long journeyId) {
         return ResponseEntity.ok(bookJourneyService.getAllPassengerOnBoardingInfo(journeyId));
     }
 
