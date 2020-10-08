@@ -12,6 +12,7 @@ import java.util.List;
  */
 @Data
 @Entity
+@Table(name = "official_agency")
 public class OfficialAgency {
 
     @Id

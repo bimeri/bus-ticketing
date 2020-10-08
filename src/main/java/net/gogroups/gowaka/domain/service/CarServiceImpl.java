@@ -54,7 +54,7 @@ public class CarServiceImpl implements CarService {
                 licensePlateNumber == null ? null : licensePlateNumber.trim()
         );
         bus.setNumberOfSeats(busDTO.getNumberOfSeats());
-        bus.setTimestamp(LocalDateTime.now());
+        bus.setCreatedAt(LocalDateTime.now());
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
         bus.setOfficialAgency(officialAgency);
@@ -85,7 +85,7 @@ public class CarServiceImpl implements CarService {
                 licensePlateNumber == null ? null : licensePlateNumber.trim());
         sharedRide.setIsCarApproved(false);
         sharedRide.setIsOfficialAgencyIndicator(false);
-        sharedRide.setTimestamp(LocalDateTime.now());
+        sharedRide.setCreatedAt(LocalDateTime.now());
         sharedRide.setPersonalAgency(personalAgency);
         SharedRide savedRide = carRepository.save(sharedRide);
         return getSharedRideResponseDTO(savedRide);
@@ -123,7 +123,7 @@ public class CarServiceImpl implements CarService {
                     carDTO.setIsCarApproved(car.getIsCarApproved());
                     carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator());
                     carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-                    carDTO.setTimestamp(car.getTimestamp());
+                    carDTO.setTimestamp(car.getCreatedAt());
                     return carDTO;
                 }).collect(Collectors.toList());
 
@@ -330,7 +330,7 @@ public class CarServiceImpl implements CarService {
         carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
         carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
         carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
-        carDTO.setTimestamp(car.getTimestamp());
+        carDTO.setTimestamp(car.getCreatedAt());
         return carDTO;
     }
 

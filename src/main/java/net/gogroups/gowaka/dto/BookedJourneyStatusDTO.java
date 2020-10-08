@@ -3,6 +3,8 @@ package net.gogroups.gowaka.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -24,11 +26,7 @@ public class BookedJourneyStatusDTO {
     private LocalDateTime paymentDate;
     private boolean checkedIn;
 
-    private String passengerName;
-    private String passengerIdNumber;
-    private Integer passengerSeatNumber;
-    private String passengerEmail;
-    private String passengerPhoneNumber;
+    private List<PassengerDTO> passengers = new ArrayList<>();
 
     private String carName;
     private String carLicenseNumber;
@@ -38,5 +36,6 @@ public class BookedJourneyStatusDTO {
     private LocalDateTime departureTime;
     private LocalDateTime estimatedArrivalTime;
     private String destinationLocation;
+
 
 }

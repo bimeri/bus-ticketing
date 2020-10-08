@@ -13,18 +13,21 @@ import java.util.List;
  */
 @Data
 @Entity
+@Table(name = "users")
 public class User {
+
     @Id
     private String userId;
     private String phoneNumber;
     private String idCardNumber;
-    private LocalDateTime timestamp;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "user")
     List<BookedJourney> bookedJourneys;
 
     @ManyToOne
     private OfficialAgency officialAgency;
+
     @OneToOne
     private PersonalAgency personalAgency;
 

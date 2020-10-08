@@ -4,27 +4,46 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 /**
  * Author: Edward Tanko <br/>
  * Date: 9/3/19 4:41 PM <br/>
  */
 @Data
-@Embeddable
-@NoArgsConstructor
+@Entity
+@Table(name = "pasengers")
 @AllArgsConstructor
+@NoArgsConstructor
 public class Passenger {
 
-    private String passengerName;
-    private String passengerIdNumber;
-    private Integer seatNumber;
-    private String passengerEmail;
-    private String passengerPhoneNumber;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public Passenger(String passengerName, String passengerIdNumber, Integer seatNumber) {
-        this.passengerName = passengerName;
-        this.passengerIdNumber = passengerIdNumber;
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "id_number")
+    private String idNumber;
+
+    @Column(name = "seat_number")
+    private Integer seatNumber;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @ManyToOne
+    private BookedJourney bookedJourney;
+
+    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber) {
+        this.name = name;
+        this.idNumber = idNumber;
         this.seatNumber = seatNumber;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
     }
 }

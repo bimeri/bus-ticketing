@@ -54,7 +54,7 @@ public class PersonalAgencyControllerIntegrationTest {
 
         User newUser = new User();
         newUser.setUserId("12");
-        newUser.setTimestamp(LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now());
 
         this.user = userRepository.save(newUser);
 

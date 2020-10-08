@@ -46,7 +46,6 @@ public class BookJourneyControllerTest {
     @Test
     public void bookJourney_callsBookJourneyService() {
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
-        bookJourneyRequest.setPassengerName("Jesus Christ");
         PaymentUrlDTO paymentUrl = new PaymentUrlDTO();
         paymentUrl.setPaymentUrl("http://payamgo.com/xyz");
         when(mockBookJourneyService.bookJourney(anyLong(), any(BookJourneyRequest.class)))

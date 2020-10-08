@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         user.setUserId(savedApiSecurityUser.getId());
-        user.setTimestamp(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
 
         UserDTO userDTO = new UserDTO();

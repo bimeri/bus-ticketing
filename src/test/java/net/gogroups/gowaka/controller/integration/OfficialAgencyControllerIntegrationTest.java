@@ -85,7 +85,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User newUser = new User();
         newUser.setUserId("12");
-        newUser.setTimestamp(LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now());
 
         this.user = userRepository.save(newUser);
 
@@ -125,7 +125,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User agencyAdminUser = new User();
         agencyAdminUser.setUserId("10");
-        agencyAdminUser.setTimestamp(LocalDateTime.now());
+        agencyAdminUser.setCreatedAt(LocalDateTime.now());
         userRepository.save(agencyAdminUser);
 
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
@@ -181,7 +181,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User aUser = new User();
         aUser.setUserId("10");
-        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setCreatedAt(LocalDateTime.now());
         aUser.setOfficialAgency(officialAgency);
         userRepository.save(aUser);
 
@@ -240,13 +240,13 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User aUser = new User();
         aUser.setUserId("10");
-        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setCreatedAt(LocalDateTime.now());
         aUser.setOfficialAgency(officialAgency);
         userRepository.save(aUser);
 
         User anotherUser = new User();
         anotherUser.setUserId("11");
-        anotherUser.setTimestamp(LocalDateTime.now());
+        anotherUser.setCreatedAt(LocalDateTime.now());
         anotherUser.setOfficialAgency(officialAgency);
         userRepository.save(anotherUser);
 
@@ -292,7 +292,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User aUser = new User();
         aUser.setUserId("10");
-        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setCreatedAt(LocalDateTime.now());
         userRepository.save(aUser);
 
 
@@ -341,7 +341,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User aUser = new User();
         aUser.setUserId("10");
-        aUser.setTimestamp(LocalDateTime.now());
+        aUser.setCreatedAt(LocalDateTime.now());
         aUser.setOfficialAgency(agency);
         userRepository.save(aUser);
 

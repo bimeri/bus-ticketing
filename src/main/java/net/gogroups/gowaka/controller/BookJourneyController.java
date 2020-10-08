@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -38,7 +39,7 @@ public class BookJourneyController {
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/protected/bookJourney/journey/{journeyId}")
-    ResponseEntity<PaymentUrlDTO> bookJourney(@PathVariable("journeyId") Long journeyId, @Valid @RequestBody BookJourneyRequest bookJourneyRequest) {
+    ResponseEntity<PaymentUrlDTO> bookJourney(@PathVariable("journeyId") Long journeyId, @Valid @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
         return ResponseEntity.ok(bookJourneyService.bookJourney(journeyId, bookJourneyRequest));
     }
 

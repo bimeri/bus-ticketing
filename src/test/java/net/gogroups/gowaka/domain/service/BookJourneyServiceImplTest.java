@@ -2,14 +2,12 @@ package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gogroups.gowaka.domain.model.*;
-import net.gogroups.gowaka.domain.repository.BookedJourneyRepository;
-import net.gogroups.gowaka.domain.repository.JourneyRepository;
-import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
-import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.BookJourneyService;
+import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.model.PayAmGoRequestDTO;
@@ -56,6 +54,8 @@ public class BookJourneyServiceImplTest {
     @Mock
     private PaymentTransactionRepository mockPaymentTransactionRepository;
     @Mock
+    private PassengerRepository mockPassengerRepository;
+    @Mock
     private UserService mockUserService;
     @Mock
     private PayAmGoService mockPayAmGoService;
@@ -66,7 +66,7 @@ public class BookJourneyServiceImplTest {
     @Mock
     private EmailContentBuilder mockEmailContentBuilder;
     @Mock
-    private JourneyServiceImpl journeyService;
+    private JourneyService mockJourneyService;
 
     private BookJourneyService bookJourneyService;
     private ArgumentCaptor<BookedJourney> bookedJourneyArgumentCaptor = ArgumentCaptor.forClass(BookedJourney.class);
@@ -86,10 +86,10 @@ public class BookJourneyServiceImplTest {
         paymentUrlResponseProps.setPayAmGoPaymentResponseUrl("http://localhost/response");
 
         bookJourneyService = new BookJourneyServiceImpl(mockBookedJourneyRepository, mockJourneyRepository,
-                mockUserRepository, mockPaymentTransactionRepository,
+                mockUserRepository, mockPaymentTransactionRepository, mockPassengerRepository,
                 mockUserService, mockPayAmGoService,
                 mocKNotificationService, mockFileStorageService, paymentUrlResponseProps,
-                mockEmailContentBuilder);
+                mockJourneyService, mockEmailContentBuilder);
 
         Location destinationLocation = new Location();
         destinationLocation.setAddress("Kumba Moto Part");
@@ -145,7 +145,15 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setId(2L);
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        bookedJourney.setPassenger(new Passenger("John Doe", "1234001", 8));
+
+        Passenger passenger = new Passenger();
+        passenger.setName("John Doe");
+        passenger.setSeatNumber(8);
+        passenger.setPhoneNumber("67676767");
+        passenger.setIdNumber("1234001");
+        passenger.setEmail("email@email.net");
+
+        bookedJourney.getPassengers().add(passenger);
         bookedJourney.setDestination(destination);
         bookedJourney.setPassengerCheckedInIndicator(false);
         bookedJourney.setCheckedInCode("1111-1599933993");
@@ -234,14 +242,10 @@ public class BookJourneyServiceImplTest {
     @Test
     public void bookJourney_throwsException_whenSeatAlreadyTaken() {
 
-        Journey journey = new Journey();
-        journey.setArrivalIndicator(true);
-        BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setPassenger(new Passenger("John", "12345", 3));
-        journey.setBookedJourneys(Collections.singletonList(bookedJourney));
-        when(mockJourneyRepository.findById(anyLong()))
-                .thenReturn(Optional.of(journey));
-
+        Passenger passenger = new Passenger();
+        passenger.setSeatNumber(3);
+        when(mockPassengerRepository.findByBookedJourney_Journey_Id(11L))
+                .thenReturn(Collections.singletonList(passenger));
 
         expectedException.expect(ApiException.class);
         expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
@@ -249,7 +253,9 @@ public class BookJourneyServiceImplTest {
         expectedException.expect(hasProperty("message", Is.is(ErrorCodes.SEAT_ALREADY_TAKEN.getMessage())));
 
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
-        bookJourneyRequest.setSeatNumber(3);
+        BookJourneyRequest.Passenger passengerDTO = new BookJourneyRequest.Passenger();
+        passengerDTO.setSeatNumber(3);
+        bookJourneyRequest.getPassengers().add(passengerDTO);
         bookJourneyService.bookJourney(11L, bookJourneyRequest);
         verify(mockBookedJourneyRepository).findById(11L);
         verify(mockUserService).getCurrentAuthUser();
@@ -335,16 +341,23 @@ public class BookJourneyServiceImplTest {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
+        userDto.setFullName("John Doe");
+        userDto.setEmail("email@email.com");
+        userDto.setPhoneNumber("676767676");
         User user = new User();
         user.setUserId("10");
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(true);
-        bookJourneyRequest.setEmail("email@email.com");
-        bookJourneyRequest.setPassengerName("Jesus Christ");
-        bookJourneyRequest.setPassengerIdNumber("1234567890");
-        bookJourneyRequest.setPhoneNumber("676767676");
-        bookJourneyRequest.setSeatNumber(9);
         bookJourneyRequest.setTransitAndStopId(33L);
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+
+        bookJourneyRequest.getPassengers().add(passenger);
 
         TransitAndStop destination = new TransitAndStop();
         destination.setId(99L);
@@ -385,7 +398,7 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(paymentResponse);
 
         PaymentUrlDTO paymentUrlDTO = bookJourneyService.bookJourney(11L, bookJourneyRequest);
-        verify(mockUserService).getCurrentAuthUser();
+        verify(mockUserService, times(2)).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
@@ -397,19 +410,19 @@ public class BookJourneyServiceImplTest {
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(5000.0);
-        assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("10119-");
+        assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("1011-");
         assertThat(bookedJourneyValue.getPassengerCheckedInIndicator()).isEqualTo(false);
-        Passenger jesusChristPassenger = new Passenger("Jesus Christ", "1234567890", 9);
-        jesusChristPassenger.setPassengerPhoneNumber("676767676");
-        jesusChristPassenger.setPassengerEmail("email@email.com");
-        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(jesusChristPassenger);
+
+        assertThat(bookedJourneyValue.getPassengers().get(0).getEmail()).isEqualTo("email@email.com");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getName()).isEqualTo("Jesus Christ");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getPhoneNumber()).isEqualTo("676767676");
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
 
         assertThat(paymentTransactionValue.getAmount()).isEqualTo(5000.0);
         assertThat(paymentTransactionValue.getAppTransactionNumber()).isNotEmpty();
         assertThat(paymentTransactionValue.getAppUserEmail()).isEqualTo("email@email.com");
-        assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("Jesus");
-        assertThat(paymentTransactionValue.getAppUserLastName()).isEqualTo("Christ");
+        assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("John");
+        assertThat(paymentTransactionValue.getAppUserLastName()).isEqualTo("Doe");
         assertThat(paymentTransactionValue.getAppUserPhoneNumber()).isEqualTo("676767676");
         assertThat(paymentTransactionValue.getCancelRedirectUrl()).isEqualTo("http://localhost/cancel");
         assertThat(paymentTransactionValue.getCurrencyCode()).isEqualTo("XAF");
@@ -433,11 +446,15 @@ public class BookJourneyServiceImplTest {
         user.setUserId("10");
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(false);
-        bookJourneyRequest.setEmail("email@email.com");
-        bookJourneyRequest.setPassengerName("Jesus Christ");
-        bookJourneyRequest.setPassengerIdNumber("1234567890");
-        bookJourneyRequest.setPhoneNumber("676767676");
-        bookJourneyRequest.setSeatNumber(9);
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+        bookJourneyRequest.getPassengers().add(passenger);
+
         bookJourneyRequest.setTransitAndStopId(100L);
 
         TransitAndStop destination = new TransitAndStop();
@@ -474,6 +491,13 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setId(101L);
         when(mockBookedJourneyRepository.save(any()))
                 .thenReturn(bookedJourney);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setFullName("John Doe");
+        userDTO.setEmail("email@email.com");
+        userDTO.setPhoneNumber("676767676");
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
@@ -488,7 +512,7 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(paymentResponse);
 
         PaymentUrlDTO paymentUrlDTO = bookJourneyService.bookJourney(11L, bookJourneyRequest);
-        verify(mockUserService).getCurrentAuthUser();
+        verify(mockUserService, times(2)).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
@@ -500,20 +524,16 @@ public class BookJourneyServiceImplTest {
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(2000.0);
-        assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("10119-");
+        assertThat(bookedJourneyValue.getCheckedInCode()).startsWith("1011-");
         assertThat(bookedJourneyValue.getPassengerCheckedInIndicator()).isEqualTo(false);
-        Passenger jesusChristPassenger = new Passenger("Jesus Christ", "1234567890", 9);
-        jesusChristPassenger.setPassengerPhoneNumber("676767676");
-        jesusChristPassenger.setPassengerEmail("email@email.com");
-        assertThat(bookedJourneyValue.getPassenger()).isEqualTo(jesusChristPassenger);
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(100L);
 
         assertThat(paymentTransactionValue.getAmount()).isEqualTo(2000.0);
         assertThat(paymentTransactionValue.getAppTransactionNumber()).isNotEmpty();
         assertThat(paymentTransactionValue.getAppUserEmail()).isEqualTo("email@email.com");
-        assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("Jesus");
-        assertThat(paymentTransactionValue.getAppUserLastName()).isEqualTo("Christ");
+        assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("John");
+        assertThat(paymentTransactionValue.getAppUserLastName()).isEqualTo("Doe");
         assertThat(paymentTransactionValue.getAppUserPhoneNumber()).isEqualTo("676767676");
         assertThat(paymentTransactionValue.getCancelRedirectUrl()).isEqualTo("http://localhost/cancel");
         assertThat(paymentTransactionValue.getCurrencyCode()).isEqualTo("XAF");
@@ -544,21 +564,12 @@ public class BookJourneyServiceImplTest {
     @Test
     public void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsCOMPLETED() {
 
-        Journey journey = new Journey();
-        BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setPassenger(new Passenger("John", "123423", 10));
-        journey.setBookedJourneys(Collections.singletonList(bookedJourney));
-
-        PaymentTransaction paymentTransaction = new PaymentTransaction();
-        paymentTransaction.setTransactionStatus(COMPLETED.toString());
-        bookedJourney.setPaymentTransaction(paymentTransaction);
-
         when(mockJourneyRepository.findById(anyLong()))
                 .thenReturn(Optional.of(journey));
 
         List<Integer> allBookedSeats = bookJourneyService.getAllBookedSeats(11L);
         verify(mockJourneyRepository).findById(11L);
-        assertThat(allBookedSeats.get(0)).isEqualTo(10);
+        assertThat(allBookedSeats.get(0)).isEqualTo(8);
 
     }
 
@@ -567,7 +578,7 @@ public class BookJourneyServiceImplTest {
 
         Journey journey = new Journey();
         BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setPassenger(new Passenger("John", "123423", 10));
+        bookedJourney.getPassengers().add(new Passenger("John", "123423", 10, "email@example.com", "123423"));
         journey.setBookedJourneys(Collections.singletonList(bookedJourney));
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
@@ -590,12 +601,12 @@ public class BookJourneyServiceImplTest {
 
         Journey journey = new Journey();
         BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setPassenger(new Passenger("John", "123423", 10));
+        bookedJourney.getPassengers().add(new Passenger("John", "123423", 10, "email@example.com", "123423"));
         journey.setBookedJourneys(Collections.singletonList(bookedJourney));
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setTransactionStatus(WAITING.toString());
-        paymentTransaction.setCreateAt(LocalDateTime.now().minusMinutes(11));
+        paymentTransaction.setCreateAt(LocalDateTime.now().minusMinutes(6));
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
 
@@ -604,6 +615,7 @@ public class BookJourneyServiceImplTest {
 
         List<Integer> allBookedSeats = bookJourneyService.getAllBookedSeats(11L);
         verify(mockJourneyRepository).findById(11L);
+        mockPassengerRepository.saveAll(any(List.class));
         assertThat(allBookedSeats.size()).isEqualTo(0);
 
     }
@@ -654,18 +666,18 @@ public class BookJourneyServiceImplTest {
         assertThat(userBookedJourneyHistory.getPaymentChannel()).isEqualTo("MTN_MOBILE_MONEY");
         assertThat(userBookedJourneyHistory.getPaymentDate()).isNotNull();
         assertThat(userBookedJourneyHistory.isCheckedIn()).isFalse();
-        assertThat(userBookedJourneyHistory.getPassengerName()).isEqualTo("John Doe");
-        assertThat(userBookedJourneyHistory.getPassengerIdNumber()).isEqualTo("1234001");
-        assertThat(userBookedJourneyHistory.getPassengerSeatNumber()).isEqualTo(8);
+        assertThat(userBookedJourneyHistory.getPassengers().get(0).getPassengerName()).isEqualTo("John Doe");
+        assertThat(userBookedJourneyHistory.getPassengers().get(0).getPassengerIdNumber()).isEqualTo("1234001");
+        assertThat(userBookedJourneyHistory.getPassengers().get(0).getPassengerSeatNumber()).isEqualTo(8);
         assertThat(userBookedJourneyHistory.getCarName()).isEqualTo("Musango 30 Seater Bus");
         assertThat(userBookedJourneyHistory.getCarDriverName()).isEqualTo("Michael John");
         assertThat(userBookedJourneyHistory.getCarLicenseNumber()).isEqualTo("123SW");
-        assertThat(userBookedJourneyHistory.getDepartureLocation()).isEqualTo("Buea Moto Part, Buea SW, Cameroon");
-        assertThat(userBookedJourneyHistory.getDestinationLocation()).isEqualTo("Kumba Moto Part, Kumba SW, Cameroon");
+        assertThat(userBookedJourneyHistory.getDepartureLocation()).isEqualTo("Buea Moto Part, Buea, SW, Cameroon");
+        assertThat(userBookedJourneyHistory.getDestinationLocation()).isEqualTo("Kumba Moto Part, Kumba, SW, Cameroon");
         assertThat(userBookedJourneyHistory.getId()).isEqualTo(2L);
         assertThat(userBookedJourneyHistory.getDepartureTime()).isNotNull();
-        assertThat(userBookedJourneyHistory.getPassengerEmail()).isEqualTo("email@email.net");
-        assertThat(userBookedJourneyHistory.getPassengerPhoneNumber()).isEqualTo("999999");
+        assertThat(userBookedJourneyHistory.getPassengers().get(0).getPassengerEmail()).isEqualTo("email@email.net");
+        assertThat(userBookedJourneyHistory.getPassengers().get(0).getPassengerPhoneNumber()).isEqualTo("67676767");
 
     }
 
@@ -704,18 +716,18 @@ public class BookJourneyServiceImplTest {
         assertThat(bookJourneyStatus.getPaymentChannel()).isEqualTo("MTN_MOBILE_MONEY");
         assertThat(bookJourneyStatus.getPaymentDate()).isNotNull();
         assertThat(bookJourneyStatus.isCheckedIn()).isFalse();
-        assertThat(bookJourneyStatus.getPassengerName()).isEqualTo("John Doe");
-        assertThat(bookJourneyStatus.getPassengerIdNumber()).isEqualTo("1234001");
-        assertThat(bookJourneyStatus.getPassengerSeatNumber()).isEqualTo(8);
+        assertThat(bookJourneyStatus.getPassengers().get(0).getPassengerName()).isEqualTo("John Doe");
+        assertThat(bookJourneyStatus.getPassengers().get(0).getPassengerIdNumber()).isEqualTo("1234001");
+        assertThat(bookJourneyStatus.getPassengers().get(0).getPassengerSeatNumber()).isEqualTo(8);
         assertThat(bookJourneyStatus.getCarName()).isEqualTo("Musango 30 Seater Bus");
         assertThat(bookJourneyStatus.getCarDriverName()).isEqualTo("Michael John");
         assertThat(bookJourneyStatus.getCarLicenseNumber()).isEqualTo("123SW");
-        assertThat(bookJourneyStatus.getDepartureLocation()).isEqualTo("Buea Moto Part, Buea SW, Cameroon");
-        assertThat(bookJourneyStatus.getDestinationLocation()).isEqualTo("Kumba Moto Part, Kumba SW, Cameroon");
+        assertThat(bookJourneyStatus.getDepartureLocation()).isEqualTo("Buea Moto Part, Buea, SW, Cameroon");
+        assertThat(bookJourneyStatus.getDestinationLocation()).isEqualTo("Kumba Moto Part, Kumba, SW, Cameroon");
         assertThat(bookJourneyStatus.getId()).isEqualTo(2L);
         assertThat(bookJourneyStatus.getDepartureTime()).isNotNull();
-        assertThat(bookJourneyStatus.getPassengerEmail()).isEqualTo("email@email.net");
-        assertThat(bookJourneyStatus.getPassengerPhoneNumber()).isEqualTo("999999");
+        assertThat(bookJourneyStatus.getPassengers().get(0).getPassengerEmail()).isEqualTo("email@email.net");
+        assertThat(bookJourneyStatus.getPassengers().get(0).getPassengerPhoneNumber()).isEqualTo("67676767");
 
     }
 
@@ -761,7 +773,7 @@ public class BookJourneyServiceImplTest {
         paymentStatusResponseDTO.setProcessingNumber("processingNumber001");
 
         BookedJourney bookedJourney = journey.getBookedJourneys().get(0);
-        bookedJourney.setPassenger(new Passenger("John", "123423", 10));
+        bookedJourney.getPassengers().add(new Passenger("John", "123423", 10, "email@example.com", "123423"));
         journey.setBookedJourneys(Collections.singletonList(bookedJourney));
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
@@ -807,7 +819,6 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -825,7 +836,6 @@ public class BookJourneyServiceImplTest {
         journey.setArrivalIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -846,7 +856,6 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -867,7 +876,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        bookedJourney.setPassenger(new Passenger("paul", "12345678", 16,
+        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16,
                 "paul@gmail.com", "66887541"));
         Location location = new Location();
         location.setCountry("Cameroon");
@@ -880,7 +889,6 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureLocation(transitAndStop);
         journey.setDriver(new Driver());
         journey.setCar(new Bus());
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         OnBoardingInfoDTO dto = bookJourneyService.getPassengerOnBoardingInfo("someCode");
@@ -893,11 +901,11 @@ public class BookJourneyServiceImplTest {
         assertThat(dto.getCarName()).isEqualTo(journey.getCar().getName());
         assertThat(dto.getDepartureLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
         assertThat(dto.getDestinationLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
-        assertThat(dto.getPassengerName()).isEqualTo("paul");
-        assertThat(dto.getPassengerIdNumber()).isEqualTo("12345678");
-        assertThat(dto.getPassengerSeatNumber()).isEqualTo(16);
-        assertThat(dto.getPassengerEmail()).isEqualTo("paul@gmail.com");
-        assertThat(dto.getPassengerPhoneNumber()).isEqualTo("66887541");
+        assertThat(dto.getPassengers().get(0).getPassengerName()).isEqualTo("paul");
+        assertThat(dto.getPassengers().get(0).getPassengerIdNumber()).isEqualTo("12345678");
+        assertThat(dto.getPassengers().get(0).getPassengerSeatNumber()).isEqualTo(16);
+        assertThat(dto.getPassengers().get(0).getPassengerEmail()).isEqualTo("paul@gmail.com");
+        assertThat(dto.getPassengers().get(0).getPassengerPhoneNumber()).isEqualTo("66887541");
     }
 
     @Test
@@ -907,7 +915,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
+
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -925,7 +933,6 @@ public class BookJourneyServiceImplTest {
         journey.setArrivalIndicator(true);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -947,7 +954,6 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -981,7 +987,6 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setPassengerCheckedInIndicator(true);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         expectedException.expect(ApiException.class);
@@ -1004,7 +1009,6 @@ public class BookJourneyServiceImplTest {
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setPassengerCheckedInIndicator(false);
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findFirstByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(bookedJourney));
         bookJourneyService.checkInPassengerByCode("someCode");
@@ -1023,7 +1027,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        bookedJourney.setPassenger(new Passenger("paul", "12345678", 16,
+        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16,
                 "paul@gmail.com", "66887541"));
         Location location = new Location();
         location.setCountry("Cameroon");
@@ -1036,7 +1040,6 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureLocation(transitAndStop);
         journey.setDriver(new Driver());
         journey.setCar(new Bus());
-        ((BookJourneyServiceImpl) bookJourneyService).setJourneyService(journeyService);
         when(mockBookedJourneyRepository.findAllByJourneyId(anyLong()))
                 .thenReturn(Collections.singletonList(bookedJourney));
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
@@ -1050,11 +1053,11 @@ public class BookJourneyServiceImplTest {
         assertThat(dto.get(0).getCarName()).isEqualTo(journey.getCar().getName());
         assertThat(dto.get(0).getDepartureLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
         assertThat(dto.get(0).getDestinationLocation()).isEqualTo("Malingo, Buea, SW, Cameroon");
-        assertThat(dto.get(0).getPassengerName()).isEqualTo("paul");
-        assertThat(dto.get(0).getPassengerIdNumber()).isEqualTo("12345678");
-        assertThat(dto.get(0).getPassengerSeatNumber()).isEqualTo(16);
-        assertThat(dto.get(0).getPassengerEmail()).isEqualTo("paul@gmail.com");
-        assertThat(dto.get(0).getPassengerPhoneNumber()).isEqualTo("66887541");
+        assertThat(dto.get(0).getPassengers().get(0).getPassengerName()).isEqualTo("paul");
+        assertThat(dto.get(0).getPassengers().get(0).getPassengerIdNumber()).isEqualTo("12345678");
+        assertThat(dto.get(0).getPassengers().get(0).getPassengerSeatNumber()).isEqualTo(16);
+        assertThat(dto.get(0).getPassengers().get(0).getPassengerEmail()).isEqualTo("paul@gmail.com");
+        assertThat(dto.get(0).getPassengers().get(0).getPassengerPhoneNumber()).isEqualTo("66887541");
     }
 
 }

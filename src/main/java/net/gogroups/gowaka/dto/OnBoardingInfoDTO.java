@@ -5,6 +5,9 @@ import lombok.Setter;
 import net.gogroups.gowaka.domain.model.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 public class OnBoardingInfoDTO {
@@ -17,11 +20,9 @@ public class OnBoardingInfoDTO {
     private String departureLocation;
     private LocalDateTime departureTime;
     private String destinationLocation;
-    private String passengerEmail;
-    private String passengerIdNumber;
-    private String passengerName;
-    private String passengerPhoneNumber;
-    private Integer passengerSeatNumber;
+
+    private List<PassengerDTO> passengers = new ArrayList<>();
+
     private String checkedInCode;
     private Boolean passengerCheckedInIndicator;
 
@@ -29,7 +30,6 @@ public class OnBoardingInfoDTO {
         if (bookedJourney != null) {
             PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
             Journey journey = bookedJourney.getJourney();
-            Passenger passenger = bookedJourney.getPassenger();
             // amount
             this.amount = bookedJourney.getAmount();
             // currency
@@ -44,8 +44,8 @@ public class OnBoardingInfoDTO {
                 if (car != null) {
                     this.carLicenseNumber = car.getLicensePlateNumber();
                     this.carName = car.getName();
-                    if(car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator()){
-                        this.agencyName = ((Bus)car).getOfficialAgency().getAgencyName();
+                    if (car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator()) {
+                        this.agencyName = ((Bus) car).getOfficialAgency().getAgencyName();
                     }
                 }
                 // location
@@ -54,7 +54,7 @@ public class OnBoardingInfoDTO {
                 if (transitAndStopDest != null) {
                     Location locationDest = transitAndStopDest.getLocation();
                     if (locationDest != null) this.destinationLocation =
-                            (locationDest.getAddress() == null ? "": locationDest.getAddress() + ", ") +
+                            (locationDest.getAddress() == null ? "" : locationDest.getAddress() + ", ") +
                                     (locationDest.getCity() == null ? "" : locationDest.getCity() + ", ") +
                                     (locationDest.getState() == null ? "" : locationDest.getState() + ", ") +
                                     (locationDest.getCountry() == null ? "" : locationDest.getCountry());
@@ -62,7 +62,7 @@ public class OnBoardingInfoDTO {
                 if (transitAndStopDep != null) {
                     Location locationDep = transitAndStopDep.getLocation();
                     if (locationDep != null) this.departureLocation =
-                            (locationDep.getAddress() == null ? "": locationDep.getAddress() + ", ") +
+                            (locationDep.getAddress() == null ? "" : locationDep.getAddress() + ", ") +
                                     (locationDep.getCity() == null ? "" : locationDep.getCity() + ", ") +
                                     (locationDep.getState() == null ? "" : locationDep.getState() + ", ") +
                                     (locationDep.getCountry() == null ? "" : locationDep.getCountry());
@@ -71,13 +71,15 @@ public class OnBoardingInfoDTO {
                 this.departureTime = journey.getDepartureTime();
             }
             // passenger
-            if (passenger != null) {
-                this.passengerName = passenger.getPassengerName();
-                this.passengerIdNumber = passenger.getPassengerIdNumber();
-                this.passengerSeatNumber = passenger.getSeatNumber();
-                this.passengerEmail = passenger.getPassengerEmail();
-                this.passengerPhoneNumber = passenger.getPassengerPhoneNumber();
-            }
+            bookedJourney.getPassengers().forEach(pge -> {
+                PassengerDTO passengerDTO = new PassengerDTO();
+                passengerDTO.setPassengerEmail(pge.getEmail());
+                passengerDTO.setPassengerName(pge.getName());
+                passengerDTO.setPassengerIdNumber(pge.getIdNumber());
+                passengerDTO.setPassengerPhoneNumber(pge.getPhoneNumber());
+                passengerDTO.setPassengerSeatNumber(pge.getSeatNumber());
+                passengers.add(passengerDTO);
+            });
             // checkInCode
             this.checkedInCode = bookedJourney.getCheckedInCode();
             // checkInIndicator

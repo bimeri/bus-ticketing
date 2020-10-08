@@ -89,7 +89,7 @@ public class JourneyControllerIntegrationTest {
 
         User newUser = new User();
         newUser.setUserId("12");
-        newUser.setTimestamp(LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now());
 
         this.user = userRepository.save(newUser);
 
@@ -145,7 +145,7 @@ public class JourneyControllerIntegrationTest {
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.plusDays(3).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String currentTimeStamp = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
         String expectedResponse = "{\"id\":1,\"departureTime\":\"" + currentDateTime + "\"," +
@@ -325,7 +325,7 @@ public class JourneyControllerIntegrationTest {
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String updatedDateTime = localDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
 
@@ -505,7 +505,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         bus = carRepository.save(bus);
 
@@ -535,7 +535,7 @@ public class JourneyControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(bus);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
@@ -653,7 +653,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         bus = carRepository.save(bus);
 
@@ -681,7 +681,7 @@ public class JourneyControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(bus);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String expectedResponse = "{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
@@ -992,7 +992,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        sharedRide.setCreatedAt(TimeProviderTestUtil.now());
         sharedRide.setPersonalAgency(personalAgency);
         carRepository.save(sharedRide);
         String expectedResponse = "{\"id\":1,\"departureTime\":\"" + currentDateTime + "\"," +
@@ -1174,7 +1174,7 @@ public class JourneyControllerIntegrationTest {
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String updatedDateTime = localDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        sharedRide.setCreatedAt(TimeProviderTestUtil.now());
         sharedRide.setPersonalAgency(personalAgency);
         carRepository.save(sharedRide);
 
@@ -1336,7 +1336,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        sharedRide.setCreatedAt(TimeProviderTestUtil.now());
         carRepository.save(sharedRide);
 
         Journey journey = new Journey();
@@ -1363,7 +1363,7 @@ public class JourneyControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(sharedRide);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String expectedResponse = "{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
@@ -1480,7 +1480,7 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        sharedRide.setTimestamp(TimeProviderTestUtil.now());
+        sharedRide.setCreatedAt(TimeProviderTestUtil.now());
         carRepository.save(sharedRide);
 
         Journey journey = new Journey();
@@ -1507,7 +1507,7 @@ public class JourneyControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(sharedRide);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
@@ -1761,7 +1761,7 @@ public class JourneyControllerIntegrationTest {
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String currentShortDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-        bus.setTimestamp(TimeProviderTestUtil.now());
+        bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         bus = carRepository.save(bus);
 
@@ -1790,7 +1790,7 @@ public class JourneyControllerIntegrationTest {
         driver.setDriverLicenseNumber("1234567899");
         journey.setDriver(driver);
         journey.setCar(bus);
-        journey.setTimestamp(localDateTime.toLocalDateTime());
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
         String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
                 "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +

@@ -219,7 +219,7 @@ public class JourneyServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
+        when(mockJourneyRepository.findAllByOrderByCreatedAtDescArrivalIndicatorAsc())
                 .thenReturn(Collections.emptyList());
         List<JourneyResponseDTO> journeyResponseDTOList = journeyService.getAllOfficialAgencyJourneys();
         assertTrue(journeyResponseDTOList.isEmpty());
@@ -246,7 +246,7 @@ public class JourneyServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc())
+        when(mockJourneyRepository.findAllByOrderByCreatedAtDescArrivalIndicatorAsc())
                 .thenReturn(Collections.singletonList(journey));
         List<JourneyResponseDTO> journeyResponseDTOList = journeyService.getAllOfficialAgencyJourneys();
         assertFalse(journeyResponseDTOList.isEmpty());
@@ -755,7 +755,7 @@ public class JourneyServiceImplTest {
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
         when(user.getPersonalAgency()).thenReturn(mockPersonalAgency);
-        when(mockJourneyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc()).thenReturn(Collections.singletonList(journey));
+        when(mockJourneyRepository.findAllByOrderByCreatedAtDescArrivalIndicatorAsc()).thenReturn(Collections.singletonList(journey));
         List<JourneyResponseDTO> journeyList = journeyService.getAllPersonalAgencyJourneys();
         assertTrue(journeyList.isEmpty());
     }

@@ -279,27 +279,23 @@
                                             <div th:text="${journeyInfo.checkedInCode}"></div>
                                         </div>
                                         <div style="text-align: left">
-                                            <table>
+                                            <table  th:each="passenger: ${journeyInfo.passengers}" >
                                                 <tbody>
                                                 <tr>
                                                     <th>Passenger's name</th>
-                                                    <td th:text="${journeyInfo.passengerName}"></td>
+                                                    <td th:text="${passenger.passengerName}"></td>
                                                 </tr>
                                                 <tr>
                                                     <th>ID Card #</th>
-                                                    <td th:text="${journeyInfo.passengerIdNumber}"></td>
+                                                    <td th:text="${passenger.passengerIdNumber}"></td>
                                                 </tr>
                                                 <tr>
                                                     <th>Seat #</th>
-                                                    <td th:text="${journeyInfo.passengerSeatNumber}"></td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Departure Time</th>
-                                                    <td th:text="${#temporals.format(journeyInfo.departureTime, 'dd/MM/yyyy HH:mm')}"></td>
+                                                    <td th:text="${passenger.passengerSeatNumber}"></td>
                                                 </tr>
                                                 </tbody>
                                             </table>
-                                            <hr style="border-width: 9px; border-color: #ed8323"/>
+                                            <hr style="border-width: 9px; border-color: forestgreen"/>
                                             <table>
                                                 <tbody>
                                                 <tr>
@@ -316,10 +312,14 @@
                                                 </tr>
                                                 </tbody>
                                             </table>
-                                            <hr style="border-width: 9px; border-color: #ed8323"/>
+                                            <hr style="border-width: 9px; border-color: forestgreen"/>
                                             <h2>Journey Information</h2>
                                             <table>
                                                 <tbody>
+                                                <tr>
+                                                    <th>Departure Time</th>
+                                                    <td th:text="${#temporals.format(journeyInfo.departureTime, 'dd/MM/yyyy HH:mm')}"></td>
+                                                </tr>
                                                 <tr>
                                                     <th>Departure</th>
                                                     <td th:text="${journeyInfo.departureLocation}"></td>
@@ -359,7 +359,7 @@
                                             </table>
                                         </div>
 
-                                        <hr style="border-width: 9px; border-color: #ed8323"/>
+                                        <hr style="border-width: 9px; border-color: forestgreen"/>
                                         <br/>
                                         Thanks,
                                         <br/>The Gowaka Team<br/>

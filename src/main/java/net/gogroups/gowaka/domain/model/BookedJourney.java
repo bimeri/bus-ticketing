@@ -4,6 +4,8 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
+@Table(name = "book_journeys")
 public class BookedJourney {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,16 +21,23 @@ public class BookedJourney {
 
     @ManyToOne
     private User user;
-    @Embedded
-    private Passenger passenger;
+
+    @OneToMany(mappedBy = "bookedJourney", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<Passenger> passengers = new ArrayList<>();
+
     @ManyToOne
     private Journey journey;
+
     @ManyToOne
     private TransitAndStop destination;
 
+    @Column(name = "amount")
     private Double amount;
+
+    @Column(name = "checked_in_ind")
     private Boolean passengerCheckedInIndicator;
 
+    @Column(name = "checked_in_code")
     private String checkedInCode;
 
     @OneToOne(mappedBy = "bookedJourney")

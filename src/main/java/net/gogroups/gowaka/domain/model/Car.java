@@ -18,13 +18,21 @@ public abstract class Car {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "name")
     private String name;
+    @Column(name = "license_plate_number")
     private String licensePlateNumber;
+    @Column(name = "is_official_agency_Ind")
     private Boolean isOfficialAgencyIndicator;
+
     @ElementCollection
     private List<String> images = new ArrayList<>();
+
+    @Column(name = "is_car_approved")
     private Boolean isCarApproved;
-    private LocalDateTime timestamp;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "car")
     private List<Journey> journeys;
