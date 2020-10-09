@@ -34,9 +34,6 @@ public class BookedJourney {
     @Column(name = "amount")
     private Double amount;
 
-    @Column(name = "checked_in_ind")
-    private Boolean passengerCheckedInIndicator;
-
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
 

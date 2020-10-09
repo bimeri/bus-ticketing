@@ -173,22 +173,22 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(WAITING.toString())
                         || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString())
                 ).forEach(bookedJourney -> {
-                    PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
-                    String transactionStatus = paymentTransaction.getTransactionStatus();
-                    long untilMinute = paymentTransaction.getCreateAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
-                    if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
-                            && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
-                        //TODO: should look for the next available seat and set
-                        List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
-                            passenger.setSeatNumber(-1);
-                            return passenger;
-                        }).collect(Collectors.toList());
-                        // update seatNumber if more than waiting limit,
-                        passengerRepository.saveAll(passengers);
-                    } else {
-                        seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
-                    }
-                });
+            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+            String transactionStatus = paymentTransaction.getTransactionStatus();
+            long untilMinute = paymentTransaction.getCreateAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
+            if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
+                    && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
+                //TODO: should look for the next available seat and set
+                List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
+                    passenger.setSeatNumber(-1);
+                    return passenger;
+                }).collect(Collectors.toList());
+                // update seatNumber if more than waiting limit,
+                passengerRepository.saveAll(passengers);
+            } else {
+                seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
+            }
+        });
 
         return new ArrayList<>(seats);
     }
@@ -298,9 +298,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (journeyNotStartedOrElseReject(journey) &&
                 journeyNotTerminatedOrElseReject(journey) &&
                 paymentAcceptedOrElseReject(bookedJourney.getPaymentTransaction())
-                && passengerNotCheckedInOrElseReject(bookedJourney.getPassengerCheckedInIndicator())) {
-            bookedJourney.setPassengerCheckedInIndicator(true);
-            bookedJourneyRepository.save(bookedJourney);
+                && passengerNotCheckedInOrElseReject(passenger.getPassengerCheckedInIndicator())) {
+            passenger.setPassengerCheckedInIndicator(true);
+            passengerRepository.save(passenger);
         }
     }
 
@@ -348,7 +348,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         bookedJourneyStatusDTO.setCurrencyCode(bookedJourney.getPaymentTransaction().getCurrencyCode());
         bookedJourneyStatusDTO.setPaymentReason(bookedJourney.getPaymentTransaction().getPaymentReason());
         bookedJourneyStatusDTO.setPaymentStatus(bookedJourney.getPaymentTransaction().getTransactionStatus());
-        bookedJourneyStatusDTO.setCheckedIn(bookedJourney.getPassengerCheckedInIndicator());
         bookedJourneyStatusDTO.setPaymentChannelTransactionNumber(bookedJourney.getPaymentTransaction().getPaymentChannelTransactionNumber());
 
         bookedJourneyStatusDTO.setPaymentChannel(bookedJourney.getPaymentTransaction().getPaymentChannel());
@@ -374,9 +373,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setPassengerPhoneNumber(pge.getPhoneNumber());
                     passenger.setPassengerSeatNumber(pge.getSeatNumber());
                     passenger.setCheckedInCode(pge.getCheckedInCode());
+                    passenger.setCheckedIn(pge.getPassengerCheckedInIndicator());
                     String encoding = null;
                     try {
-                        encoding = getQREncodedImage(bookedJourney, pge.getCheckedInCode() );
+                        encoding = getQREncodedImage(bookedJourney, pge.getCheckedInCode());
                     } catch (IOException e) {
                         log.info("could not generate QR Code");
                         e.printStackTrace();
@@ -430,7 +430,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     private BookedJourney getBookedJourney(List<Passenger> passengers, User user, Journey journey, Double amount, TransitAndStop transitAndStop) {
         BookedJourney bookedJourney = new BookedJourney();
-        bookedJourney.setPassengerCheckedInIndicator(false);
         bookedJourney.setPassengers(passengers);
         bookedJourney.setUser(user);
         bookedJourney.setJourney(journey);
@@ -448,6 +447,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setSeatNumber(psngr.getSeatNumber());
                     passenger.setEmail(psngr.getEmail());
                     passenger.setPhoneNumber(psngr.getPhoneNumber());
+                    passenger.setPassengerCheckedInIndicator(false);
                     passenger.setCheckedInCode(userId + journeyId.toString() + "-" + new Date().getTime());
                     return passenger;
                 }).collect(Collectors.toList());

@@ -21,7 +21,6 @@ public class BookedJourneyStatusDTO {
     private String paymentChannel;
     private String paymentChannelTransactionNumber;
     private LocalDateTime paymentDate;
-    private boolean checkedIn;
 
     private List<PassengerDTO> passengers = new ArrayList<>();
 

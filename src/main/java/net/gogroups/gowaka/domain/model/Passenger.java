@@ -39,15 +39,19 @@ public class Passenger {
     @Column(name = "checked_in_code")
     private String checkedInCode;
 
+    @Column(name = "checked_in_ind")
+    private Boolean passengerCheckedInIndicator;
+
     @ManyToOne
     private BookedJourney bookedJourney;
 
-    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber, String checkedInCode) {
+    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber, String checkedInCode, Boolean passengerCheckedInIndicator) {
         this.name = name;
         this.idNumber = idNumber;
         this.seatNumber = seatNumber;
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.checkedInCode = checkedInCode;
+        this.passengerCheckedInIndicator = passengerCheckedInIndicator;
     }
 }

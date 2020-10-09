@@ -11,6 +11,7 @@ public class PassengerDTO {
     private String passengerPhoneNumber;
     private String passengerEmail;
     private String checkedInCode;
+    private boolean checkedIn;
     private String qRCheckedInImage;
     private String qRCheckedInImageUrl;
 
