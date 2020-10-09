@@ -36,14 +36,18 @@ public class Passenger {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "checked_in_code")
+    private String checkedInCode;
+
     @ManyToOne
     private BookedJourney bookedJourney;
 
-    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber) {
+    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber, String checkedInCode) {
         this.name = name;
         this.idNumber = idNumber;
         this.seatNumber = seatNumber;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.checkedInCode = checkedInCode;
     }
 }

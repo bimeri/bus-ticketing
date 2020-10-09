@@ -23,7 +23,6 @@ public class OnBoardingInfoDTO {
 
     private List<PassengerDTO> passengers = new ArrayList<>();
 
-    private String checkedInCode;
     private Boolean passengerCheckedInIndicator;
 
     public OnBoardingInfoDTO(BookedJourney bookedJourney) {
@@ -78,10 +77,9 @@ public class OnBoardingInfoDTO {
                 passengerDTO.setPassengerIdNumber(pge.getIdNumber());
                 passengerDTO.setPassengerPhoneNumber(pge.getPhoneNumber());
                 passengerDTO.setPassengerSeatNumber(pge.getSeatNumber());
+                passengerDTO.setCheckedInCode(pge.getCheckedInCode());
                 passengers.add(passengerDTO);
             });
-            // checkInCode
-            this.checkedInCode = bookedJourney.getCheckedInCode();
             // checkInIndicator
             this.passengerCheckedInIndicator = bookedJourney.getPassengerCheckedInIndicator();
         }

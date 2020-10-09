@@ -97,7 +97,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         User user = getUser();
         verifyJourneyStatus(journey);
-        List<Passenger> passengers = getPassenger(bookJourneyRequest);
+        List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey.getId());
 
         Double amount;
         TransitAndStop transitAndStop;
@@ -118,8 +118,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
 
         BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
-        String qrCodeText = user.getUserId() + journey.getId().toString() + "-" + new Date().getTime();
-        bookedJourney.setCheckedInCode(qrCodeText);
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
 
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
@@ -211,9 +209,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
 
-        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
-        addQRCheckedInImageUrl(bookedJourneyStatusDTO);
-        return bookedJourneyStatusDTO;
+        return getBookedJourneyStatusDTO(bookedJourney);
     }
 
     @Override
@@ -256,30 +252,28 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 }).collect(Collectors.toList());
                 passengerRepository.saveAll(passengers);
             }
-            if (isCompleted) {
-                String storageFolder = QRCodeProvider.STORAGE_FOLDER;
-                String filename = bookedJourney.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
-                try {
-                    byte[] qrCodeBytes = getQRCodeBytes(bookedJourney);
-                    fileStorageService.saveFile(filename, qrCodeBytes, storageFolder, FileAccessType.PROTECTED);
-                } catch (IOException e) {
-                    log.info("could not generate QR Code");
-                    e.printStackTrace();
-                }
-                String filePath = fileStorageService.getFilePath(filename, storageFolder, FileAccessType.PROTECTED);
 
-                BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
-                bookedJourneyStatusDTO.setQRCheckedInImageUrl(filePath);
+            BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
+            if (isCompleted) {
+                bookedJourney.getPassengers().forEach(passenger -> {
+                    String filename = passenger.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+                    try {
+                        byte[] qrCodeBytes = getQRCodeBytes(bookedJourney, passenger.getCheckedInCode());
+                        fileStorageService.saveFile(filename, qrCodeBytes, QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
+                    } catch (IOException e) {
+                        log.info("could not generate QR Code");
+                        e.printStackTrace();
+                    }
+                });
                 sendTicketEmail(bookedJourneyStatusDTO);
             }
         }
-
-
     }
 
     @Override
     public OnBoardingInfoDTO getPassengerOnBoardingInfo(String checkedInCode) {
-        BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
+        Passenger passenger = getBookedJourneyByCheckedInCode(checkedInCode);
+        BookedJourney bookedJourney = passenger.getBookedJourney();
         Journey journey = bookedJourney.getJourney();
         // check if the journey's car is in user's official agency
         // borrow this method from journeyService
@@ -295,7 +289,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     @Override
     public void checkInPassengerByCode(String checkedInCode) {
-        BookedJourney bookedJourney = getBookedJourneyByCheckedInCode(checkedInCode);
+        Passenger passenger = getBookedJourneyByCheckedInCode(checkedInCode);
+        BookedJourney bookedJourney = passenger.getBookedJourney();
         Journey journey = bookedJourney.getJourney();
         // check if the journey's car is in user's official agency
         // borrow this method from journeyService
@@ -356,7 +351,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         bookedJourneyStatusDTO.setCheckedIn(bookedJourney.getPassengerCheckedInIndicator());
         bookedJourneyStatusDTO.setPaymentChannelTransactionNumber(bookedJourney.getPaymentTransaction().getPaymentChannelTransactionNumber());
 
-        bookedJourneyStatusDTO.setCheckedInCode(bookedJourney.getCheckedInCode());
         bookedJourneyStatusDTO.setPaymentChannel(bookedJourney.getPaymentTransaction().getPaymentChannel());
 
         bookedJourneyStatusDTO.setCarDriverName(bookedJourney.getJourney().getDriver().getDriverName());
@@ -379,45 +373,40 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setPassengerIdNumber(pge.getIdNumber());
                     passenger.setPassengerPhoneNumber(pge.getPhoneNumber());
                     passenger.setPassengerSeatNumber(pge.getSeatNumber());
+                    passenger.setCheckedInCode(pge.getCheckedInCode());
+                    String encoding = null;
+                    try {
+                        encoding = getQREncodedImage(bookedJourney, pge.getCheckedInCode() );
+                    } catch (IOException e) {
+                        log.info("could not generate QR Code");
+                        e.printStackTrace();
+                    }
+                    passenger.setQRCheckedInImage(encoding);
+                    String filePath = fileStorageService.getFilePath(pge.getCheckedInCode(), QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
+                    passenger.setQRCheckedInImageUrl(filePath);
                     return passenger;
                 }).collect(Collectors.toList());
 
         bookedJourneyStatusDTO.setPassengers(passengers);
 
-        String encoding = null;
-        try {
-            encoding = getQREncodedImage(bookedJourney);
-        } catch (IOException e) {
-            log.info("could not generate QR Code");
-            e.printStackTrace();
-        }
-        bookedJourneyStatusDTO.setQRCheckedInImage(encoding);
         return bookedJourneyStatusDTO;
     }
 
-    private String getQREncodedImage(BookedJourney bookedJourney) throws IOException {
-        byte[] imageBytes = getQRCodeBytes(bookedJourney);
+    private String getQREncodedImage(BookedJourney bookedJourney, String code) throws IOException {
+        byte[] imageBytes = getQRCodeBytes(bookedJourney, code);
 
         Base64.Encoder encoder = Base64.getEncoder();
         return "data:image/png;base64," + encoder.encodeToString(imageBytes);
     }
 
-    private byte[] getQRCodeBytes(BookedJourney bookedJourney) throws IOException {
-        BufferedImage bufferedImage = QRCodeProvider.generateQRCodeImage(bookedJourney.getCheckedInCode());
+    private byte[] getQRCodeBytes(BookedJourney bookedJourney, String code) throws IOException {
+        BufferedImage bufferedImage = QRCodeProvider.generateQRCodeImage(code);
         String pathname = "image" + bookedJourney.getId() + ".png";
         File file = new File(pathname);
         ImageIO.write(bufferedImage, "png", file);
         byte[] imageBytes = Files.readAllBytes(Paths.get(pathname));
         file.delete();
         return imageBytes;
-    }
-
-    private void addQRCheckedInImageUrl(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
-        String storageFolder = QRCodeProvider.STORAGE_FOLDER;
-        String filename = bookedJourneyStatusDTO.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
-        String filePath = fileStorageService.getFilePath(filename, storageFolder, FileAccessType.PROTECTED);
-
-        bookedJourneyStatusDTO.setQRCheckedInImageUrl(filePath);
     }
 
     private PayAmGoRequestDTO getPayAmGoRequestDTO(PaymentTransaction savedPaymentTransaction) {
@@ -450,7 +439,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return bookedJourney;
     }
 
-    private List<Passenger> getPassenger(BookJourneyRequest bookJourneyRequest) {
+    private List<Passenger> getPassenger(BookJourneyRequest bookJourneyRequest, String userId, Long journeyId) {
         return bookJourneyRequest.getPassengers().stream()
                 .map(psngr -> {
                     Passenger passenger = new Passenger();
@@ -459,6 +448,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setSeatNumber(psngr.getSeatNumber());
                     passenger.setEmail(psngr.getEmail());
                     passenger.setPhoneNumber(psngr.getPhoneNumber());
+                    passenger.setCheckedInCode(userId + journeyId.toString() + "-" + new Date().getTime());
                     return passenger;
                 }).collect(Collectors.toList());
 
@@ -491,8 +481,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return journeyOptional.get();
     }
 
-    private BookedJourney getBookedJourneyByCheckedInCode(String code) {
-        Optional<BookedJourney> optional = bookedJourneyRepository.findFirstByCheckedInCode(code);
+    private Passenger getBookedJourneyByCheckedInCode(String code) {
+        Optional<Passenger> optional = passengerRepository.findByCheckedInCode(code);
         if (!optional.isPresent()) {
             log.info("CheckedInCode not found code: {}", code);
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);

@@ -148,11 +148,10 @@ public class BookJourneyControllerIntegrationTest {
         bookedJourney.setUser(user);
         bookedJourney.setDestination(savedDestination);
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("1111-1599933993");
         bookedJourney.setAmount(2000.00);
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
 
-        Passenger passenger = new Passenger("John Doe", "1234001", 8, "email@example.com", "123423");
+        Passenger passenger = new Passenger("John Doe", "1234001", 8, "email@example.com", "123423", "1111-1599933993");
         passenger.setBookedJourney(savedBookJourney);
         passengerRepository.save(passenger);
 
@@ -275,13 +274,14 @@ public class BookJourneyControllerIntegrationTest {
     public void handlePaymentResponses_success_return204_whenPaymentResponseRecieved() throws Exception {
 
 
+        Passenger passenger = new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423", "2111-1599933988");
         BookedJourney bookedJourney = new BookedJourney();
+        passenger.setBookedJourney(bookedJourney);
         bookedJourney.setJourney(journey);
         bookedJourney.setUser(user);
-        bookedJourney.getPassengers().add(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423"));
+        bookedJourney.getPassengers().add(passenger);
         bookedJourney.setDestination(journey.getDestination());
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("2111-1599933988");
         bookedJourney.setAmount(2000.00);
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
@@ -403,10 +403,9 @@ public class BookJourneyControllerIntegrationTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(newJourney);
         bookedJourney.setUser(newUser);
-        bookedJourney.getPassengers().add(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423"));
+        bookedJourney.addPassenger(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423", "24755hsyw08jaja"));
         bookedJourney.setDestination(newJourney.getDestination());
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("24755hsyw08jaja");
         bookedJourney.setAmount(2000.00);
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
@@ -433,7 +432,7 @@ public class BookJourneyControllerIntegrationTest {
         bookedJourneyRepository.save(savedBookJourney);
 
         String jwtToken = createToken(newUser.getUserId(), "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
-        RequestBuilder requestBuilder = get("/api/protected/checkIn_status?code=" + savedBookJourney.getCheckedInCode())
+        RequestBuilder requestBuilder = get("/api/protected/checkIn_status?code=24755hsyw08jaja")
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -445,10 +444,11 @@ public class BookJourneyControllerIntegrationTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setUser(user);
-        bookedJourney.getPassengers().add(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423"));
+        Passenger passenger = new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423", "2000-1599933988");
+        passenger.setBookedJourney(bookedJourney);
+        bookedJourney.getPassengers().add(passenger);
         bookedJourney.setDestination(journey.getDestination());
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("2000-1599933988");
         bookedJourney.setAmount(2000.00);
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);
@@ -551,11 +551,10 @@ public class BookJourneyControllerIntegrationTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(newJourney);
         bookedJourney.setUser(newUser);
-        bookedJourney.getPassengers().add(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423"));
+        bookedJourney.getPassengers().add(new Passenger("Edward Tanko", "1234033", 10, "email@example.com", "123423", "24755hsyw08kuku"));
 
         bookedJourney.setDestination(newJourney.getDestination());
         bookedJourney.setPassengerCheckedInIndicator(false);
-        bookedJourney.setCheckedInCode("24755hsyw08kuku");
         bookedJourney.setAmount(2000.00);
 
         BookedJourney savedBookJourney = bookedJourneyRepository.save(bookedJourney);

@@ -37,12 +37,14 @@ public class BookedJourney {
     @Column(name = "checked_in_ind")
     private Boolean passengerCheckedInIndicator;
 
-    @Column(name = "checked_in_code")
-    private String checkedInCode;
-
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public void addPassenger(Passenger passenger){
+        this.passengers.add(passenger);
+        passenger.setBookedJourney(this);
+    }
 
 }

@@ -271,15 +271,8 @@
                             <tr>
                                 <td class="content-cell">
                                     <div class="f-fallback">
-                                        <!--Ticket here -->
-                                        <div style="float: right; border: 2px solid #6b7d90; text-align: center">
-                                            <img style=""
-                                                 th:src="${journeyInfo.qRCheckedInImageUrl}"
-                                                 alt="QR Code"/>
-                                            <div th:text="${journeyInfo.checkedInCode}"></div>
-                                        </div>
                                         <div style="text-align: left">
-                                            <table  th:each="passenger: ${journeyInfo.passengers}" >
+                                            <table th:each="passenger: ${journeyInfo.passengers}">
                                                 <tbody>
                                                 <tr>
                                                     <th>Passenger's name</th>
@@ -292,6 +285,13 @@
                                                 <tr>
                                                     <th>Seat #</th>
                                                     <td th:text="${passenger.passengerSeatNumber}"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th></th>
+                                                    <td>
+                                                        <img th:src="${passenger.qRCheckedInImageUrl}" alt="QR Code"/>
+                                                        <div th:text="${passenger.checkedInCode}"></div>
+                                                    </td>
                                                 </tr>
                                                 </tbody>
                                             </table>
