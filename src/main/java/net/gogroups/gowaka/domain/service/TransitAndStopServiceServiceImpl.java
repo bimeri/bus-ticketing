@@ -92,7 +92,8 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
     private Long journeyCheck(TransitAndStop transitAndStop){
         if (!transitAndStop.getJourneyStops().isEmpty()){
             logger.warn("Cannot delete record: \n <{}> \n has journeys", transitAndStop.toString());
-            throw new ApiException("Cannot delete record for any existing journey", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new ApiException(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage(),
+                    ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return transitAndStop.getId();
     }
@@ -116,7 +117,7 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
                 transitAndStop.getBookedJourneys() != null &&
                 !transitAndStop.getBookedJourneys().isEmpty()) {
             throw new ApiException(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage(),
-                    ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString(), HttpStatus.FORBIDDEN);
+                    ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 }

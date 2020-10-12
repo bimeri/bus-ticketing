@@ -128,8 +128,8 @@ public class TransitAndStopImplTest {
         transitAndStop.setJourneyStops(Collections.singletonList(new JourneyStop()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         expectedException.expect(ApiException.class);
-        expectedException.expectMessage("Cannot delete record for any existing journey");
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.VALIDATION_ERROR.toString())));
+        expectedException.expectMessage(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage());
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString())));
         transitAndStopService.deleteLocation(1L);
     }
 
