@@ -13,7 +13,6 @@ import java.util.List;
  */
 @Data
 @Entity
-@Table(name = "user")
 public class User {
 
     @Id

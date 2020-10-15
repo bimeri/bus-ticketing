@@ -12,7 +12,6 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-@Table(name = "pasenger")
 @AllArgsConstructor
 @NoArgsConstructor
 public class Passenger {
