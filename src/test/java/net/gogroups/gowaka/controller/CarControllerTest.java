@@ -5,10 +5,9 @@ import net.gogroups.gowaka.domain.model.Car;
 import net.gogroups.gowaka.domain.model.SharedRide;
 import net.gogroups.gowaka.domain.repository.CarRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.domain.service.CarServiceImpl;
 import net.gogroups.gowaka.dto.*;
-import net.gogroups.gowaka.service.UserService;
 import net.gogroups.gowaka.service.CarService;
+import net.gogroups.gowaka.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,12 +19,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Nnouka Stephen
@@ -126,6 +128,13 @@ public class CarControllerTest {
     public void official_agency_get_all_buses_should_call_car_service_get_all_buses() {
         carController.getAllOfficialAgencyBuses();
         verify(mockCarService).getAllOfficialAgencyBuses();
+    }
+
+    @Test
+    public void official_agency_get_buses_should_call_car_service_get_all_buses() {
+        ResponseEntity<BusResponseDTO> response = carController.getOfficialAgencyBuses(1L);
+        verify(mockCarService).getOfficialAgencyBuses(1L);
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 
     @Test

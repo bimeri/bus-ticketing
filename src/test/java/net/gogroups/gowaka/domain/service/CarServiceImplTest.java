@@ -5,6 +5,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.CarService;
 import net.gogroups.gowaka.service.UserService;
 import org.junit.Before;
@@ -159,6 +160,39 @@ public class CarServiceImplTest {
         assertThat(busResponseDTOS.get(1).getId(), both(not(bus.getId())).and(is(bus1.getId())));
         assertThat(busResponseDTOS.get(1).getName(), is(bus1.getName()));
     }
+
+    @Test
+    public void official_agency_car_should_throw_resource_not_found_exception_whenUserNotInAgency(){
+
+        UserDTO userDTO = new UserDTO();
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("No Official Agency found for this user");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        carService.getOfficialAgencyBuses(1L);
+    }
+
+    @Test
+    public void official_agency_car_should_throw_resource_not_found_exception_whenCarNotFound(){
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        Bus bus = new Bus();
+        UserDTO userDTO = new UserDTO();
+        User user = new User();
+
+        bus.setOfficialAgency(officialAgency);
+        bus.setId(111L);
+        officialAgency.setBuses(Arrays.asList(bus, bus));
+        user.setOfficialAgency(officialAgency);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        expectedException.expect(ResourceNotFoundException.class);
+        expectedException.expectMessage("Resource Not Found");
+        carService.getOfficialAgencyBuses(1L);
+    }
+
 
     @Test
     public void official_agency_get_buses_should_throw_resource_not_found_exception_no_agency(){
