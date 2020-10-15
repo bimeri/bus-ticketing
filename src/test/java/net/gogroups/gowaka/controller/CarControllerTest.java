@@ -48,7 +48,6 @@ public class CarControllerTest {
     @Before
     public void setup() {
         carController = new CarController(mockCarService);
-        carService = new CarServiceImpl(mockCarRepository, mockUserService, mockUserRepository);
     }
 
     @Test
@@ -202,20 +201,16 @@ public class CarControllerTest {
     public void approve_should_return_204_no_content_status_code() {
         Car car = new Bus();
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
-        carController = new CarController(carService);
         car.setId(1L);
-        when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(car));
-        when(mockCarRepository.save(any())).thenReturn(car);
+
         approveCarDTO.setApprove(true);
         ResponseEntity<Object> responseEntity = carController.shallApprove(approveCarDTO, "1");
-        verify(mockCarRepository).findById(1L);
-        verify(mockCarRepository).save(car);
-        assertTrue(car.getIsCarApproved());
+
         assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
 
         approveCarDTO.setApprove(false);
         carController.shallApprove(approveCarDTO, "1");
-        assertFalse(car.getIsCarApproved());
+
         assertThat(responseEntity.getStatusCode(), is(equalTo(HttpStatus.NO_CONTENT)));
     }
 

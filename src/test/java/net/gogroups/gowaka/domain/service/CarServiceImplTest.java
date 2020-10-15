@@ -61,12 +61,8 @@ public class CarServiceImplTest {
 
      @Before
      public void setup() throws Exception{
-         carService = new CarServiceImpl(mockCarRepository, mockUserService, mockUserRepository);
+         carService = new CarServiceImpl(mockCarRepository, mockUserService, mockUserRepository, mockSeatStructureRepository);
      }
-
-    public void setMockSeatStructureRepository() {
-        ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
-    }
 
     @Test
      public void official_agency_should_add_car(){
@@ -83,7 +79,6 @@ public class CarServiceImplTest {
          when(mockCarRepository.save(any())).thenReturn(bus);
          when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
          when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-         setMockSeatStructureRepository();
          when(mockSeatStructureRepository.findById(anyLong())).thenReturn(Optional.of(seatStructure));
          carService.addOfficialAgencyBus(busDTO);
          verify(mockUserService).getCurrentAuthUser();
@@ -468,9 +463,7 @@ public class CarServiceImplTest {
         seatStructure1.setId(2L);
         seatStructure1.setNumberOfSeats(10);
         seatStructure1.setImage("10-1.png");
-        if (carService instanceof CarServiceImpl) {
-            ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
-        }
+
         when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(new ArrayList<>(
                 Arrays.asList(seatStructure, seatStructure1)
         ));
@@ -482,11 +475,23 @@ public class CarServiceImplTest {
     }
     @Test
     public void get_seat_structures_should_return_empty_list_of_no_structure_exits() {
-        if (carService instanceof CarServiceImpl) {
-            ((CarServiceImpl) carService).setSeatStructureRepository(mockSeatStructureRepository);
-        }
+
         when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(Collections.emptyList());
         List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10);
         assertTrue(seatStructureDTOS.isEmpty());
+    }
+
+    @Test
+    public void get_seat_structures_should_return_allSeatStructure_whenNumberOfSeatIsZero() {
+
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setId(1L);
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("10.png");
+
+        when(mockSeatStructureRepository.findAll()).thenReturn(Collections.singletonList(seatStructure));
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(0);
+        verify(mockSeatStructureRepository).findAll();
+        assertEquals("seatstructures/10.png", seatStructureDTOS.get(0).getImage());
     }
 }

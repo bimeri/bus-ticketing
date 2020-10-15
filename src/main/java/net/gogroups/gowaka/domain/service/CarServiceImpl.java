@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,14 +32,10 @@ public class CarServiceImpl implements CarService {
     private SeatStructureRepository seatStructureRepository;
 
     @Autowired
-    public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
+    public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository, SeatStructureRepository seatStructureRepository) {
         this.carRepository = carRepository;
         this.userService = userService;
         this.userRepository = userRepository;
-    }
-
-    @Autowired
-    public void setSeatStructureRepository(SeatStructureRepository seatStructureRepository) {
         this.seatStructureRepository = seatStructureRepository;
     }
 
@@ -164,7 +161,12 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
-        List<SeatStructure> seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+        List<SeatStructure> seatStructures = new ArrayList<>();
+        if(numberOfSeats.equals(0)){
+            seatStructures = seatStructureRepository.findAll();
+        }else {
+            seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+        }
         return seatStructures.stream()
                 .map(SeatStructureDTO::new)
                 .collect(Collectors.toList());
