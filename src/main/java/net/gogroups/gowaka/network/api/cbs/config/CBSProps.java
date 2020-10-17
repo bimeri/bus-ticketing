@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component;
 public class CBSProps {
     private String host;
     private String port;
-    private String email;
-    private String password;
-    private String loginPath;
-    private String availableBenefitsPath;
     private String userBenefitsPath;
     private String userRewardPointsPath;
 
