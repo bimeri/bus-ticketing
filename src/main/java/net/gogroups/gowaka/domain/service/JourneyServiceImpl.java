@@ -1,7 +1,11 @@
 package net.gogroups.gowaka.domain.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import net.gogroups.cfs.model.CustomerDTO;
+import net.gogroups.cfs.model.SurveyDTO;
+import net.gogroups.cfs.service.CfsClientService;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.DTFFromDateStr;
@@ -11,6 +15,7 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
+import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,18 +43,21 @@ public class JourneyServiceImpl implements JourneyService {
     private JourneyRepository journeyRepository;
     private JourneyStopRepository journeyStopRepository;
     private BookedJourneyRepository bookedJourneyRepository;
+    private GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository;
+    private CfsClientService cfsClientService;
 
     private final ZoneId zoneId = ZoneId.of("GMT");
 
-
     @Autowired
-    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository) {
+    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository, GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository, CfsClientService cfsClientService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.transitAndStopRepository = transitAndStopRepository;
         this.journeyRepository = journeyRepository;
         this.journeyStopRepository = journeyStopRepository;
         this.bookedJourneyRepository = bookedJourneyRepository;
+        this.ggCfsSurveyTemplateJsonRepository = ggCfsSurveyTemplateJsonRepository;
+        this.cfsClientService = cfsClientService;
     }
 
     @Override
@@ -142,6 +150,20 @@ public class JourneyServiceImpl implements JourneyService {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
+        }
+        try {
+            List<CustomerDTO> customers = new ArrayList<>();
+            journey.getBookedJourneys().stream()
+                    .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(PayAmGoPaymentStatus.COMPLETED.toString()))
+                    .map(BookedJourney::getPassengers)
+                    .forEach(passengers -> passengers.forEach(passenger -> customers.add(new CustomerDTO(passenger.getEmail(), passenger.getName()))));
+
+            GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = ggCfsSurveyTemplateJsonRepository.findById("1").get();
+            SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
+            surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + "from " + journey.getDepartureLocation().getLocation().getAddress());
+            cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
+        } catch (Exception e) {
+            log.error("Error sending request to CFS ");
         }
     }
 

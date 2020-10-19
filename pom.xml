@@ -26,6 +26,7 @@
         <gg-notification-client.version>0.0.1-SNAPSHOT</gg-notification-client.version>
         <gg-file-storage.version>0.0.1-SNAPSHOT</gg-file-storage.version>
         <payamgo-client.version>0.0.1-SNAPSHOT</payamgo-client.version>
+        <gg-cfs-client.version>0.0.1-SNAPSHOT</gg-cfs-client.version>
     </properties>
 
     <dependencies>
@@ -132,6 +133,11 @@
             <groupId>net.go-groups</groupId>
             <artifactId>gg-file-storage</artifactId>
             <version>${gg-file-storage.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.go-groups</groupId>
+            <artifactId>gg-cfs-client</artifactId>
+            <version>${gg-cfs-client.version}</version>
         </dependency>
     </dependencies>
     <build>
