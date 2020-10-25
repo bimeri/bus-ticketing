@@ -12,6 +12,8 @@ public interface BookJourneyService {
 
     PaymentUrlDTO bookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest);
 
+    void agencyUserBookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest);
+
     List<Integer> getAllBookedSeats(Long journeyId);
 
     BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId);
@@ -27,4 +29,5 @@ public interface BookJourneyService {
     String getHtmlReceipt(Long bookedJourneyId);
 
     List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId);
+
 }

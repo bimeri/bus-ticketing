@@ -60,6 +60,18 @@ public class BookJourneyControllerTest {
     }
 
     @Test
+    public void agencyUserBookJourney_callsBookJourneyService() {
+
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setTransitAndStopId(1L);
+
+        ResponseEntity<?> response = bookJourneyController.agencyUserBookJourney(1L, bookJourneyRequest);
+        verify(mockBookJourneyService).agencyUserBookJourney(1L, bookJourneyRequest);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+    }
+
+    @Test
     public void getAllBookedSeats_callsBookJourneyService() {
 
         when(mockBookJourneyService.getAllBookedSeats(anyLong()))

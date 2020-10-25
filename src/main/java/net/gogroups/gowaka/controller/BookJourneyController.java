@@ -43,6 +43,13 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.bookJourney(journeyId, bookJourneyRequest));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/journey/{journeyId}/agency")
+    ResponseEntity<?> agencyUserBookJourney(@PathVariable("journeyId") Long journeyId, @Valid @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
+        bookJourneyService.agencyUserBookJourney(journeyId, bookJourneyRequest);
+        return ResponseEntity.noContent().build();
+    }
+
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/journey/{journeyId}/booked_seats")
     ResponseEntity<List<Integer>> getAllBookedSeats(@PathVariable("journeyId") Long bookedJourneyId) {

@@ -82,71 +82,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Transactional
     public PaymentUrlDTO bookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
 
-        List<Integer> bookSeats = bookJourneyRequest.getPassengers().stream()
-                .map(BookJourneyRequest.Passenger::getSeatNumber)
-                .collect(Collectors.toList());
 
-        List<Passenger> bookPassengers = passengerRepository.findByBookedJourney_Journey_Id(journeyId);
-        bookPassengers.forEach(passenger -> {
-            if (bookSeats.contains(passenger.getSeatNumber())) {
-                throw new ApiException(SEAT_ALREADY_TAKEN.getMessage(), SEAT_ALREADY_TAKEN.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
-            }
-        });
-
-        Journey journey = getJourney(journeyId);
-
-        User user = getUser();
-        verifyJourneyStatus(journey);
-        List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey.getId());
-
-        Double amount;
-        TransitAndStop transitAndStop;
-        if (bookJourneyRequest.isDestinationIndicator()) {
-            amount = journey.getAmount() * bookJourneyRequest.getPassengers().size();
-            transitAndStop = journey.getDestination();
-        } else {
-            Optional<JourneyStop> journeyStopOptional = journey.getJourneyStops().stream()
-                    .filter(stop -> stop.getTransitAndStop().getId().equals(bookJourneyRequest.getTransitAndStopId()))
-                    .findFirst();
-            if (!journeyStopOptional.isPresent()) {
-                log.info("Transit and stop not found transitAndStopId: {}", bookJourneyRequest.getTransitAndStopId());
-                throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
-            }
-            JourneyStop journeyStop = journeyStopOptional.get();
-            amount = journeyStop.getAmount();
-            transitAndStop = journeyStop.getTransitAndStop();
-        }
-
-        BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
-        BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
-
-        UserDTO currentAuthUser = userService.getCurrentAuthUser();
-        String[] names = currentAuthUser.getFullName().split(" ");
-        String firstName = "Anonymous";
-        String lastName = "Anonymous";
-        if (names.length > 1) {
-            firstName = names[0];
-            lastName = names[names.length - 1];
-        }
-        PaymentTransaction paymentTransaction = new PaymentTransaction();
-        paymentTransaction.setBookedJourney(savedBookedJourney);
-
-        paymentTransaction.setAmount(amount);
-        paymentTransaction.setCurrencyCode("XAF");
-        paymentTransaction.setPaymentReason("Bus ticket for " + journey.getCar().getLicensePlateNumber());
-
-        paymentTransaction.setAppTransactionNumber(UUID.randomUUID().toString());
-        paymentTransaction.setAppUserEmail(currentAuthUser.getEmail());
-        paymentTransaction.setAppUserFirstName(firstName);
-        paymentTransaction.setAppUserLastName(lastName);
-        paymentTransaction.setAppUserPhoneNumber(StringUtils.isEmpty(currentAuthUser.getPhoneNumber()) ? "670000000" : currentAuthUser.getPhoneNumber());
-
-        paymentTransaction.setCancelRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentCancelUrl());
-        paymentTransaction.setPaymentResponseUrl(paymentUrlResponseProps.getPayAmGoPaymentResponseUrl() + "/" + savedBookedJourney.getId());
-        paymentTransaction.setReturnRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentRedirectUrl() + "/" + savedBookedJourney.getId());
-
-        paymentTransaction.setLanguage("en");
-        paymentTransaction.setTransactionStatus(INITIATED.toString());
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journeyId, bookJourneyRequest);
 
         PaymentTransaction savedPaymentTransaction = paymentTransactionRepository.save(paymentTransaction);
 
@@ -157,8 +94,23 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         savedPaymentTransaction.setProcessingNumber(payAmGoRequestResponseDTO.getProcessingNumber());
         paymentTransactionRepository.save(savedPaymentTransaction);
 
-
         return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl());
+    }
+
+    @Override
+    public void agencyUserBookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
+
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journeyId, bookJourneyRequest);
+        paymentTransaction.setTransactionStatus(COMPLETED.toString());
+        paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
+        paymentTransaction.setPaymentChannel("CASHIER");
+        paymentTransaction.setPaymentDate(LocalDateTime.now());
+        PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
+        savedTxn.getBookedJourney().setPaymentTransaction(savedTxn);
+
+        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(savedTxn.getBookedJourney());
+        notifyPassengers(savedTxn.getBookedJourney(), bookedJourneyStatusDTO);
+
     }
 
     @Override
@@ -255,19 +207,23 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
             BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
             if (isCompleted) {
-                bookedJourney.getPassengers().forEach(passenger -> {
-                    String filename = passenger.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
-                    try {
-                        byte[] qrCodeBytes = getQRCodeBytes(bookedJourney, passenger.getCheckedInCode());
-                        fileStorageService.saveFile(filename, qrCodeBytes, QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
-                    } catch (IOException e) {
-                        log.info("could not generate QR Code");
-                        e.printStackTrace();
-                    }
-                });
-                sendTicketEmail(bookedJourneyStatusDTO);
+                notifyPassengers(bookedJourney, bookedJourneyStatusDTO);
             }
         }
+    }
+
+    private void notifyPassengers(BookedJourney bookedJourney, BookedJourneyStatusDTO bookedJourneyStatusDTO) {
+        bookedJourney.getPassengers().forEach(passenger -> {
+            String filename = passenger.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+            try {
+                byte[] qrCodeBytes = getQRCodeBytes(bookedJourney, passenger.getCheckedInCode());
+                fileStorageService.saveFile(filename, qrCodeBytes, QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
+            } catch (IOException e) {
+                log.info("could not generate QR Code");
+                e.printStackTrace();
+            }
+        });
+        sendTicketEmail(bookedJourneyStatusDTO);
     }
 
     @Override
@@ -322,6 +278,75 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         ).collect(Collectors.toList());
     }
 
+    private PaymentTransaction getPaymentTransaction(Long journeyId, BookJourneyRequest bookJourneyRequest) {
+        List<Integer> bookSeats = bookJourneyRequest.getPassengers().stream()
+                .map(BookJourneyRequest.Passenger::getSeatNumber)
+                .collect(Collectors.toList());
+
+        List<Passenger> bookPassengers = passengerRepository.findByBookedJourney_Journey_Id(journeyId);
+        bookPassengers.forEach(passenger -> {
+            if (bookSeats.contains(passenger.getSeatNumber())) {
+                throw new ApiException(SEAT_ALREADY_TAKEN.getMessage(), SEAT_ALREADY_TAKEN.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        });
+
+        Journey journey = getJourney(journeyId);
+
+        User user = getUser();
+        verifyJourneyStatus(journey);
+        List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey.getId());
+
+        Double amount;
+        TransitAndStop transitAndStop;
+        if (bookJourneyRequest.isDestinationIndicator()) {
+            amount = journey.getAmount() * bookJourneyRequest.getPassengers().size();
+            transitAndStop = journey.getDestination();
+        } else {
+            Optional<JourneyStop> journeyStopOptional = journey.getJourneyStops().stream()
+                    .filter(stop -> stop.getTransitAndStop().getId().equals(bookJourneyRequest.getTransitAndStopId()))
+                    .findFirst();
+            if (!journeyStopOptional.isPresent()) {
+                log.info("Transit and stop not found transitAndStopId: {}", bookJourneyRequest.getTransitAndStopId());
+                throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            JourneyStop journeyStop = journeyStopOptional.get();
+            amount = journeyStop.getAmount();
+            transitAndStop = journeyStop.getTransitAndStop();
+        }
+
+        BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+        BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
+
+        UserDTO currentAuthUser = userService.getCurrentAuthUser();
+        String[] names = currentAuthUser.getFullName().split(" ");
+        String firstName = "Anonymous";
+        String lastName = "Anonymous";
+        if (names.length > 1) {
+            firstName = names[0];
+            lastName = names[names.length - 1];
+        }
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setBookedJourney(savedBookedJourney);
+
+        paymentTransaction.setAmount(amount);
+        paymentTransaction.setCurrencyCode("XAF");
+        paymentTransaction.setPaymentReason("Bus ticket for " + journey.getCar().getLicensePlateNumber());
+
+        paymentTransaction.setAppTransactionNumber(UUID.randomUUID().toString());
+        paymentTransaction.setAppUserEmail(currentAuthUser.getEmail());
+        paymentTransaction.setAppUserFirstName(firstName);
+        paymentTransaction.setAppUserLastName(lastName);
+        paymentTransaction.setAppUserPhoneNumber(StringUtils.isEmpty(currentAuthUser.getPhoneNumber()) ? "670000000" : currentAuthUser.getPhoneNumber());
+
+        paymentTransaction.setCancelRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentCancelUrl());
+        paymentTransaction.setPaymentResponseUrl(paymentUrlResponseProps.getPayAmGoPaymentResponseUrl() + "/" + savedBookedJourney.getId());
+        paymentTransaction.setReturnRedirectUrl(paymentUrlResponseProps.getPayAmGoPaymentRedirectUrl() + "/" + savedBookedJourney.getId());
+
+        paymentTransaction.setLanguage("en");
+        paymentTransaction.setTransactionStatus(INITIATED.toString());
+        return paymentTransaction;
+    }
+
     private void sendTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
 
         String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);
@@ -338,6 +363,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
+        //TODO: should also send SMS
     }
 
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {

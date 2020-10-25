@@ -35,7 +35,7 @@ public class BookJourneyRequest {
         private String passengerIdNumber;
         private Integer seatNumber;
 
-        @NotBlank(message = "passenger phone number required.")
+//        @NotBlank(message = "passenger phone number required.")
         private String phoneNumber;
 
         @NotBlank(message = "passenger email required.")

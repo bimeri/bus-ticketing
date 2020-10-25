@@ -226,6 +226,32 @@ public class BookJourneyControllerIntegrationTest {
     }
 
     @Test
+    public void agencyUserBookJourney_success_return200_whenRequestParameterNotValid() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_OPERATOR");
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setTransitAndStopId(1L);
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(10);
+        passenger.setEmail("info@go-groups.net");
+        passenger.setPassengerName("John Doe");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+        bookJourneyRequest.getPassengers().add(passenger);
+        bookJourneyRequest.setDestinationIndicator(true);
+
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/journey/" + journey.getId() + "/agency")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(bookJourneyRequest))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    @Test
     public void getAllBookedSeats_success_return200_whenRequestParameterNotValid() throws Exception {
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
@@ -260,7 +286,7 @@ public class BookJourneyControllerIntegrationTest {
         String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
 
         BookedJourney bookedJourney = journey.getBookedJourneys().get(0);
-        RequestBuilder requestBuilder = get("/api/protected/bookJourney/" + bookedJourney.getId()+"/receipt")
+        RequestBuilder requestBuilder = get("/api/protected/bookJourney/" + bookedJourney.getId() + "/receipt")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
