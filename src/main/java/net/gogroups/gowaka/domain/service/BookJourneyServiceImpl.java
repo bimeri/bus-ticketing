@@ -21,6 +21,7 @@ import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
+import org.bouncycastle.ocsp.OCSPReqGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -417,7 +418,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         e.printStackTrace();
                     }
                     passenger.setQRCheckedInImage(encoding);
-                    String filePath = fileStorageService.getFilePath(pge.getCheckedInCode(), QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
+                    String filename = passenger.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+                    String filePath = fileStorageService.getFilePath(filename, QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
                     passenger.setQRCheckedInImageUrl(filePath);
                     return passenger;
                 }).collect(Collectors.toList());
