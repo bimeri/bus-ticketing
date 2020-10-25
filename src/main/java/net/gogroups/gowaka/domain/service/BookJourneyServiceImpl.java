@@ -323,6 +323,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
+        passengers.forEach(passenger -> passenger.setBookedJourney(savedBookedJourney));
+        passengerRepository.saveAll(passengers);
 
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
         String[] names = currentAuthUser.getFullName().split(" ");
