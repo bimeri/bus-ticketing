@@ -242,6 +242,21 @@ public class BookJourneyServiceImplTest {
 
     @Test
     public void bookJourney_throwsException_whenSeatAlreadyTaken() {
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        User user = new User();
+        user.setUserId("10");
+
+        Journey journey = new Journey();
+        journey.setId(11L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
 
         Passenger passenger = new Passenger();
         passenger.setSeatNumber(3);
@@ -555,6 +570,9 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         User user = new User();
         user.setUserId("10");
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(111L);
+        user.setOfficialAgency(officialAgency);
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(false);
 
@@ -592,11 +610,13 @@ public class BookJourneyServiceImplTest {
 
         Bus car = new Bus();
         car.setLicensePlateNumber("123SW");
+        car.setOfficialAgency(officialAgency);
         journey.setCar(car);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setDestination(destination);
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setBookedJourney(bookedJourney);
+
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setJourney(journey);
@@ -656,6 +676,38 @@ public class BookJourneyServiceImplTest {
         assertThat(paymentTransactionValue.getPaymentChannel()).isEqualTo("CASHIER");
         assertThat(paymentTransactionValue.getProcessingNumber()).isEqualTo(null);
 
+    }
+
+    @Test
+    public void agencyUserBookJourney_throwsException_whenUserNotInAgency() {
+
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        User user = new User();
+        user.setUserId("10");
+
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(true);
+        journey.setCar(new Bus());
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+
+        expectedException.expect(ApiException.class);
+        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
+        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.USER_NOT_IN_AGENCY.toString())));
+        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.USER_NOT_IN_AGENCY.getMessage())));
+
+        bookJourneyService.agencyUserBookJourney(11L, new BookJourneyRequest());
+        verify(mockBookedJourneyRepository).findById(11L);
+        verify(mockUserService).getCurrentAuthUser();
+        verify(mockUserRepository).findById("10");
+        verifyZeroInteractions(mockPaymentTransactionRepository);
+        verifyZeroInteractions(mockPayAmGoService);
     }
 
     @Test

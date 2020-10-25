@@ -8,6 +8,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
+import net.gogroups.gowaka.exception.BusinessValidationException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.BookJourneyService;
 import net.gogroups.gowaka.service.JourneyService;
@@ -82,8 +83,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Transactional
     public PaymentUrlDTO bookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
 
-
-        PaymentTransaction paymentTransaction = getPaymentTransaction(journeyId, bookJourneyRequest);
+        Journey journey = getJourney(journeyId);
+        User user = getUser();
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest);
 
         PaymentTransaction savedPaymentTransaction = paymentTransactionRepository.save(paymentTransaction);
 
@@ -100,7 +102,15 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public void agencyUserBookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
 
-        PaymentTransaction paymentTransaction = getPaymentTransaction(journeyId, bookJourneyRequest);
+        Journey journey = getJourney(journeyId);
+        User user = getUser();
+        OfficialAgency agency = ((Bus)journey.getCar()).getOfficialAgency();
+
+        if( user.getOfficialAgency()==null || !user.getOfficialAgency().getId().equals(agency.getId())){
+            throw new ApiException(USER_NOT_IN_AGENCY.getMessage(), USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest);
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
         paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
         paymentTransaction.setPaymentChannel("CASHIER");
@@ -278,21 +288,18 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         ).collect(Collectors.toList());
     }
 
-    private PaymentTransaction getPaymentTransaction(Long journeyId, BookJourneyRequest bookJourneyRequest) {
+    private PaymentTransaction getPaymentTransaction(Journey journey, User user, BookJourneyRequest bookJourneyRequest) {
         List<Integer> bookSeats = bookJourneyRequest.getPassengers().stream()
                 .map(BookJourneyRequest.Passenger::getSeatNumber)
                 .collect(Collectors.toList());
 
-        List<Passenger> bookPassengers = passengerRepository.findByBookedJourney_Journey_Id(journeyId);
+        List<Passenger> bookPassengers = passengerRepository.findByBookedJourney_Journey_Id(journey.getId());
         bookPassengers.forEach(passenger -> {
             if (bookSeats.contains(passenger.getSeatNumber())) {
                 throw new ApiException(SEAT_ALREADY_TAKEN.getMessage(), SEAT_ALREADY_TAKEN.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         });
 
-        Journey journey = getJourney(journeyId);
-
-        User user = getUser();
         verifyJourneyStatus(journey);
         List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey.getId());
 

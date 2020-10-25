@@ -6,14 +6,9 @@ package net.gogroups.gowaka.exception;
  */
 public enum ErrorCodes {
     RESOURCE_NOT_FOUND("Resource Not Found"),
-    CBS_USER_RESOURCE_NOT_FOUND("User not found CBS."),
     ACCESS_DENIED("Access is denied"),
     ACCESS_FORBIDDEN("Access is forbidden"),
     VALIDATION_ERROR("Validation Error"),
-    INT_SERVER_ERROR("Internal Server error"),
-    EXT_SERVER_ERROR("External server error"),
-    EXT_SERVICE_UNAVAILABLE("External service is unavailable"),
-    BAD_CREDENTIALS("Bad Credentials"),
     USER_NOT_IN_AGENCY("User not in this agency"),
     USER_ALREADY_IN_AN_AGENCY("User is already in this agency"),
     LICENSE_PLATE_NUMBER_ALREADY_IN_USE("License plate number is already in use."),
@@ -29,8 +24,6 @@ public enum ErrorCodes {
     CAR_ALREADY_HAS_JOURNEY("This Car has one or more booked journeys"),
     LOCATION_HAS_BOOKED_JOURNEY("This location has one or more booked journeys"),
     SEAT_STRUCTURE_NOT_FOUND("The seat structure does not exist or may have been deleted"),
-    MD5_HASH_FAILED("Failed to execute MD5 hashing"),
-    FILE_NOT_FOUND("File not found "),
     PASSENGER_ALREADY_CHECKED_IN("This passenger is already checked in"),
     SEAT_ALREADY_TAKEN("Seat already taken.");
 
