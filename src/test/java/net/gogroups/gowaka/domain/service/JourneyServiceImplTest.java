@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.cfs.service.CfsClientService;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
@@ -15,8 +16,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-
-import java.time.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -57,6 +58,12 @@ public class JourneyServiceImplTest {
     @Mock
     private PersonalAgency mockPersonalAgency;
 
+    @Mock
+    private GgCfsSurveyTemplateJsonRepository mockGgCfsSurveyTemplateJsonRepository;
+
+    @Mock
+    private CfsClientService mockCfsClientService;
+
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -70,6 +77,8 @@ public class JourneyServiceImplTest {
                 .journeyRepository(mockJourneyRepository)
                 .journeyStopRepository(mockJourneyStopRepository)
                 .bookedJourneyRepository(mockBookedJourneyRepository)
+                .ggCfsSurveyTemplateJsonRepository(mockGgCfsSurveyTemplateJsonRepository)
+                .cfsClientService(mockCfsClientService)
                 .build();
     }
 
@@ -628,6 +637,148 @@ public class JourneyServiceImplTest {
         expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
         journeyService.updateJourneyArrivalIndicator(4L, new JourneyArrivalIndicatorDTO());
     }
+
+    @Test
+    public void updateJourneyArrivalIndicator_should_shouldUpDate_and_sendNotificationToPassengers(){
+
+        GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = new GgCfsSurveyTemplateJson();
+        ggCfsSurveyTemplateJson.setId("1");
+        ggCfsSurveyTemplateJson.setSurveyTemplateJson("" +
+                "{\n" +
+                "  \"id\": \"d76cad8e-d126-47d5-8a69-47253c9bb0ba\",\n" +
+                "  \"name\": \"GoWaka Journey, 10/12/2020 Musago expres\",\n" +
+                "  \"description\": \"You are receiving this invite because you recently booked a trip using GoWaka. We actively use feedback to constantly improve our service and provide you with the best possible experience\",\n" +
+                "  \"status\": true,\n" +
+                "  \"createdAt\": \"2020-10-19 07:07:06\",\n" +
+                "  \"surveyInputs\": [\n" +
+                "    {\n" +
+                "      \"id\": 13,\n" +
+                "      \"title\": \"Please rate your experience using GoWaka\",\n" +
+                "      \"surveyInputType\": \"FIVE_STAR\",\n" +
+                "      \"required\": true,\n" +
+                "      \"position\": 1\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"id\": 14,\n" +
+                "      \"title\": \"Any concern or suggestion you will like us to know?\",\n" +
+                "      \"surveyInputType\": \"TEXT\",\n" +
+                "      \"required\": true,\n" +
+                "      \"position\": 2\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n");
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(111L);
+
+        User user = new User();
+        user.setUserId("1");
+        user.setOfficialAgency(officialAgency);
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("GG VIP1");
+        bus.setOfficialAgency(officialAgency);
+        officialAgency.setBuses(Collections.singletonList(bus));
+
+        TransitAndStop departureLocation = new TransitAndStop();
+        Location location = new Location();
+        location.setAddress("Buea motto park");
+        departureLocation.setLocation(location);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(true);
+        journey.setCar(bus);
+        journey.setDepartureLocation(departureLocation);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockGgCfsSurveyTemplateJsonRepository.findById(anyString()))
+                .thenReturn(Optional.of(ggCfsSurveyTemplateJson));
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO = new JourneyArrivalIndicatorDTO();
+        journeyArrivalIndicatorDTO.setArrivalIndicator(true);
+        journeyService.updateJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO);
+        verify(mockJourneyRepository).save(any());
+        verify(mockGgCfsSurveyTemplateJsonRepository).findById("1");
+        verify(mockCfsClientService).createAndAddCustomerToSurvey(any(), any());
+    }
+
+    @Test
+    public void updateJourneyArrivalIndicator_should_shouldUpDate_butNot_sendNotificationToPassengers_whenArrivalIndIsFalse(){
+
+        GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = new GgCfsSurveyTemplateJson();
+        ggCfsSurveyTemplateJson.setId("1");
+        ggCfsSurveyTemplateJson.setSurveyTemplateJson("" +
+                "{\n" +
+                "  \"id\": \"d76cad8e-d126-47d5-8a69-47253c9bb0ba\",\n" +
+                "  \"name\": \"GoWaka Journey, 10/12/2020 Musago expres\",\n" +
+                "  \"description\": \"You are receiving this invite because you recently booked a trip using GoWaka. We actively use feedback to constantly improve our service and provide you with the best possible experience\",\n" +
+                "  \"status\": true,\n" +
+                "  \"createdAt\": \"2020-10-19 07:07:06\",\n" +
+                "  \"surveyInputs\": [\n" +
+                "    {\n" +
+                "      \"id\": 13,\n" +
+                "      \"title\": \"Please rate your experience using GoWaka\",\n" +
+                "      \"surveyInputType\": \"FIVE_STAR\",\n" +
+                "      \"required\": true,\n" +
+                "      \"position\": 1\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"id\": 14,\n" +
+                "      \"title\": \"Any concern or suggestion you will like us to know?\",\n" +
+                "      \"surveyInputType\": \"TEXT\",\n" +
+                "      \"required\": true,\n" +
+                "      \"position\": 2\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n");
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(111L);
+
+        User user = new User();
+        user.setUserId("1");
+        user.setOfficialAgency(officialAgency);
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("GG VIP1");
+        bus.setOfficialAgency(officialAgency);
+        officialAgency.setBuses(Collections.singletonList(bus));
+
+        TransitAndStop departureLocation = new TransitAndStop();
+        Location location = new Location();
+        location.setAddress("Buea motto park");
+        departureLocation.setLocation(location);
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(true);
+        journey.setCar(bus);
+        journey.setDepartureLocation(departureLocation);
+
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO = new JourneyArrivalIndicatorDTO();
+        journeyArrivalIndicatorDTO.setArrivalIndicator(false);
+        journeyService.updateJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO);
+        verify(mockJourneyRepository).save(any());
+        verifyZeroInteractions(mockGgCfsSurveyTemplateJsonRepository);
+        verifyZeroInteractions(mockCfsClientService);
+    }
+
+
 
     /**
      * **USERS** Should be able to SharedRide Journey

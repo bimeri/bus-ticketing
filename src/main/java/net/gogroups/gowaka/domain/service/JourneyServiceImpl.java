@@ -151,20 +151,22 @@ public class JourneyServiceImpl implements JourneyService {
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
         }
-        try {
-            List<CustomerDTO> customers = new ArrayList<>();
-            journey.getBookedJourneys().stream()
-                    .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(PayAmGoPaymentStatus.COMPLETED.toString()))
-                    .map(BookedJourney::getPassengers)
-                    .forEach(passengers -> passengers.forEach(passenger -> customers.add(new CustomerDTO(passenger.getEmail(), passenger.getName()))));
+        if(journeyArrivalIndicatorDTO.getArrivalIndicator()) {
+            try {
+                List<CustomerDTO> customers = new ArrayList<>();
+                journey.getBookedJourneys().stream()
+                        .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(PayAmGoPaymentStatus.COMPLETED.toString()))
+                        .map(BookedJourney::getPassengers)
+                        .forEach(passengers -> passengers.forEach(passenger -> customers.add(new CustomerDTO(passenger.getEmail(), passenger.getName()))));
 
-            GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = ggCfsSurveyTemplateJsonRepository.findById("1").get();
-            SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
-            surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + "from " + journey.getDepartureLocation().getLocation().getAddress());
-            cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
-        } catch (Exception e) {
-            log.error("Error sending request to CFS ");
-            e.printStackTrace();
+                GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = ggCfsSurveyTemplateJsonRepository.findById("1").get();
+                SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
+                surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + " from " + journey.getDepartureLocation().getLocation().getAddress());
+                cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
+            } catch (Exception e) {
+                log.error("Error sending request to CFS ");
+                e.printStackTrace();
+            }
         }
     }
 
