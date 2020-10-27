@@ -164,6 +164,7 @@ public class JourneyServiceImpl implements JourneyService {
             cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
         } catch (Exception e) {
             log.error("Error sending request to CFS ");
+            e.printStackTrace();
         }
     }
 
