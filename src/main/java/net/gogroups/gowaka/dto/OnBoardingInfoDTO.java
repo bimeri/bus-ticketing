@@ -46,7 +46,7 @@ public class OnBoardingInfoDTO {
                     }
                 }
                 // location
-                TransitAndStop transitAndStopDest = journey.getDestination();
+                TransitAndStop transitAndStopDest = bookedJourney.getDestination();
                 TransitAndStop transitAndStopDep = journey.getDepartureLocation();
                 if (transitAndStopDest != null) {
                     Location locationDest = transitAndStopDest.getLocation();
