@@ -8,10 +8,10 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
-import net.gogroups.gowaka.exception.BusinessValidationException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.BookJourneyService;
 import net.gogroups.gowaka.service.JourneyService;
+import net.gogroups.gowaka.service.ServiceChargeService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
@@ -21,7 +21,6 @@ import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
-import org.bouncycastle.ocsp.OCSPReqGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -61,11 +60,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private FileStorageService fileStorageService;
     private PaymentUrlResponseProps paymentUrlResponseProps;
     private JourneyService journeyService;
+    private ServiceChargeService serviceChargeService;
 
     private EmailContentBuilder emailContentBuilder;
 
     @Autowired
-    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, EmailContentBuilder emailContentBuilder) {
+    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, ServiceChargeService serviceChargeService, EmailContentBuilder emailContentBuilder) {
         this.bookedJourneyRepository = bookedJourneyRepository;
         this.journeyRepository = journeyRepository;
         this.userRepository = userRepository;
@@ -77,6 +77,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.fileStorageService = fileStorageService;
         this.paymentUrlResponseProps = paymentUrlResponseProps;
         this.journeyService = journeyService;
+        this.serviceChargeService = serviceChargeService;
         this.emailContentBuilder = emailContentBuilder;
     }
 
@@ -88,6 +89,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         User user = getUser();
         PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest);
 
+        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
+        if (serviceCharges.size() > 0) {
+            Double chargeAmount = paymentTransaction.getAmount() * (serviceCharges.get(0).getPercentageCharge() / 100);
+            Double amountWithoutCharge = paymentTransaction.getAmount();
+            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+        }
         PaymentTransaction savedPaymentTransaction = paymentTransactionRepository.save(paymentTransaction);
 
         PayAmGoRequestDTO payAmGoRequestDTO = getPayAmGoRequestDTO(savedPaymentTransaction);
@@ -105,9 +112,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         Journey journey = getJourney(journeyId);
         User user = getUser();
-        OfficialAgency agency = ((Bus)journey.getCar()).getOfficialAgency();
+        OfficialAgency agency = ((Bus) journey.getCar()).getOfficialAgency();
 
-        if( user.getOfficialAgency()==null || !user.getOfficialAgency().getId().equals(agency.getId())){
+        if (user.getOfficialAgency() == null || !user.getOfficialAgency().getId().equals(agency.getId())) {
             throw new ApiException(USER_NOT_IN_AGENCY.getMessage(), USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 

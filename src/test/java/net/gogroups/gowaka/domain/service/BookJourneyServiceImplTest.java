@@ -8,6 +8,7 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.BookJourneyService;
 import net.gogroups.gowaka.service.JourneyService;
+import net.gogroups.gowaka.service.ServiceChargeService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.model.PayAmGoRequestDTO;
@@ -26,6 +27,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +69,8 @@ public class BookJourneyServiceImplTest {
     private EmailContentBuilder mockEmailContentBuilder;
     @Mock
     private JourneyService mockJourneyService;
+    @Mock
+    private ServiceChargeService mockServiceChargeService;
 
     private BookJourneyService bookJourneyService;
     private ArgumentCaptor<BookedJourney> bookedJourneyArgumentCaptor = ArgumentCaptor.forClass(BookedJourney.class);
@@ -90,7 +94,7 @@ public class BookJourneyServiceImplTest {
                 mockUserRepository, mockPaymentTransactionRepository, mockPassengerRepository,
                 mockUserService, mockPayAmGoService,
                 mocKNotificationService, mockFileStorageService, paymentUrlResponseProps,
-                mockJourneyService, mockEmailContentBuilder);
+                mockJourneyService, mockServiceChargeService, mockEmailContentBuilder);
 
         Location destinationLocation = new Location();
         destinationLocation.setAddress("Kumba Moto Part");
@@ -397,6 +401,8 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(userDto);
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
+        when(mockServiceChargeService.getServiceCharges())
+                .thenReturn(Collections.singletonList(new ServiceChargeDTO("sc-id", 10.0)));
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setId(101L);
         when(mockBookedJourneyRepository.save(any()))
@@ -435,7 +441,7 @@ public class BookJourneyServiceImplTest {
         assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
-        assertThat(paymentTransactionValue.getAmount()).isEqualTo(5000.0);
+        assertThat(paymentTransactionValue.getAmount()).isEqualTo(5500.0);
         assertThat(paymentTransactionValue.getAppTransactionNumber()).isNotEmpty();
         assertThat(paymentTransactionValue.getAppUserEmail()).isEqualTo("email@email.com");
         assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("John");
