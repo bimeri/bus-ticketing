@@ -13,13 +13,12 @@ import java.util.List;
  */
 @Data
 @Entity
-public class User {
+public class User extends BaseEntity{
 
     @Id
     private String userId;
     private String phoneNumber;
     private String idCardNumber;
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "user")
     List<BookedJourney> bookedJourneys;

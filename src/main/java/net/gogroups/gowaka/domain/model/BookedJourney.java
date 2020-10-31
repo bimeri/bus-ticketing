@@ -13,7 +13,7 @@ import java.util.List;
  */
 @Data
 @Entity
-public class BookedJourney {
+public class BookedJourney extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,8 +35,6 @@ public class BookedJourney {
 
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     public void addPassenger(Passenger passenger){
         this.passengers.add(passenger);

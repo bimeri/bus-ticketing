@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @Entity
 @EqualsAndHashCode
-public class Journey {
+public class Journey extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,8 +43,6 @@ public class Journey {
 
     @Column(name = "arrival_indicator")
     private Boolean arrivalIndicator;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BookedJourney> bookedJourneys;

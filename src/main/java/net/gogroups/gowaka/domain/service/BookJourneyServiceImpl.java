@@ -138,7 +138,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 ).forEach(bookedJourney -> {
             PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
             String transactionStatus = paymentTransaction.getTransactionStatus();
-            long untilMinute = paymentTransaction.getCreateAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
+            long untilMinute = paymentTransaction.getCreatedAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
             if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
                     && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
                 //TODO: should look for the next available seat and set

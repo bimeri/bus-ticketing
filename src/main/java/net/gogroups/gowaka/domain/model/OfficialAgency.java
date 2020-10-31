@@ -12,7 +12,7 @@ import java.util.List;
  */
 @Data
 @Entity
-public class OfficialAgency {
+public class OfficialAgency extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -140,6 +140,7 @@ public class BookJourneyServiceImplTest {
         paymentTransaction.setPaymentChannel("MTN_MOBILE_MONEY");
         paymentTransaction.setAppUserPhoneNumber("999999");
         paymentTransaction.setAppUserEmail("email@email.net");
+        paymentTransaction.setCreatedAt(LocalDateTime.now());
 
 
         BookedJourney bookedJourney = new BookedJourney();
@@ -746,7 +747,7 @@ public class BookJourneyServiceImplTest {
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setTransactionStatus(WAITING.toString());
-        paymentTransaction.setCreateAt(LocalDateTime.now().minusMinutes(5));
+        paymentTransaction.setCreatedAt(LocalDateTime.now().minusMinutes(5));
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
 
@@ -769,7 +770,7 @@ public class BookJourneyServiceImplTest {
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setTransactionStatus(WAITING.toString());
-        paymentTransaction.setCreateAt(LocalDateTime.now().minusMinutes(6));
+        paymentTransaction.setCreatedAt(LocalDateTime.now().minusMinutes(6));
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
 

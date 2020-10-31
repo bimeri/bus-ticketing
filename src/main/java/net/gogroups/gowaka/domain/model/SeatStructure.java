@@ -6,7 +6,7 @@ import javax.persistence.*;
 
 @Entity
 @Data
-public class SeatStructure {
+public class SeatStructure extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

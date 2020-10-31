@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Car {
+public abstract class Car extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +32,6 @@ public abstract class Car {
     @Column(name = "is_car_approved")
     private Boolean isCarApproved;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "car")
     private List<Journey> journeys;
