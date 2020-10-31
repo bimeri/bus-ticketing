@@ -51,7 +51,7 @@ public class ServiceChargeIntegrationTest {
     @Before
     public void setUp() throws Exception {
         serviceChargeServiceRepository.save(new ServiceCharge("sc-id", 5.0));
-        jwtToken = ApiSecurityTestUtils.createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"GW_ADMIN"});
+        jwtToken = ApiSecurityTestUtils.createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"GW_ADMIN", "USERS"});
     }
 
     @Test

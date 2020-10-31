@@ -22,7 +22,7 @@ public class ServiceChargeController {
         this.serviceChargeService = serviceChargeService;
     }
 
-    @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
+    @PreAuthorize("hasRole('USERS')")
     @GetMapping
     public ResponseEntity<List<ServiceChargeDTO>> getServiceCharge(){
         return ResponseEntity.ok(serviceChargeService.getServiceCharges());
