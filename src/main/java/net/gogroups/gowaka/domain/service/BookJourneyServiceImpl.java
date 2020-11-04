@@ -492,7 +492,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setEmail(psngr.getEmail());
                     passenger.setPhoneNumber(psngr.getPhoneNumber());
                     passenger.setPassengerCheckedInIndicator(false);
-                    passenger.setCheckedInCode(userId + journeyId.toString() + "-" + new Date().getTime());
+                    passenger.setCheckedInCode(generateCode(userId, journeyId));
                     return passenger;
                 }).collect(Collectors.toList());
 
@@ -585,4 +585,11 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
 
+    private String generateCode(String userId, Long journeyId) {
+
+        long timeSeed = System.nanoTime();
+        double randSeed = Math.random() * 1000;
+        long midSeed = (long) (timeSeed * randSeed);
+        return userId + journeyId.toString() + "-" + (midSeed + "").substring(0, 6);
+    }
 }
