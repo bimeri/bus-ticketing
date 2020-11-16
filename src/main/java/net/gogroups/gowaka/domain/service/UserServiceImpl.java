@@ -80,11 +80,17 @@ public class UserServiceImpl implements UserService {
         user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
 
+        TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setAccessToken(savedApiSecurityUser.getToken().getToken());
+        tokenDTO.setExpiredIn(savedApiSecurityUser.getToken().getExpiredIn());
+        tokenDTO.setRefreshToken(savedApiSecurityUser.getToken().getRefreshToken());
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getUserId());
         userDTO.setFullName(createUserRequest.getFullName());
         userDTO.setEmail(createUserRequest.getEmail());
         userDTO.setRoles(Collections.singletonList(roles));
+        userDTO.setToken(tokenDTO);
 
         sendWelcomeEmail(createUserRequest);
 

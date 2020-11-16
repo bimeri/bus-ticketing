@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.dto.CreateUserRequest;
 import net.gogroups.gowaka.dto.EmailDTO;
 import net.gogroups.gowaka.dto.EmailPasswordDTO;
 import net.gogroups.gowaka.dto.UpdateProfileDTO;
 import net.gogroups.security.model.ApiSecurityAccessToken;
-import net.gogroups.gowaka.dto.CreateUserRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,7 +83,12 @@ public class UserControllerIntegrationTest {
             "  \"username\": \"eddytnk\",\n" +
             "  \"fullName\": \"Edward Tanko\",\n" +
             "  \"email\": \"tanko.edward@go-groups.net\",\n" +
-            "  \"roles\": \"users\"\n" +
+            "  \"roles\": \"users\",\n" +
+            "  \"token\": {\n" +
+            "  \"token\": \"token\",\n" +
+            "  \"refreshToken\": \"refresh-token\",\n" +
+            "  \"expiredIn\": \"100000\"" +
+            "  }\n" +
             "}";
 
     private String failureUserTokenResponse = "{\n" +

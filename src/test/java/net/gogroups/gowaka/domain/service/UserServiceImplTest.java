@@ -92,6 +92,7 @@ public class UserServiceImplTest {
 
         ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
         apiSecurityUser.setId("12");
+        apiSecurityUser.setToken(new ApiSecurityAccessToken());
 
         ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
         accessToken.setToken("jwt-token");
@@ -166,7 +167,7 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
         assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null)");
+        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null, token=null)");
 
     }
 
