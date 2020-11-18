@@ -148,56 +148,7 @@ public class JourneyControllerIntegrationTest {
         bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
-        String expectedResponse = "{\"id\":1,\"departureTime\":\"" + currentDateTime + "\"," +
-                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
-                "\"departureIndicator\":false," +
-                "\"arrivalIndicator\":false," +
-                "\"timestamp\":\"" + currentTimeStamp + "\"," +
-                "\"amount\": 1000.0," +
-                "\"driver\":{" +
-                "\"driverName\":\"John Doe\"," +
-                "\"driverLicenseNumber\":\"1234567899\"" +
-                "}," +
-                "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Buea\"," +
-                "\"address\":\"Mile 17 Motto Park\"" +
-                "}," +
-                "\"destination\":{" +
-                "\"id\":" + transitAndStop1.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Kumba\"," +
-                "\"address\":\"Buea Road Motor Park\"," +
-                "\"amount\":1000.0" +
-                "}," +
-                "\"transitAndStops\":[" +
-                "{" +
-                "\"id\":"+ transitAndStop2.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\": \"South West\"," +
-                "\"city\":\"Muyuka\"," +
-                "\"address\":\"Muyuka Main Park\"," +
-                "\"amount\": 1000" +
-                "}," +
-                "{" +
-                "\"id\":" + transitAndStop3.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Ekona\"," +
-                "\"address\":\"Ekona Main Park\"," +
-                "\"amount\": 2000 }" +
-                "]," +
-                "\"car\":{" +
-                "\"id\":" + bus.getId() + "," +
-                "\"name\":\"Kumba One Chances\"," +
-                "\"licensePlateNumber\":\"123454387\"," +
-                "\"isOfficialAgencyIndicator\":true," +
-                "\"isCarApproved\":true," +
-                "\"timestamp\":\"" + currentTimeStamp + "\"" +
-                "}}";
+
         String reqBody = "{\n" +
                 "  \"departureTime\": \"" + currentDateTime + "\",\n" +
                 "  \"estimatedArrivalTime\": \"" + currentDateTime + "\",\n" +
@@ -218,7 +169,6 @@ public class JourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(content().json(expectedResponse))
                 .andReturn();
 
     }
