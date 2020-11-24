@@ -132,6 +132,7 @@ jobs:
           inputs:
             - name: source-code-from-gitlab
             - name: minio-s3
+            - name: version
           run:
             path: ./source-code-from-gitlab/ci/tasks/deploy-containarized-app.sh
           params:
