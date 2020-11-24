@@ -6,11 +6,12 @@ ls -l
 appName=$LCS_APPNAME
 appType=$LCS_APPTYPE
 port=$LCS_PORT
-version=$LCS_VERSION
+version=$(cat version/version)
 registry=$LCS_REGISTRY
 username=$LCS_USERNAME
 password=$LCS_PASSWORD
 url=$LCS_URL
+appFile=minio-s3/*.jar
 
 echo "${version}"
 
@@ -24,4 +25,4 @@ echo "{
   \"version\": \"${version}\"
 }" >./config.json
 
-curl -v -F 'appfile=@minio-s3/*.jar' -F 'config=@./config.json' "${url}"
+curl -v -F "appfile=@${appFile}" -F 'config=@./config.json' "${url}"
