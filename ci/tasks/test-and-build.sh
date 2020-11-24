@@ -15,5 +15,5 @@ echo "Packaging jar file"
 echo "Current directory ..."
 ls
 echo "copying jar to ../jar-file directory"
-mv ./target/*.jar  ../jar-file/gowaka-"${version}".jar
+mv ./target/*.jar  ../jar-file/gowaka-service-"${version}".jar
 ls -l ../jar-file

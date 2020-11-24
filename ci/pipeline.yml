@@ -10,7 +10,7 @@ resources:
   - name: minio-s3
     type: s3
     source:
-      regexp: gowaka-(.*).jar
+      regexp: gowaka-service-(.*).jar
       endpoint: ((minio_endpoint_url))
       bucket: ((minio_bucket))
       access_key_id: ((minio_access_key))
