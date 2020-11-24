@@ -24,4 +24,4 @@ echo "{
   \"version\": \"${version}\"
 }" >./config.json
 
-curl -F 'appfile=@minio-s3/*.jar' -F 'config=@./config.json' "${url}"
+curl -v -F 'appfile=@minio-s3/*.jar' -F 'config=@./config.json' "${url}"
