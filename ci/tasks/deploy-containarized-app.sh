@@ -2,6 +2,7 @@
 set -e
 pwd
 ls -l
+ls minio-s3
 
 appName=$LCS_APPNAME
 appType=$LCS_APPTYPE
@@ -11,7 +12,7 @@ registry=$LCS_REGISTRY
 username=$LCS_USERNAME
 password=$LCS_PASSWORD
 url=$LCS_URL
-appFile=minio-s3/gowaka-*.jar
+appFile=minio-s3/gowaka-service-*.jar
 
 echo "${version}"
 
