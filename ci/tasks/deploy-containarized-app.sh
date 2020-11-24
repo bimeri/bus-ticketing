@@ -12,7 +12,7 @@ registry=$LCS_REGISTRY
 username=$LCS_USERNAME
 password=$LCS_PASSWORD
 url=$LCS_URL
-appFile=minio-s3/gowaka-service-*.jar
+appFile=minio-s3/gowaka-service-${version}.jar
 
 echo "${version}"
 
