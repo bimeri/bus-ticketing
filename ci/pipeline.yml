@@ -111,6 +111,38 @@ jobs:
             PAYAMGO_CLIENT_SECRET: ((payamgo_client_secret))
             AS_PUBLIC_KEY: ((as_public_key))
 
+
+  - name: deploy-containarized-image
+    build_log_retention:
+      builds: 10
+    public: true
+    plan:
+      - get: minio-s3
+        passed: [ deploy-dev ]
+      - get: source-code-from-gitlab
+      - get: version
+      - task: run-deploy-image-script
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: tutum/curl
+              tag: latest
+          inputs:
+            - name: source-code-from-gitlab
+            - name: minio-s3
+          run:
+            path: ./source-code-from-gitlab/ci/tasks/deploy-containarized-app.sh
+          params:
+            LCS_APPNAME: ((lcs_appName))
+            LCS_APPTYPE: ((lcs_appType))
+            LCS_PORT: ((lcs_port))
+            LCS_REGISTRY: ((lcs_registry))
+            LCS_USERNAME: ((lcs_username))
+            LCS_PASSWORD: ((lcs_password))
+            LCS_URL: ((lcs_url))
+
   - name: major
     plan:
       - put: version
