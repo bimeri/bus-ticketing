@@ -20,6 +20,9 @@ public class OnBoardingInfoDTO {
     private String departureLocation;
     private LocalDateTime departureTime;
     private String destinationLocation;
+    private String paymentMethod;
+    private LocalDateTime paymentDate;
+    private String paidBy;
 
     private List<PassengerDTO> passengers = new ArrayList<>();
 
@@ -32,6 +35,9 @@ public class OnBoardingInfoDTO {
             // currency
             if (paymentTransaction != null) {
                 this.currencyCode = paymentTransaction.getCurrencyCode();
+                this.paymentMethod = paymentTransaction.getPaymentChannel();
+                this.paymentDate = paymentTransaction.getPaymentDate();
+                this.paidBy = paymentTransaction.getAppUserFirstName() + " " + paymentTransaction.getAppUserLastName();
             }
             // journey
             if (journey != null) {
