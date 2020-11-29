@@ -325,6 +325,13 @@ public class JourneyServiceImpl implements JourneyService {
         return journeys;
     }
 
+    @Override
+    public List<JourneyResponseDTO> searchAllAvailableJourney() {
+        return journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc().stream()
+                .map(this::mapToJourneyResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     private List<JourneyResponseDTO> getJourneyResponseDTOS(Long departureLocationId, Long destinationLocationId, LocalDateTime dateTime) {
 
         TransitAndStop departureLocation = getTransitAndStopCanAppendErrMsg(departureLocationId, "Departure");

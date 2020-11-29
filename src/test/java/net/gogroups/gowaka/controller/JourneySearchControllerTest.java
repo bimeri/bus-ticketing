@@ -1,12 +1,18 @@
 package net.gogroups.gowaka.controller;
 
+import net.gogroups.gowaka.dto.JourneyResponseDTO;
 import net.gogroups.gowaka.service.JourneyService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -41,6 +47,14 @@ public class JourneySearchControllerTest {
         journeySearchController.searchJourney();
         verify(mockJourneyService).searchJourney();
 
+    }
+
+    @Test
+    public void getAllAvailableJourney_calls_JourneyService_returns_userJourneys() {
+
+        ResponseEntity<List<JourneyResponseDTO>> response = journeySearchController.getAllAvailableJourney();
+        verify(mockJourneyService).searchAllAvailableJourney();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
 

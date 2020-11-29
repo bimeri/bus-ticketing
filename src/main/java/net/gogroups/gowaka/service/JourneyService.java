@@ -49,6 +49,8 @@ public interface JourneyService {
 
     List<JourneyResponseDTO> searchJourney();
 
+    List<JourneyResponseDTO> searchAllAvailableJourney();
+
     // service level methods
     void checkJourneyCarInOfficialAgency(Journey journey);
 }

@@ -779,7 +779,6 @@ public class JourneyServiceImplTest {
     }
 
 
-
     /**
      * **USERS** Should be able to SharedRide Journey
      * #169527991
@@ -1421,6 +1420,30 @@ public class JourneyServiceImplTest {
         verify(mockTransitAndStopRepository, times(2)).findById(2L);
         verify(mockBookedJourneyRepository).findTopByUser_UserIdOrderByIdDesc("12");
 
+        assertThat(journeyResponseDTOS.size(), is(1));
+    }
+
+    @Test
+    public void searchAllAvailableJourney_return_all_journey_withDepartureIndicatorFalse() {
+
+        BookedJourney bookedJourney = new BookedJourney();
+        TransitAndStop destination = new TransitAndStop();
+        TransitAndStop departure = new TransitAndStop();
+        Journey journey = new Journey();
+
+        journey.setDepartureLocation(departure);
+        journey.setDestination(destination);
+        journey.setDepartureTime(LocalDateTime.now());
+        destination.setId(2L);
+        departure.setId(1L);
+        bookedJourney.setDestination(destination);
+        bookedJourney.setJourney(journey);
+
+        when(mockJourneyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc())
+                .thenReturn(Collections.singletonList(journey));
+
+        List<JourneyResponseDTO> journeyResponseDTOS = journeyService.searchAllAvailableJourney();
+        verify(mockJourneyRepository).findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
         assertThat(journeyResponseDTOS.size(), is(1));
     }
 }
