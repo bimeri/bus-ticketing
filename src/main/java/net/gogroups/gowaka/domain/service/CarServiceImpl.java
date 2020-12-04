@@ -103,7 +103,7 @@ public class CarServiceImpl implements CarService {
         Optional<Bus> busOptional = getBuses(getOfficialAgency(verifyCurrentAuthUser())).stream()
                 .filter(bus -> bus.getId().equals(carId))
                 .findFirst();
-        if(!busOptional.isPresent()){
+        if (!busOptional.isPresent()) {
             throw new ResourceNotFoundException(RESOURCE_NOT_FOUND.getMessage());
         }
         return getBusResponseDTO(busOptional.get());
@@ -148,6 +148,8 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void updateAgencyCarInfo(Long carId, BusDTO busDTO) {
+
+        List<SeatStructure> allByNumberOfSeats = seatStructureRepository.findAllByNumberOfSeats(busDTO.getNumberOfSeats());
         // which car to update?
         Car car = getCarById(carId);
         // check if car has journey booked
@@ -157,7 +159,11 @@ public class CarServiceImpl implements CarService {
         // update car successfully
         if (busDTO.getName() != null) car.setName(busDTO.getName());
         car.setLicensePlateNumber(busDTO.getLicensePlateNumber());
-        if (car instanceof Bus) ((Bus) car).setNumberOfSeats(busDTO.getNumberOfSeats());
+        if (car instanceof Bus) {
+            Bus bus = (Bus) car;
+            bus.setNumberOfSeats(busDTO.getNumberOfSeats());
+            if (!allByNumberOfSeats.isEmpty()) bus.setSeatStructure(allByNumberOfSeats.get(0));
+        }
         carRepository.save(car);
     }
 
@@ -176,9 +182,9 @@ public class CarServiceImpl implements CarService {
     @Override
     public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
         List<SeatStructure> seatStructures = new ArrayList<>();
-        if(numberOfSeats.equals(0)){
+        if (numberOfSeats.equals(0)) {
             seatStructures = seatStructureRepository.findAll();
-        }else {
+        } else {
             seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
         }
         return seatStructures.stream()

@@ -22,23 +22,24 @@ public class BaseEntity {
     protected String updatedBy = "";
 
     @PrePersist
-    public void prePersist(){
+    public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         addUpdatedByUser();
     }
 
     @PreUpdate
-    public void preUpdate(){
+    public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
         addUpdatedByUser();
     }
 
-    void addUpdatedByUser(){
+    void addUpdatedByUser() {
         try {
             Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            this.updatedBy = ((UserDetailsImpl) principal).getFullName();
-        }catch (Exception ex){
+            UserDetailsImpl user = (UserDetailsImpl) principal;
+            this.updatedBy = user.getFullName() + "<" + user.getUsername() + ">";
+        } catch (Exception ex) {
             this.updatedBy = "Default";
         }
     }

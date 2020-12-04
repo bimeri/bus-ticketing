@@ -77,7 +77,8 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         user.setUserId(savedApiSecurityUser.getId());
-        user.setCreatedAt(LocalDateTime.now());
+        user.setEmail(savedApiSecurityUser.getEmail());
+        user.setFullName(savedApiSecurityUser.getFullName());
         userRepository.save(user);
 
         TokenDTO tokenDTO = new TokenDTO();
@@ -164,13 +165,14 @@ public class UserServiceImpl implements UserService {
             throw new ResourceNotFoundException("User not found.");
         }
         User user = userOptional.get();
-        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
-        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
-        userRepository.save(user);
         if (!currentAuthUser.getFullName().equals(updateProfileDTO.getFullName())) {
             ApiSecurityAccessToken apiSecurityAccessToken = getApiSecurityAccessToken();
             apiSecurityService.updateUserInfo(user.getUserId(), "FULL_NAME", updateProfileDTO.getFullName(), apiSecurityAccessToken.getToken());
+            user.setFullName(updateProfileDTO.getFullName());
         }
+        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
+        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
+        userRepository.save(user);
     }
 
     @Override

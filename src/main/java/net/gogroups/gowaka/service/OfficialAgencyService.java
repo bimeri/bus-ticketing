@@ -1,6 +1,8 @@
 package net.gogroups.gowaka.service;
 
 import net.gogroups.gowaka.dto.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 /**
@@ -10,8 +12,18 @@ import java.util.List;
 public interface OfficialAgencyService {
 
     OfficialAgencyDTO createOfficialAgency(CreateOfficialAgencyDTO createOfficialAgencyDTO);
+
+    void uploadAgencyLogo(Long agencyId, MultipartFile logoFile);
+
+    List<OfficialAgencyDTO> getAllAgencies();
+
+    void updateOfficialAgency(Long agencyId, OfficialAgencyDTO officialAgencyDTO);
+
     OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO);
+
     List<OfficialAgencyUserDTO> getAgencyUsers();
+
     OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO);
+
     void removeAgencyUser(String userId);
 }

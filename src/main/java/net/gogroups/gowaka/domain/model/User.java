@@ -17,6 +17,8 @@ public class User extends BaseEntity{
 
     @Id
     private String userId;
+    private String fullName;
+    private String email;
     private String phoneNumber;
     private String idCardNumber;
 
@@ -25,6 +27,8 @@ public class User extends BaseEntity{
 
     @ManyToOne
     private OfficialAgency officialAgency;
+
+    private Boolean  isAgencyAdminIndicator = false;
 
     @OneToOne
     private PersonalAgency personalAgency;

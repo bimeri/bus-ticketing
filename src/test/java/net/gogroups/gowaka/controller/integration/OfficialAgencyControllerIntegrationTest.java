@@ -7,6 +7,7 @@ import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.CreateOfficialAgencyDTO;
 import net.gogroups.gowaka.dto.EmailDTO;
+import net.gogroups.gowaka.dto.OfficialAgencyDTO;
 import net.gogroups.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import org.junit.After;
 import org.junit.Before;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -67,7 +69,6 @@ public class OfficialAgencyControllerIntegrationTest {
     @Autowired
     private RestTemplate restTemplate;
 
-
     private MockRestServiceServer mockServer;
 
     private String successClientTokenResponse = "{\n" +
@@ -92,14 +93,13 @@ public class OfficialAgencyControllerIntegrationTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         mockServer.reset();
     }
 
 
     private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
-//                .andExpect(header("content-type", "application/json;charset=UTF-8"))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
@@ -135,7 +135,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
 
-        String expectedResponse = "{\"id\":1,\"agencyName\":\"GG Express\",\"agencyRegistrationNumber\":\"123456789\",\"agencyAdmin\":{\"id\":\"10\",\"fullName\":\"Agency User\"}}\n";
 
         RequestBuilder requestBuilder = post("/api/protected/agency")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -143,13 +142,78 @@ public class OfficialAgencyControllerIntegrationTest {
                 .content(new ObjectMapper().writeValueAsString(createOfficialAgencyDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andExpect(content().json(expectedResponse))
-                .andReturn();
+                .andExpect(status().isOk());
 
         User aUser = userRepository.findById("10").get();
         assertThat(aUser.getOfficialAgency()).isNotNull();
 
+    }
+
+    @Test
+    public void updateAgency_success_204() throws Exception {
+
+        User agencyAdminUser = new User();
+        agencyAdminUser.setUserId("10");
+        agencyAdminUser.setCreatedAt(LocalDateTime.now());
+        userRepository.save(agencyAdminUser);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Agency");
+        officialAgency.setAgencyRegistrationNumber("reg");
+        OfficialAgency officialAgency1 = officialAgencyRepository.save(officialAgency);
+
+        OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
+        officialAgency.setAgencyName("Agency2");
+        officialAgency.setAgencyRegistrationNumber("reg2");
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
+        RequestBuilder requestBuilder = put("/api/protected/agency/"+officialAgency1.getId())
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(officialAgencyDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void updateAgencyLogo_success_204() throws Exception {
+
+        User agencyAdminUser = new User();
+        agencyAdminUser.setUserId("10");
+        agencyAdminUser.setCreatedAt(LocalDateTime.now());
+        userRepository.save(agencyAdminUser);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Agency");
+        officialAgency.setAgencyRegistrationNumber("reg");
+        OfficialAgency officialAgency1 = officialAgencyRepository.save(officialAgency);
+
+        startMockServerWith("http://ggs2.space:9092/api/protected/files?bucketDirectory=GoWaka/agency_logos/"+officialAgency1.getId()+"&identifier=PROTECTED",
+                HttpStatus.OK, "");
+
+        MockMultipartFile file = new MockMultipartFile("file", "logo.png","multipart/form-data", "My Logo Content".getBytes());
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
+        RequestBuilder requestBuilder = multipart("/api/protected/agency/"+officialAgency1.getId()+"/logo")
+                .file(file)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void getAllAgency_success_200() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
+        RequestBuilder requestBuilder = get("/api/protected/agency")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk());
     }
 
     @Test

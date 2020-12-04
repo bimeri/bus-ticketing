@@ -1,17 +1,20 @@
 package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
+import net.gogroups.gowaka.domain.model.Bus;
 import net.gogroups.gowaka.domain.model.OfficialAgency;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
-import net.gogroups.security.model.ApiSecurityAccessToken;
-import net.gogroups.security.model.ApiSecurityUser;
-import net.gogroups.security.service.ApiSecurityService;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.service.OfficialAgencyService;
 import net.gogroups.gowaka.service.UserService;
+import net.gogroups.security.model.ApiSecurityAccessToken;
+import net.gogroups.security.model.ApiSecurityUser;
+import net.gogroups.security.service.ApiSecurityService;
+import net.gogroups.storage.constants.FileAccessType;
+import net.gogroups.storage.service.FileStorageService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,8 +23,11 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +57,9 @@ public class OfficialAgencyServiceImplTest {
     @Mock
     private ApiSecurityService mockApiSecurityService;
 
+    @Mock
+    private FileStorageService mockFileStorageService;
+
     private ClientUserCredConfig clientUserCredConfig;
 
     private OfficialAgencyService officialAgencyService;
@@ -65,7 +74,7 @@ public class OfficialAgencyServiceImplTest {
         this.clientUserCredConfig.setClientId("client-secret");
         this.clientUserCredConfig.setAppName("GoWaka");
 
-        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig);
+        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService);
     }
 
     @Test
@@ -133,6 +142,55 @@ public class OfficialAgencyServiceImplTest {
         assertThat(officialAgencyDTO.getAgencyAdmin()).isNotNull();
         assertThat(officialAgencyDTO.getAgencyName()).isEqualTo("Amo Mezam");
         assertThat(officialAgencyDTO.getAgencyRegistrationNumber()).isEqualTo("ABC20111234");
+
+    }
+
+    @Test
+    public void uploadAgencyLogo_calls_fileStorageService() throws IOException {
+        MockMultipartFile file = new MockMultipartFile("file", "logo.png", "multipart/form-data", "My logo Content".getBytes());
+        when(mockOfficialAgencyRepository.findById(2L))
+                .thenReturn(Optional.of(new OfficialAgency()));
+        officialAgencyService.uploadAgencyLogo(2L, file);
+        verify(mockFileStorageService).saveFile("logo.png", file.getBytes(), "agency_logos/2", FileAccessType.PROTECTED);
+
+    }
+
+    @Test
+    public void getAllOfficialAgencies_returnAgencyDTO() throws IOException {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setLogo("agency_logos/2/logo.png");
+        officialAgency.setBuses(Collections.singletonList(new Bus()));
+        when(mockOfficialAgencyRepository.findAll())
+                .thenReturn(Collections.singletonList(officialAgency));
+        when(mockFileStorageService.getFilePath("agency_logos/2/logo.png", "", FileAccessType.PROTECTED))
+                .thenReturn("http://localhost/logo.png");
+        List<OfficialAgencyDTO> allAgencies = officialAgencyService.getAllAgencies();
+        assertThat(allAgencies.size()).isEqualTo(1);
+        assertThat(allAgencies.get(0).getBuses().size()).isEqualTo(1);
+        assertThat(allAgencies.get(0).getLogo()).isEqualTo("http://localhost/logo.png");
+
+    }
+
+    @Test
+    public void updateOfficialAgencies_returnAgencyDTO() {
+
+
+        ArgumentCaptor<OfficialAgency> officialAgencyArgumentCaptor = ArgumentCaptor.forClass(OfficialAgency.class);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        when(mockOfficialAgencyRepository.findById(2L))
+                .thenReturn(Optional.of(officialAgency));
+
+        OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
+        officialAgencyDTO.setAgencyName("GG Agency");
+        officialAgencyDTO.setAgencyRegistrationNumber("Registration GG Agency");
+
+        officialAgencyService.updateOfficialAgency(2L, officialAgencyDTO);
+        verify(mockOfficialAgencyRepository).save(officialAgencyArgumentCaptor.capture());
+
+        assertThat(officialAgencyArgumentCaptor.getValue().getAgencyName()).isEqualTo("GG Agency");
+        assertThat(officialAgencyArgumentCaptor.getValue().getAgencyRegistrationNumber()).isEqualTo("Registration GG Agency");
 
     }
 
@@ -514,7 +572,7 @@ public class OfficialAgencyServiceImplTest {
         ArgumentCaptor<String> roleCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
 
-        verify(mockApiSecurityService).updateUserInfo(userIdCaptor.capture(),fieldCaptor.capture(), roleCaptor.capture(),tokenCaptor.capture());
+        verify(mockApiSecurityService).updateUserInfo(userIdCaptor.capture(), fieldCaptor.capture(), roleCaptor.capture(), tokenCaptor.capture());
 
         assertThat(userIdCaptor.getValue()).isEqualTo("10");
         assertThat(fieldCaptor.getValue()).isEqualTo("ROLES");
