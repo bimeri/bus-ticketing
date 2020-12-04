@@ -16,7 +16,8 @@ import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.gogroups.storage.constants.FileAccessType;
+import net.gogroups.storage.service.FileStorageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -45,11 +46,11 @@ public class JourneyServiceImpl implements JourneyService {
     private BookedJourneyRepository bookedJourneyRepository;
     private GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository;
     private CfsClientService cfsClientService;
+    private FileStorageService fileStorageService;
 
     private final ZoneId zoneId = ZoneId.of("GMT");
 
-    @Autowired
-    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository, GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository, CfsClientService cfsClientService) {
+    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository, GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository, CfsClientService cfsClientService, FileStorageService fileStorageService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.transitAndStopRepository = transitAndStopRepository;
@@ -58,6 +59,7 @@ public class JourneyServiceImpl implements JourneyService {
         this.bookedJourneyRepository = bookedJourneyRepository;
         this.ggCfsSurveyTemplateJsonRepository = ggCfsSurveyTemplateJsonRepository;
         this.cfsClientService = cfsClientService;
+        this.fileStorageService = fileStorageService;
     }
 
     @Override
@@ -151,7 +153,7 @@ public class JourneyServiceImpl implements JourneyService {
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
         }
-        if(journeyArrivalIndicatorDTO.getArrivalIndicator()) {
+        if (journeyArrivalIndicatorDTO.getArrivalIndicator()) {
             try {
                 List<CustomerDTO> customers = new ArrayList<>();
                 journey.getBookedJourneys().stream()
@@ -566,7 +568,10 @@ public class JourneyServiceImpl implements JourneyService {
             if (car instanceof Bus) {
                 Bus bus = (Bus) car;
                 OfficialAgency officialAgency = bus.getOfficialAgency();
-                if (officialAgency != null) carDTO.setAgencyName(officialAgency.getAgencyName());
+                if (officialAgency != null) {
+                    carDTO.setAgencyName(officialAgency.getAgencyName());
+                    carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
+                }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {
                 PersonalAgency personalAgency = ((SharedRide) car).getPersonalAgency();

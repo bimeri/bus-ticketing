@@ -8,6 +8,7 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
+import net.gogroups.storage.service.FileStorageService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,6 +65,9 @@ public class JourneyServiceImplTest {
     @Mock
     private CfsClientService mockCfsClientService;
 
+    @Mock
+    private FileStorageService mockFileStorageService;
+
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -79,6 +83,7 @@ public class JourneyServiceImplTest {
                 .bookedJourneyRepository(mockBookedJourneyRepository)
                 .ggCfsSurveyTemplateJsonRepository(mockGgCfsSurveyTemplateJsonRepository)
                 .cfsClientService(mockCfsClientService)
+                .fileStorageService(mockFileStorageService)
                 .build();
     }
 

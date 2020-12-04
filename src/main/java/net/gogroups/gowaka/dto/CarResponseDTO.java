@@ -16,6 +16,7 @@ public class CarResponseDTO {
     private String licensePlateNumber;
     private Boolean isOfficialAgencyIndicator;
     private String agencyName;
+    private String agencyLogo;
     private Boolean isCarApproved;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timestamp;
