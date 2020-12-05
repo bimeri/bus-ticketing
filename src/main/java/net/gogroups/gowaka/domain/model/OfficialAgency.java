@@ -22,6 +22,8 @@ public class OfficialAgency extends BaseEntity{
     private String agencyAuthorizationDocument;
     private String logo;
     private Boolean isDisabled;
+    @Lob
+    private String policy;
 
     @OneToMany(mappedBy = "officialAgency")
     private List<Bus> buses;

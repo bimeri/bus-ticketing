@@ -46,7 +46,7 @@ public class OfficialAgencyController {
 
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @PostMapping("/protected/agency/{id}/logo")
-    public ResponseEntity<OfficialAgencyDTO> uploadAgencyLogo(@PathVariable("id") Long agencyId, @RequestBody MultipartFile file) {
+    public ResponseEntity<OfficialAgencyDTO> uploadAgencyLogo(@PathVariable("id") Long agencyId, @RequestParam("logo") MultipartFile file) {
         officialAgencyService.uploadAgencyLogo(agencyId, file);
         return ResponseEntity.noContent().build();
     }

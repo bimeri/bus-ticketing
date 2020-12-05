@@ -21,6 +21,7 @@ public class OfficialAgencyDTO {
         private Long id;
         private String agencyName;
         private String logo;
+        private String policy;
         private String agencyRegistrationNumber;
         private List<Bus> buses = new ArrayList<>();
         private OfficialAgencyAdminUserDTO agencyAdmin;

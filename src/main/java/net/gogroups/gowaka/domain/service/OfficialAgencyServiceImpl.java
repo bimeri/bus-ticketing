@@ -90,6 +90,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         List<User> agencyUsers = officialAgency.getUsers();
         agencyUsers.add(user);
         officialAgency.setIsDisabled(false);
+        officialAgency.setPolicy(createOfficialAgencyDTO.getPolicy());
 
         OfficialAgency saveOfficialAgency = officialAgencyRepository.save(officialAgency);
 
@@ -106,6 +107,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyDTO.setAgencyName(saveOfficialAgency.getAgencyName());
         officialAgencyDTO.setAgencyRegistrationNumber(saveOfficialAgency.getAgencyRegistrationNumber());
         officialAgencyDTO.setAgencyAdmin(agencyAdminDTO);
+        officialAgencyDTO.setPolicy(saveOfficialAgency.getPolicy());
 
         return officialAgencyDTO;
 
@@ -144,6 +146,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         }
         OfficialAgency officialAgency = officialAgencyOptional.get();
         officialAgency.setAgencyName(officialAgencyDTO.getAgencyName());
+        officialAgency.setPolicy(officialAgencyDTO.getPolicy());
         officialAgency.setAgencyRegistrationNumber(officialAgencyDTO.getAgencyRegistrationNumber());
 
         officialAgencyRepository.save(officialAgency);

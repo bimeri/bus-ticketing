@@ -192,7 +192,7 @@ public class OfficialAgencyControllerIntegrationTest {
         startMockServerWith("http://ggs2.space:9092/api/protected/files?bucketDirectory=GoWaka/agency_logos/"+officialAgency1.getId()+"&identifier=PROTECTED",
                 HttpStatus.OK, "");
 
-        MockMultipartFile file = new MockMultipartFile("file", "logo.png","multipart/form-data", "My Logo Content".getBytes());
+        MockMultipartFile file = new MockMultipartFile("logo", "logo.png","multipart/form-data", "My Logo Content".getBytes());
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
         RequestBuilder requestBuilder = multipart("/api/protected/agency/"+officialAgency1.getId()+"/logo")
