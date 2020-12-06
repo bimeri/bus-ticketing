@@ -27,4 +27,5 @@ public class JourneyResponseDTO {
     private LocationStopResponseDTO destination;
     private List<LocationStopResponseDTO> transitAndStops;
     private CarResponseDTO car;
+    private boolean isDepartureTimeDue;
 }

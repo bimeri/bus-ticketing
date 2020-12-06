@@ -628,6 +628,7 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
+        journeyResponseDTO.setDepartureTimeDue(LocalDateTime.now().isAfter(journey.getDepartureTime()));
         return journeyResponseDTO;
     }
 

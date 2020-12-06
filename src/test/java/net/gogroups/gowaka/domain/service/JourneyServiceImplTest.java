@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class JourneyServiceImplTest {
+
     @Mock
     private UserService mockUserService;
     @Mock
@@ -255,7 +256,7 @@ public class JourneyServiceImplTest {
 
         Journey journey = new Journey();
         journey.setCar(bus);
-
+        journey.setDepartureTime(LocalDateTime.MIN);
 
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
@@ -266,6 +267,7 @@ public class JourneyServiceImplTest {
         assertFalse(journeyResponseDTOList.isEmpty());
         assertThat(journeyResponseDTOList.get(0).getCar(), is(instanceOf(CarResponseDTO.class)));
         assertThat(journeyResponseDTOList.get(0).getCar().getName(), is(bus.getName()));
+        assertThat(journeyResponseDTOList.get(0).isDepartureTimeDue(), is(true));
     }
 
     /**
@@ -325,6 +327,7 @@ public class JourneyServiceImplTest {
 
         Journey journey = new Journey();
         journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
 
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setId(2L);
