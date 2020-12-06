@@ -91,13 +91,13 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         agencyUsers.add(user);
         officialAgency.setIsDisabled(false);
         officialAgency.setPolicy(createOfficialAgencyDTO.getPolicy());
+        officialAgency.setCode(createOfficialAgencyDTO.getCode());
 
         OfficialAgency saveOfficialAgency = officialAgencyRepository.save(officialAgency);
 
         user.setOfficialAgency(officialAgency);
         user.setIsAgencyAdminIndicator(true);
         userRepository.save(user);
-
 
         OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
         OfficialAgencyAdminUserDTO agencyAdminDTO = new OfficialAgencyAdminUserDTO();
@@ -108,6 +108,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyDTO.setAgencyRegistrationNumber(saveOfficialAgency.getAgencyRegistrationNumber());
         officialAgencyDTO.setAgencyAdmin(agencyAdminDTO);
         officialAgencyDTO.setPolicy(saveOfficialAgency.getPolicy());
+        officialAgencyDTO.setCode(saveOfficialAgency.getCode());
 
         return officialAgencyDTO;
 
@@ -147,6 +148,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         OfficialAgency officialAgency = officialAgencyOptional.get();
         officialAgency.setAgencyName(officialAgencyDTO.getAgencyName());
         officialAgency.setPolicy(officialAgencyDTO.getPolicy());
+        officialAgency.setCode(officialAgencyDTO.getCode());
         officialAgency.setAgencyRegistrationNumber(officialAgencyDTO.getAgencyRegistrationNumber());
 
         officialAgencyRepository.save(officialAgency);
@@ -182,6 +184,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                             .logo(logoURL)
                             .buses(buses)
                             .policy(agency.getPolicy())
+                            .code(agency.getCode())
                             .agencyAdmin(officialAgencyAdminUserDTO)
                             .build();
                 }).collect(Collectors.toList());

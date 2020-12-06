@@ -21,6 +21,7 @@ public class OfficialAgency extends BaseEntity{
     private String agencyRegistrationNumber;
     private String agencyAuthorizationDocument;
     private String logo;
+    private String code;
     private Boolean isDisabled;
     @Lob
     private String policy;

@@ -13,5 +13,6 @@ public class CreateOfficialAgencyDTO {
     private String agencyRegistrationNumber;
     private String agencyAdminEmail;
     private String policy;
+    private String code;
 
 }

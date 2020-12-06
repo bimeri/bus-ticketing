@@ -86,6 +86,7 @@ public class BookJourneyControllerIntegrationTest {
     public void setUp() {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
+        officialAgency.setCode("GG");
         officialAgencyRepository.save(officialAgency);
 
         User newUser = new User();
@@ -121,6 +122,7 @@ public class BookJourneyControllerIntegrationTest {
         car.setName("Musango 30 Seater Bus");
         car.setNumberOfSeats(10);
         car.setOfficialAgency(officialAgency);
+        car.setIsOfficialAgencyIndicator(true);
         Bus savedCar = carRepository.save(car);
 
         officialAgency.setBuses(Collections.singletonList(car));

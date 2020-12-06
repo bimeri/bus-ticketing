@@ -3,3 +3,5 @@
     1. add isAgencyAdminIndicator to User entity
     2. add fullName and email to user entity
     3. add policy field to official agency table
+    4. add logo in the official agency table
+    5. add code in the official agency table

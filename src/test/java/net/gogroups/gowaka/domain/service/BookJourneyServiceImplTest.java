@@ -391,8 +391,13 @@ public class BookJourneyServiceImplTest {
         journey.setAmount(5000.00);
         journey.setDestination(destination);
 
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT");
+
         Bus car = new Bus();
         car.setLicensePlateNumber("123SW");
+        car.setIsOfficialAgencyIndicator(true);
+        car.setOfficialAgency(officialAgency);
         journey.setCar(car);
 
         when(mockJourneyRepository.findById(anyLong()))
@@ -437,7 +442,7 @@ public class BookJourneyServiceImplTest {
         assertThat(bookedJourneyValue.getPassengers().get(0).getEmail()).isEqualTo("email@email.com");
         assertThat(bookedJourneyValue.getPassengers().get(0).getName()).isEqualTo("Jesus Christ");
         assertThat(bookedJourneyValue.getPassengers().get(0).getPhoneNumber()).isEqualTo("676767676");
-        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).startsWith("1011-");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT11-123SW-9-10");
         assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
@@ -500,8 +505,12 @@ public class BookJourneyServiceImplTest {
         stopLocation.setAmount(2000.00);
         journey.setJourneyStops(Collections.singletonList(stopLocation));
 
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT");
         Bus car = new Bus();
+        car.setIsOfficialAgencyIndicator(true);
         car.setLicensePlateNumber("123SW");
+        car.setOfficialAgency(officialAgency);
         journey.setCar(car);
 
         when(mockJourneyRepository.findById(anyLong()))
@@ -547,7 +556,7 @@ public class BookJourneyServiceImplTest {
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(2000.0);
-        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).startsWith("1011-");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT11-123SW-9-10");
         assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(100L);
@@ -579,6 +588,7 @@ public class BookJourneyServiceImplTest {
         user.setUserId("10");
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setId(111L);
+        officialAgency.setCode("VT");
         user.setOfficialAgency(officialAgency);
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(false);
@@ -618,12 +628,12 @@ public class BookJourneyServiceImplTest {
         Bus car = new Bus();
         car.setLicensePlateNumber("123SW");
         car.setOfficialAgency(officialAgency);
+        car.setIsOfficialAgencyIndicator(true);
         journey.setCar(car);
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setDestination(destination);
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setBookedJourney(bookedJourney);
-
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
         bookedJourney.setJourney(journey);
@@ -661,7 +671,7 @@ public class BookJourneyServiceImplTest {
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getValue();
 
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(2000.0);
-        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).startsWith("1011-");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT11-123SW-9-10");
         assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(100L);

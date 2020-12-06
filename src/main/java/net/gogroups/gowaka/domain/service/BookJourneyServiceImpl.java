@@ -309,7 +309,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         });
 
         verifyJourneyStatus(journey);
-        List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey.getId());
+        List<Passenger> passengers = getPassenger(bookJourneyRequest, user.getUserId(), journey);
 
         Double amount;
         TransitAndStop transitAndStop;
@@ -482,7 +482,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return bookedJourney;
     }
 
-    private List<Passenger> getPassenger(BookJourneyRequest bookJourneyRequest, String userId, Long journeyId) {
+    private List<Passenger> getPassenger(BookJourneyRequest bookJourneyRequest, String userId, Journey journey) {
         return bookJourneyRequest.getPassengers().stream()
                 .map(psngr -> {
                     Passenger passenger = new Passenger();
@@ -492,7 +492,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     passenger.setEmail(psngr.getEmail());
                     passenger.setPhoneNumber(psngr.getPhoneNumber());
                     passenger.setPassengerCheckedInIndicator(false);
-                    passenger.setCheckedInCode(generateCode(userId, journeyId));
+                    passenger.setCheckedInCode(generateCode(userId, journey, psngr.getSeatNumber()));
                     return passenger;
                 }).collect(Collectors.toList());
 
@@ -585,11 +585,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
 
-    private String generateCode(String userId, Long journeyId) {
+    private String generateCode(String userId, Journey journey, Integer seat) {
 
-        long timeSeed = System.nanoTime();
-        double randSeed = Math.random() * 1000;
-        long midSeed = (long) (timeSeed * randSeed);
-        return userId + journeyId.toString() + "-" + (midSeed + "").substring(0, 6);
+        String code = "SR";
+        Car car = journey.getCar();
+        if (car.getIsOfficialAgencyIndicator()) {
+            code = ((Bus) car).getOfficialAgency().getCode();
+        }
+//        VT234-234LT-9-161
+        return code + journey.getId().toString() + "-" + car.getLicensePlateNumber() + "-" + seat + "-" + userId;
     }
 }
