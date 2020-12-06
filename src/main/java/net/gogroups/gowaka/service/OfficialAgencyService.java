@@ -17,6 +17,8 @@ public interface OfficialAgencyService {
 
     List<OfficialAgencyDTO> getAllAgencies();
 
+    OfficialAgencyDTO getUserAgency();
+
     void updateOfficialAgency(Long agencyId, OfficialAgencyDTO officialAgencyDTO);
 
     OfficialAgencyUserDTO assignAgencyUserRole(OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO);

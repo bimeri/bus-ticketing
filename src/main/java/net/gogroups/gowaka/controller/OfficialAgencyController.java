@@ -44,6 +44,12 @@ public class OfficialAgencyController {
         return ResponseEntity.ok(officialAgencyService.getAllAgencies());
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
+    @GetMapping("/protected/agency/user_agency")
+    public ResponseEntity<OfficialAgencyDTO> getUserOfficialAgency() {
+        return ResponseEntity.ok(officialAgencyService.getUserAgency());
+    }
+
     @PreAuthorize("hasRole('ROLE_GW_ADMIN')")
     @PostMapping("/protected/agency/{id}/logo")
     public ResponseEntity<OfficialAgencyDTO> uploadAgencyLogo(@PathVariable("id") Long agencyId, @RequestParam("logo") MultipartFile file) {

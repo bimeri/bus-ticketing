@@ -62,6 +62,14 @@ public class OfficialAgencyControllerTest {
 
     }
     @Test
+    public void getUserOfficialAgency_calls_OfficialAgencyService() {
+
+        ResponseEntity<OfficialAgencyDTO> response = officialAgencyController.getUserOfficialAgency();
+        verify(mockOfficialAgencyService).getUserAgency();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    }
+    @Test
     public void updateOfficialAgency_calls_OfficialAgencyService() {
 
         OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();

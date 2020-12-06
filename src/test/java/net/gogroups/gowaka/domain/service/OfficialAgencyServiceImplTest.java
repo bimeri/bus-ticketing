@@ -68,7 +68,7 @@ public class OfficialAgencyServiceImplTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         this.clientUserCredConfig = new ClientUserCredConfig();
         this.clientUserCredConfig.setClientId("client-id");
         this.clientUserCredConfig.setClientId("client-secret");
@@ -156,7 +156,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void getAllOfficialAgencies_returnAgencyDTO() throws IOException {
+    public void getAllOfficialAgencies_returnAgencyDTO() {
 
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setLogo("agency_logos/2/logo.png");
@@ -169,6 +169,48 @@ public class OfficialAgencyServiceImplTest {
         assertThat(allAgencies.size()).isEqualTo(1);
         assertThat(allAgencies.get(0).getBuses().size()).isEqualTo(1);
         assertThat(allAgencies.get(0).getLogo()).isEqualTo("http://localhost/logo.png");
+
+    }
+
+    @Test
+    public void getUserOfficialAgency_throwException_whenUserNotFound() {
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.empty());
+
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("User not found");
+        expectedException.expect(hasProperty("errorCode", is("RESOURCE_NOT_FOUND")));
+        officialAgencyService.getUserAgency();
+
+    }
+
+    @Test
+    public void getUserOfficialAgency_returnAgencyDTO() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setLogo("agency_logos/2/logo.png");
+        officialAgency.setBuses(Collections.singletonList(new Bus()));
+        User user = new User();
+        user.setUserId("10");
+        user.setOfficialAgency(officialAgency);
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.of(user));
+
+        when(mockFileStorageService.getFilePath("agency_logos/2/logo.png", "", FileAccessType.PROTECTED))
+                .thenReturn("http://localhost/logo.png");
+        OfficialAgencyDTO agency = officialAgencyService.getUserAgency();
+        assertThat(agency.getBuses().size()).isEqualTo(1);
+        assertThat(agency.getLogo()).isEqualTo("http://localhost/logo.png");
 
     }
 

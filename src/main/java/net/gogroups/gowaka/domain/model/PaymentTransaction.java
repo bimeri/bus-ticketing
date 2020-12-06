@@ -35,6 +35,9 @@ public class PaymentTransaction extends BaseEntity{
     private String transactionStatus;
     private LocalDateTime paymentDate;
 
+    private Double agencyAmount;
+    private Double serviceChargeAmount;
+
     @OneToOne()
     @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
     private BookedJourney bookedJourney;

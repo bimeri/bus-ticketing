@@ -33,5 +33,8 @@ public class BookedJourneyStatusDTO {
     private LocalDateTime estimatedArrivalTime;
     private String destinationLocation;
 
+    private Double agencyAmount;
+    private Double serviceChargeAmount;
+
 
 }

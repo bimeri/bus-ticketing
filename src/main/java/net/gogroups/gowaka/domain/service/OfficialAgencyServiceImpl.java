@@ -137,6 +137,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgency.setLogo(storageFolder + "/" + filename);
         officialAgencyRepository.save(officialAgency);
     }
+
     @Override
     public void updateOfficialAgency(Long agencyId, OfficialAgencyDTO officialAgencyDTO) {
 
@@ -159,35 +160,14 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
     public List<OfficialAgencyDTO> getAllAgencies() {
 
         return officialAgencyRepository.findAll().stream()
-                .map(agency -> {
-                    String logoURL = fileStorageService.getFilePath(agency.getLogo(), "", FileAccessType.PROTECTED);
-                    List<OfficialAgencyDTO.Bus> buses = agency.getBuses().stream()
-                            .map(bus -> OfficialAgencyDTO.Bus.builder()
-                                    .id(bus.getId())
-                                    .name(bus.getName())
-                                    .licensePlateNumber(bus.getLicensePlateNumber())
-                                    .build())
-                            .collect(Collectors.toList());
+                .map(this::getOfficialAgencyDTO)
+                .collect(Collectors.toList());
+    }
 
-                    Optional<User> userOptional = agency.getUsers().stream().filter(User::getIsAgencyAdminIndicator).findFirst();
-                    OfficialAgencyAdminUserDTO officialAgencyAdminUserDTO = new OfficialAgencyAdminUserDTO();
-                    if(userOptional.isPresent()){
-                        officialAgencyAdminUserDTO.setId(userOptional.get().getUserId());
-                        officialAgencyAdminUserDTO.setFullName(userOptional.get().getFullName());
-                        officialAgencyAdminUserDTO.setEmail(userOptional.get().getEmail());
-                    }
-
-                    return OfficialAgencyDTO.builder()
-                            .agencyRegistrationNumber(agency.getAgencyRegistrationNumber())
-                            .agencyName(agency.getAgencyName())
-                            .id(agency.getId())
-                            .logo(logoURL)
-                            .buses(buses)
-                            .policy(agency.getPolicy())
-                            .code(agency.getCode())
-                            .agencyAdmin(officialAgencyAdminUserDTO)
-                            .build();
-                }).collect(Collectors.toList());
+    @Override
+    public OfficialAgencyDTO getUserAgency() {
+        User user = getCurrentAuthUser();
+        return getOfficialAgencyDTO(user.getOfficialAgency());
     }
 
     @Override
@@ -345,4 +325,43 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
+    private OfficialAgencyDTO getOfficialAgencyDTO(OfficialAgency agency) {
+        String logoURL = fileStorageService.getFilePath(agency.getLogo(), "", FileAccessType.PROTECTED);
+        List<OfficialAgencyDTO.Bus> buses = agency.getBuses().stream()
+                .map(bus -> OfficialAgencyDTO.Bus.builder()
+                        .id(bus.getId())
+                        .name(bus.getName())
+                        .licensePlateNumber(bus.getLicensePlateNumber())
+                        .build())
+                .collect(Collectors.toList());
+
+        Optional<User> userOptional = agency.getUsers().stream().filter(User::getIsAgencyAdminIndicator).findFirst();
+        OfficialAgencyAdminUserDTO officialAgencyAdminUserDTO = new OfficialAgencyAdminUserDTO();
+        if (userOptional.isPresent()) {
+            officialAgencyAdminUserDTO.setId(userOptional.get().getUserId());
+            officialAgencyAdminUserDTO.setFullName(userOptional.get().getFullName());
+            officialAgencyAdminUserDTO.setEmail(userOptional.get().getEmail());
+        }
+
+        return OfficialAgencyDTO.builder()
+                .agencyRegistrationNumber(agency.getAgencyRegistrationNumber())
+                .agencyName(agency.getAgencyName())
+                .id(agency.getId())
+                .logo(logoURL)
+                .buses(buses)
+                .policy(agency.getPolicy())
+                .code(agency.getCode())
+                .agencyAdmin(officialAgencyAdminUserDTO)
+                .build();
+    }
+
+    private User getCurrentAuthUser() {
+        UserDTO authUser = userService.getCurrentAuthUser();
+        // get user entity
+        Optional<User> optionalUser = userRepository.findById(authUser.getId());
+        if (!optionalUser.isPresent()) {
+            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalUser.get();
+    }
 }

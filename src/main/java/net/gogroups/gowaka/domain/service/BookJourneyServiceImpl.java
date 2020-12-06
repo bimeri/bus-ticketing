@@ -94,6 +94,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             Double chargeAmount = paymentTransaction.getAmount() * (serviceCharges.get(0).getPercentageCharge() / 100);
             Double amountWithoutCharge = paymentTransaction.getAmount();
             paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+            paymentTransaction.setAgencyAmount(amountWithoutCharge);
+            paymentTransaction.setServiceChargeAmount(chargeAmount);
         }
         PaymentTransaction savedPaymentTransaction = paymentTransactionRepository.save(paymentTransaction);
 
@@ -123,6 +125,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
         paymentTransaction.setPaymentChannel("CASHIER");
         paymentTransaction.setPaymentDate(LocalDateTime.now());
+        paymentTransaction.setAgencyAmount(paymentTransaction.getAmount());
+        paymentTransaction.setServiceChargeAmount(0.0);
         PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
         savedTxn.getBookedJourney().setPaymentTransaction(savedTxn);
 
@@ -387,6 +391,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
         bookedJourneyStatusDTO.setId(bookedJourney.getId());
         bookedJourneyStatusDTO.setAmount(bookedJourney.getPaymentTransaction().getAmount());
+
+        bookedJourneyStatusDTO.setServiceChargeAmount(bookedJourney.getPaymentTransaction().getServiceChargeAmount());
+        bookedJourneyStatusDTO.setAgencyAmount(bookedJourney.getPaymentTransaction().getAgencyAmount());
+
         bookedJourneyStatusDTO.setPaymentDate(bookedJourney.getPaymentTransaction().getPaymentDate());
         bookedJourneyStatusDTO.setCurrencyCode(bookedJourney.getPaymentTransaction().getCurrencyCode());
         bookedJourneyStatusDTO.setPaymentReason(bookedJourney.getPaymentTransaction().getPaymentReason());

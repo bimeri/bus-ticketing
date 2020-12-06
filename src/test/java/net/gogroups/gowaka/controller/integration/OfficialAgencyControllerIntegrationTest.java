@@ -217,6 +217,26 @@ public class OfficialAgencyControllerIntegrationTest {
     }
 
     @Test
+    public void getUserAgency_success_200() throws Exception {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("ED");
+        officialAgency.setAgencyName("Hello");
+        OfficialAgency saveAgency = officialAgencyRepository.save(officialAgency);
+        user.setOfficialAgency(saveAgency);
+        userRepository.save(user);
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "AGENCY_BOOKING"});
+        RequestBuilder requestBuilder = get("/api/protected/agency/user_agency")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk());
+    }
+
+
+    @Test
     public void assignAgencyUserRole_success_return_200() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",

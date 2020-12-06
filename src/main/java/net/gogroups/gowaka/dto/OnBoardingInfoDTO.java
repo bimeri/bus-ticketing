@@ -11,6 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 public class OnBoardingInfoDTO {
+
     private Double amount;
     private String currencyCode;
     private String carDriverName;
