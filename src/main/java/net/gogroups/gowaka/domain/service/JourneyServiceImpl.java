@@ -571,6 +571,7 @@ public class JourneyServiceImpl implements JourneyService {
                 if (officialAgency != null) {
                     carDTO.setAgencyName(officialAgency.getAgencyName());
                     carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
+                    carDTO.setPolicy(officialAgency.getPolicy());
                 }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {

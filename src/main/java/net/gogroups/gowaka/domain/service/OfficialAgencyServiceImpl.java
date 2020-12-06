@@ -181,6 +181,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                             .id(agency.getId())
                             .logo(logoURL)
                             .buses(buses)
+                            .policy(agency.getPolicy())
                             .agencyAdmin(officialAgencyAdminUserDTO)
                             .build();
                 }).collect(Collectors.toList());
