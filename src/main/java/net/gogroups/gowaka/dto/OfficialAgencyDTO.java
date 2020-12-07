@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.dto;
 
+import io.swagger.models.auth.In;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class OfficialAgencyDTO {
         private String agencyRegistrationNumber;
         private List<Bus> buses = new ArrayList<>();
         private OfficialAgencyAdminUserDTO agencyAdmin;
+        private long numberOfCompletedTrips;
 
         @Data
         @AllArgsConstructor
@@ -35,6 +37,7 @@ public class OfficialAgencyDTO {
                 private Long id;
                 private String name;
                 private String licensePlateNumber;
+                private Integer numberOfSeats;
         }
 
 }

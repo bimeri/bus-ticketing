@@ -3,8 +3,11 @@ package net.gogroups.gowaka.domain.service;
 import io.jsonwebtoken.lang.Collections;
 import net.gogroups.gowaka.constant.UserRoles;
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
+import net.gogroups.gowaka.domain.model.Bus;
+import net.gogroups.gowaka.domain.model.Car;
 import net.gogroups.gowaka.domain.model.OfficialAgency;
 import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.repository.JourneyRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
@@ -51,15 +54,16 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
     private ApiSecurityService apiSecurityService;
     private ClientUserCredConfig clientUserCredConfig;
     private FileStorageService fileStorageService;
+    private JourneyRepository journeyRepository;
 
-    @Autowired
-    public OfficialAgencyServiceImpl(OfficialAgencyRepository officialAgencyRepository, UserRepository userRepository, UserService userService, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, FileStorageService fileStorageService) {
+    public OfficialAgencyServiceImpl(OfficialAgencyRepository officialAgencyRepository, UserRepository userRepository, UserService userService, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, FileStorageService fileStorageService, JourneyRepository journeyRepository) {
         this.officialAgencyRepository = officialAgencyRepository;
         this.userRepository = userRepository;
         this.userService = userService;
         this.apiSecurityService = apiSecurityService;
         this.clientUserCredConfig = clientUserCredConfig;
         this.fileStorageService = fileStorageService;
+        this.journeyRepository = journeyRepository;
     }
 
     @Override
@@ -326,12 +330,25 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
     }
 
     private OfficialAgencyDTO getOfficialAgencyDTO(OfficialAgency agency) {
+
+        long numberOfCompletedTrips = journeyRepository.findByArrivalIndicatorTrue().stream()
+                .filter(journey -> {
+                    Car car = journey.getCar();
+                    if (car == null) return false;
+                    if (car instanceof Bus) {
+                        if (((Bus) car).getOfficialAgency() == null) return false;
+                        return ((Bus) car).getOfficialAgency().getId().equals(agency.getId());
+                    }
+                    return false;
+                }).count();
+
         String logoURL = fileStorageService.getFilePath(agency.getLogo(), "", FileAccessType.PROTECTED);
         List<OfficialAgencyDTO.Bus> buses = agency.getBuses().stream()
                 .map(bus -> OfficialAgencyDTO.Bus.builder()
                         .id(bus.getId())
                         .name(bus.getName())
                         .licensePlateNumber(bus.getLicensePlateNumber())
+                        .numberOfSeats(bus.getNumberOfSeats())
                         .build())
                 .collect(Collectors.toList());
 
@@ -352,6 +369,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                 .policy(agency.getPolicy())
                 .code(agency.getCode())
                 .agencyAdmin(officialAgencyAdminUserDTO)
+                .numberOfCompletedTrips(numberOfCompletedTrips)
                 .build();
     }
 

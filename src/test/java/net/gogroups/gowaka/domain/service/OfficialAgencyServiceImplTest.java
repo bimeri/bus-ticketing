@@ -2,8 +2,10 @@ package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
 import net.gogroups.gowaka.domain.model.Bus;
+import net.gogroups.gowaka.domain.model.Journey;
 import net.gogroups.gowaka.domain.model.OfficialAgency;
 import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.repository.JourneyRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
@@ -60,6 +62,9 @@ public class OfficialAgencyServiceImplTest {
     @Mock
     private FileStorageService mockFileStorageService;
 
+    @Mock
+    private JourneyRepository mockJourneyRepository;
+
     private ClientUserCredConfig clientUserCredConfig;
 
     private OfficialAgencyService officialAgencyService;
@@ -74,7 +79,7 @@ public class OfficialAgencyServiceImplTest {
         this.clientUserCredConfig.setClientId("client-secret");
         this.clientUserCredConfig.setAppName("GoWaka");
 
-        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService);
+        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService, mockJourneyRepository);
     }
 
     @Test
@@ -193,24 +198,36 @@ public class OfficialAgencyServiceImplTest {
     public void getUserOfficialAgency_returnAgencyDTO() {
 
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setLogo("agency_logos/2/logo.png");
-        officialAgency.setBuses(Collections.singletonList(new Bus()));
+        Bus car = new Bus();
         User user = new User();
+        UserDTO userDTO = new UserDTO();
+        Journey journey = new Journey();
+
+        officialAgency.setId(10L);
+        officialAgency.setLogo("agency_logos/2/logo.png");
+        officialAgency.setBuses(Collections.singletonList(car));
+
+        car.setOfficialAgency(officialAgency);
+
         user.setUserId("10");
         user.setOfficialAgency(officialAgency);
-
-        UserDTO userDTO = new UserDTO();
         userDTO.setId("10");
+
+        journey.setCar(car);
+
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDTO);
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findByArrivalIndicatorTrue())
+                .thenReturn(Collections.singletonList(journey));
 
         when(mockFileStorageService.getFilePath("agency_logos/2/logo.png", "", FileAccessType.PROTECTED))
                 .thenReturn("http://localhost/logo.png");
         OfficialAgencyDTO agency = officialAgencyService.getUserAgency();
         assertThat(agency.getBuses().size()).isEqualTo(1);
         assertThat(agency.getLogo()).isEqualTo("http://localhost/logo.png");
+        assertThat(agency.getNumberOfCompletedTrips()).isEqualTo(1);
 
     }
 

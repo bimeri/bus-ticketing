@@ -16,4 +16,6 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
     List<Journey> findAllByOrderByCreatedAtDescArrivalIndicatorAsc();
 
     List<Journey> findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
+
+    List<Journey> findByArrivalIndicatorTrue();
 }
