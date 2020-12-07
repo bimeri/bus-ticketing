@@ -299,16 +299,32 @@
                                             <table>
                                                 <tbody>
                                                 <tr>
-                                                    <th>Car</th>
-                                                    <td th:text="${journeyInfo.carName}"></td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Car Plate #</th>
-                                                    <td th:text="${journeyInfo.carLicenseNumber}"></td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Driver's Name</th>
-                                                    <td th:text="${journeyInfo.carDriverName}"></td>
+                                                    <td>
+                                                        <table>
+                                                            <tbody>
+                                                            <tr>
+                                                                <th>Agency</th>
+                                                                <td th:text="${journeyInfo.agencyName}"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Car</th>
+                                                                <td th:text="${journeyInfo.carName}"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Car Plate #</th>
+                                                                <td th:text="${journeyInfo.carLicenseNumber}"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Driver's Name</th>
+                                                                <td th:text="${journeyInfo.carDriverName}"></td>
+                                                            </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                    <td>
+                                                        <img th:src="${journeyInfo.agencyLogo}" alt=""
+                                                             style="width: 90px;float: right"/>
+                                                    </td>
                                                 </tr>
                                                 </tbody>
                                             </table>
@@ -329,7 +345,21 @@
                                                     <td th:text="${journeyInfo.destinationLocation}"></td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Cost</th>
+                                                    <th>Service charge</th>
+                                                    <td>
+                                                        <span th:text="${journeyInfo.serviceChargeAmount}"></span>
+                                                        <span th:text="${journeyInfo.currencyCode}"></span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Agency charge</th>
+                                                    <td>
+                                                        <span th:text="${journeyInfo.agencyAmount}"></span>
+                                                        <span th:text="${journeyInfo.currencyCode}"></span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Total</th>
                                                     <td>
                                                         <span th:text="${journeyInfo.amount}"></span>
                                                         <span th:text="${journeyInfo.currencyCode}"></span>

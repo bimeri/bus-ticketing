@@ -344,7 +344,7 @@ public class BookJourneyControllerIntegrationTest {
                 .andReturn();
         verify(notificationService).sendEmail(any());
         verify(fileStorageService).saveFile(any(), any(), any(), any());
-        verify(fileStorageService, times(2)).getFilePath(any(), any(), any());
+        verify(fileStorageService, times(3)).getFilePath(any(), any(), any());
 
     }
 

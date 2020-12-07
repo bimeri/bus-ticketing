@@ -133,6 +133,8 @@ public class BookJourneyServiceImplTest {
         Bus car = new Bus();
         car.setLicensePlateNumber("123SW");
         car.setName("Musango 30 Seater Bus");
+        car.setIsOfficialAgencyIndicator(true);
+        car.setOfficialAgency(new OfficialAgency());
         journey.setCar(car);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();

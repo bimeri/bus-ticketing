@@ -406,6 +406,11 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         bookedJourneyStatusDTO.setCarDriverName(bookedJourney.getJourney().getDriver().getDriverName());
         bookedJourneyStatusDTO.setCarLicenseNumber(bookedJourney.getJourney().getCar().getLicensePlateNumber());
         bookedJourneyStatusDTO.setCarName(bookedJourney.getJourney().getCar().getName());
+        if (bookedJourney.getJourney().getCar().getIsOfficialAgencyIndicator()) {
+            Bus bus = (Bus) bookedJourney.getJourney().getCar();
+            bookedJourneyStatusDTO.setAgencyName(bus.getOfficialAgency().getAgencyName());
+            bookedJourneyStatusDTO.setAgencyLogo( fileStorageService.getFilePath(bus.getOfficialAgency().getLogo(), "", FileAccessType.PROTECTED));
+        }
 
         Location departureLocation = bookedJourney.getJourney().getDepartureLocation().getLocation();
         bookedJourneyStatusDTO.setDepartureLocation(departureLocation.getAddress() + ", " + departureLocation.getCity() + ", " + departureLocation.getState() + ", " + departureLocation.getCountry());

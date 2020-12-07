@@ -27,6 +27,8 @@ public class BookedJourneyStatusDTO {
     private String carName;
     private String carLicenseNumber;
     private String carDriverName;
+    private String agencyName;
+    private String agencyLogo;
 
     private String departureLocation;
     private LocalDateTime departureTime;
