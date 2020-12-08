@@ -87,7 +87,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         Journey journey = getJourney(journeyId);
         User user = getUser();
-        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest);
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, false);
 
         List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
         if (serviceCharges.size() > 0) {
@@ -120,7 +120,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(USER_NOT_IN_AGENCY.getMessage(), USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest);
+        PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, true);
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
         paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
         paymentTransaction.setPaymentChannel("CASHIER");
@@ -300,7 +300,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         ).collect(Collectors.toList());
     }
 
-    private PaymentTransaction getPaymentTransaction(Journey journey, User user, BookJourneyRequest bookJourneyRequest) {
+    private PaymentTransaction getPaymentTransaction(Journey journey, User user, BookJourneyRequest bookJourneyRequest, Boolean isAgencyBooking) {
         List<Integer> bookSeats = bookJourneyRequest.getPassengers().stream()
                 .map(BookJourneyRequest.Passenger::getSeatNumber)
                 .collect(Collectors.toList());
@@ -334,6 +334,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
 
         BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+        bookedJourney.setIsAgencyBooking(isAgencyBooking);
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
         passengers.forEach(passenger -> passenger.setBookedJourney(savedBookedJourney));
         passengerRepository.saveAll(passengers);

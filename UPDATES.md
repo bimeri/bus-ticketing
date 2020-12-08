@@ -10,3 +10,5 @@
     * payment transaction entity    
         1. add serviceChargeAmount to the payment transaction entity
         2. add agencyAmount to the payment transaction entity
+    * BookedJourney entity
+        1. add isAgencyBooking to the entity    

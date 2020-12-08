@@ -32,6 +32,7 @@ public class BookedJourney extends BaseEntity{
 
     @Column(name = "amount")
     private Double amount;
+    private Boolean isAgencyBooking;
 
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
