@@ -30,8 +30,7 @@ import java.util.*;
 import static net.gogroups.gowaka.TestUtils.createToken;
 import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -798,24 +797,24 @@ public class JourneyControllerIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now();
         String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String badRequest = "{\n" +
-                "  \"departureTime\": \""+ depTime + "\",\n" +
-                "  \"estimatedArrivalTime\": \""+ depTime +"\",\n" +
+                "  \"departureTime\": \"" + depTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \"" + depTime + "\",\n" +
                 "  \"driver\": {\n" +
                 "    \"driverName\": \"John Doe\",\n" +
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
                 "  },\n" + "\"departureLocation\": 10," +
                 "  \"transitAndStops\": [{\"transitAndStopId\": 12,\"amount\": 600},{\"transitAndStopId\": 13,\"amount\": 700}]\n" +
                 "}";
-        String expectedResponse = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"MethodArgumentNotValidException: #destination @errors.\",\"endpoint\":\"/api/protected/users/journeys/cars/1\",\"errors\":{\"destination\":\"destination is required\"}}";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/cars/1")
-                                            .contentType(MediaType.APPLICATION_JSON_UTF8)
-                                            .header("Authorization", "Bearer " + jwtToken)
-                                            .content(badRequest)
-                                            .accept(MediaType.APPLICATION_JSON);
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(badRequest)
+                .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(expectedResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("destination"))
+                .andExpect(jsonPath("$.errors.[0].message").value("destination is required"));
     }
 
     /**
@@ -935,7 +934,6 @@ public class JourneyControllerIntegrationTest {
                 "  },\n" + "\"departureLocation\": 10," +
                 "  \"transitAndStops\": [{\"transitAndStopId\": 12,\"amount\": 600},{\"transitAndStopId\": 13,\"amount\": 700}]\n" +
                 "}";
-        String expectedResponse = "{\"code\":\"VALIDATION_ERROR\",\"message\":\"MethodArgumentNotValidException: #destination @errors.\",\"endpoint\":\"/api/protected/users/journeys/1/cars/1\",\"errors\":{\"destination\":\"destination is required\"}}";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/1/cars/1")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -943,8 +941,9 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(expectedResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("destination"))
+                .andExpect(jsonPath("$.errors.[0].message").value("destination is required"));
     }
     /**
      ***USERS** can update information about  Journey for PersonalAgency

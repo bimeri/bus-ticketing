@@ -34,8 +34,7 @@ import java.util.Collections;
 
 import static net.gogroups.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * @author Nnouka Stephen
@@ -44,7 +43,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @RunWith(SpringJUnit4ClassRunner.class)
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @WebAppConfiguration
 @ActiveProfiles("test")
 public class TransitAndStopControllerIntegrationTest {
@@ -115,14 +113,7 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Test
     public void transit_should_return_400_bad_request() throws Exception {
-        String badResponse = "{\n" +
-                "  \"code\": \"VALIDATION_ERROR\",\n" +
-                "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
-                "  \"endpoint\": \"/api/protected/location\",\n" +
-                "  \"errors\": {\n" +
-                "    \"country\": \"country is required\"\n" +
-                "  }\n" +
-                "}";
+
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
@@ -134,8 +125,9 @@ public class TransitAndStopControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(badResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("country"))
+                .andExpect(jsonPath("$.errors.[0].message").value("country is required"));
     }
 
     @Test
@@ -165,14 +157,6 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Test
     public void transit_update_should_return_400_bad_request() throws Exception {
-        String badResponse = "{\n" +
-                "  \"code\": \"VALIDATION_ERROR\",\n" +
-                "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
-                "  \"endpoint\": \"/api/protected/location/1\",\n" +
-                "  \"errors\": {\n" +
-                "    \"country\": \"country is required\"\n" +
-                "  }\n" +
-                "}";
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
@@ -184,8 +168,9 @@ public class TransitAndStopControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(badResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("country"))
+                .andExpect(jsonPath("$.errors.[0].message").value("country is required"));
     }
 
     @Test

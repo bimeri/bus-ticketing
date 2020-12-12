@@ -1,20 +1,30 @@
 package net.gogroups.gowaka.exception;
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Nnouka Stephen
  * @date 30 Sep 2019
  */
+@Data
 public class ValidationErrorResponse extends ErrorResponse {
-    private Map<String, String> errors = new HashMap<>();
 
-    public Map<String, String> getErrors() {
-        return errors;
+    private List<ErrorItem> errors = new ArrayList<>();
+
+    void addError(ErrorItem errorItem){
+        this.errors.add(errorItem);
     }
 
-    public void setErrors(Map<String, String> errors) {
-        this.errors = errors;
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ErrorItem {
+        private String field;
+        private String message;
     }
 }

@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import net.gogroups.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.BookJourneyService;
@@ -14,7 +15,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -26,6 +26,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class BookJourneyController {
 
     private BookJourneyService bookJourneyService;
@@ -39,21 +40,24 @@ public class BookJourneyController {
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @PostMapping("/protected/bookJourney/journey/{journeyId}")
-    ResponseEntity<PaymentUrlDTO> bookJourney(@PathVariable("journeyId") Long journeyId, @Valid @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
+    ResponseEntity<PaymentUrlDTO> bookJourney(@PathVariable("journeyId") Long journeyId, @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
+        log.info("user booking journey for :{}", journeyId);
         return ResponseEntity.ok(bookJourneyService.bookJourney(journeyId, bookJourneyRequest));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/bookJourney/journey/{journeyId}/agency")
-    ResponseEntity<?> agencyUserBookJourney(@PathVariable("journeyId") Long journeyId, @Valid @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
+    ResponseEntity<?> agencyUserBookJourney(@PathVariable("journeyId") Long journeyId, @Validated @RequestBody BookJourneyRequest bookJourneyRequest) {
+        log.info("agency booking journey for :{}", journeyId);
         bookJourneyService.agencyUserBookJourney(journeyId, bookJourneyRequest);
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/journey/{journeyId}/booked_seats")
-    ResponseEntity<List<Integer>> getAllBookedSeats(@PathVariable("journeyId") Long bookedJourneyId) {
-        return ResponseEntity.ok(bookJourneyService.getAllBookedSeats(bookedJourneyId));
+    ResponseEntity<List<Integer>> getAllBookedSeats(@PathVariable("journeyId") Long journeyId) {
+        log.info("getting all booked seats for journey  :{}", journeyId);
+        return ResponseEntity.ok(bookJourneyService.getAllBookedSeats(journeyId));
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
@@ -91,13 +95,16 @@ public class BookJourneyController {
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @GetMapping("/protected/checkIn_status")
     public ResponseEntity<OnBoardingInfoDTO> getOnBoardingInfoResponse(@RequestParam("code") String code) {
+        log.info("getting on boarding info for code :{}", code);
         return ResponseEntity.ok(bookJourneyService.getPassengerOnBoardingInfo(code));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/checkIn")
-    public ResponseEntity<?> checkInPassengerByCode(@RequestBody CodeDTO dto) {
+    public ResponseEntity<?> checkInPassengerByCode(@RequestBody @Validated CodeDTO dto) {
+        log.info("checking in code :{}", dto.getCode());
         bookJourneyService.checkInPassengerByCode(dto.getCode());
+        log.info("checking successful for code :{}", dto.getCode());
         return ResponseEntity.noContent().build();
     }
 

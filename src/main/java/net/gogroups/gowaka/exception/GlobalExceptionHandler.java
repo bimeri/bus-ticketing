@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
         StringBuilder message = new StringBuilder("MethodArgumentNotValidException:");
 
         for(FieldError fieldError: fieldErrorList){
-            validationErrorResponse.getErrors().put(fieldError.getField(), fieldError.getDefaultMessage());
+            validationErrorResponse.addError(new ValidationErrorResponse.ErrorItem(fieldError.getField(), fieldError.getDefaultMessage()));
             message.append(" #").append(fieldError.getField());
         }
         message.append(" @errors.");
