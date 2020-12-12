@@ -176,6 +176,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void verifyEmail(EmailDTO emailDTO) {
+
+        ApiSecurityVerifyEmail apiSecurityVerifyEmail = new ApiSecurityVerifyEmail();
+        apiSecurityVerifyEmail.setUsername(emailDTO.getEmail());
+        apiSecurityVerifyEmail.setApplicationName(clientUserCredConfig.getAppName());
+        apiSecurityService.verifyEmail(apiSecurityVerifyEmail);
+    }
+
+    @Override
     public TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO) {
         ApiRefreshToken apiRefreshToken = new ApiRefreshToken();
         apiRefreshToken.setRefreshToken(refreshTokenDTO.getRefreshToken());

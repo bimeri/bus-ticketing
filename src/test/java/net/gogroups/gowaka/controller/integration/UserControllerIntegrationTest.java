@@ -335,4 +335,21 @@ public class UserControllerIntegrationTest {
 
     }
 
+    @Test
+    public void verifyEmail_success_return_204() throws Exception {
+        startMockServerWith("http://localhost:8082/api/public/v1/users/verify_email_link",
+                HttpStatus.NO_CONTENT, "");
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("info@go-groups.net");
+
+        RequestBuilder requestBuilder = post("/api/public/users/verify_email")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
 }

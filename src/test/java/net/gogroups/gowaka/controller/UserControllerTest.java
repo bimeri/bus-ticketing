@@ -6,8 +6,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -66,6 +69,16 @@ public class UserControllerTest {
         UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
         userController.updateProfile(updateProfileDTO);
         verify(mockUserService).updateProfile(updateProfileDTO);
+    }
+
+
+    @Test
+    public void verifyEmail_calls_UserService() {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("email@email.com");
+        ResponseEntity<?> response = userController.verifyEmail(emailDTO);
+        verify(mockUserService).verifyEmail(emailDTO);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 
 }

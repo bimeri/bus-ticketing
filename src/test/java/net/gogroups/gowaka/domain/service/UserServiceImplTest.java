@@ -9,10 +9,7 @@ import net.gogroups.notification.service.NotificationService;
 import net.gogroups.security.accessconfig.AppGrantedAuthority;
 import net.gogroups.security.accessconfig.JwtTokenProvider;
 import net.gogroups.security.accessconfig.UserDetailsImpl;
-import net.gogroups.security.model.ApiSecurityAccessToken;
-import net.gogroups.security.model.ApiSecurityChangePassword;
-import net.gogroups.security.model.ApiSecurityForgotPassword;
-import net.gogroups.security.model.ApiSecurityUser;
+import net.gogroups.security.model.*;
 import net.gogroups.security.service.ApiSecurityService;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.UserService;
@@ -64,6 +61,7 @@ public class UserServiceImplTest {
     ArgumentCaptor<User> userArgumentCaptor;
     ArgumentCaptor<ApiSecurityChangePassword> apiSecurityChangePasswordArgumentCaptor;
     ArgumentCaptor<ApiSecurityForgotPassword> apiSecurityForgotPasswordArgumentCaptor;
+    ArgumentCaptor<ApiSecurityVerifyEmail> apiSecurityVerifyEmailArgumentCaptor;
 
     @Before
     public void setUp() {
@@ -345,5 +343,22 @@ public class UserServiceImplTest {
         assertThat(userValue.getIdCardNumber()).isEqualTo("123456789");
         assertThat(userValue.getPhoneNumber()).isEqualTo("67676767676");
     }
+
+    @Test
+    public void verifyEmail_calls_ApiSecurityService() {
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("example@example.com");
+
+        apiSecurityVerifyEmailArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityVerifyEmail.class);
+        userService.verifyEmail(emailDTO);
+
+        verify(mockApiSecurityService).verifyEmail(apiSecurityVerifyEmailArgumentCaptor.capture());
+
+        ApiSecurityVerifyEmail value = apiSecurityVerifyEmailArgumentCaptor.getValue();
+        assertThat(value.getApplicationName()).isEqualTo(clientUserCredConfig.getAppName());
+        assertThat(value.getUsername()).isEqualTo("example@example.com");
+    }
+
 
 }
