@@ -103,6 +103,12 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
+    public JourneyResponseDTO getAJourneyById(Long journeyId) {
+        Journey journey = getJourney(journeyId);
+        return mapToJourneyResponseDTO(journey);
+    }
+
+    @Override
     public void addStop(Long journeyId, AddStopDTO addStopDTO) {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {

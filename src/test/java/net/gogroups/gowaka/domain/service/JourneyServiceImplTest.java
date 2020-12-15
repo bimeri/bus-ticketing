@@ -340,6 +340,31 @@ public class JourneyServiceImplTest {
         journeyService.getJourneyById(1L);
     }
 
+
+
+    @Test
+    public void getAJourneyById_throw_journey_not_found_api_exception(){
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.empty());
+        expectedException.expect(ApiException.class);
+        expectedException.expectMessage("Journey not found");
+        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
+        journeyService.getAJourneyById(1L);
+    }
+
+    @Test
+    public void getAJourneyById_return_journey_response_dto(){
+
+        Journey journey = new Journey();
+        journey.setAmount(1000.0);
+        journey.setDepartureTime(LocalDateTime.MIN);
+
+        when(mockJourneyRepository.findById(1L)).thenReturn(Optional.of(journey));
+        JourneyResponseDTO journeyResponseDTO = journeyService.getAJourneyById(1L);
+        assertThat(journeyResponseDTO.getAmount(), is(1000.0));
+
+    }
+
+
     /**
      * #169112805
      * Scenario 1. Journey's arrivalIndicator is true

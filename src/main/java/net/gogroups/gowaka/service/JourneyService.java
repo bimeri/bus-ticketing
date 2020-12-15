@@ -19,6 +19,8 @@ public interface JourneyService {
 
     JourneyResponseDTO getJourneyById(Long journeyId);
 
+    JourneyResponseDTO getAJourneyById(Long journeyId);
+
     void addStop(Long journeyId, AddStopDTO addStopDTO);
 
     void deleteNonBookedJourney(Long journeyId);
@@ -50,7 +52,7 @@ public interface JourneyService {
     List<JourneyResponseDTO> searchJourney();
 
     List<JourneyResponseDTO> searchAllAvailableJourney();
-
     // service level methods
+
     void checkJourneyCarInOfficialAgency(Journey journey);
 }

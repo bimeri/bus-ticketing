@@ -641,6 +641,96 @@ public class JourneyControllerIntegrationTest {
                 .andReturn();
     }
 
+    @Test
+    public void getJourneyById_success_return200_journey_response_dto() throws Exception {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Malingo Major");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Tole Park");
+        location.setCity("Buea");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        Location location1 = new Location();
+        location1.setState("South West");
+        location1.setCountry("Cameroon");
+        location1.setCity("Kumba");
+        location1.setAddress("Fiango Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
+        Location location2 = new Location();
+        location2.setState("South West");
+        location2.setCountry("Cameroon");
+        location2.setCity("Muyuka");
+        location2.setAddress("Munyenge Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location2);
+        transitAndStopRepository.save(transitAndStop2);
+        Location location3 = new Location();
+        location3.setState("South West");
+        location3.setCountry("Cameroon");
+        location3.setCity("Ekona");
+        location3.setAddress("Small Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location3);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        bus.setCreatedAt(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        bus = carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+        journey.setJourneyStops(journeyStops);
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(bus);
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
+        journeyRepository.save(journey);
+
+        RequestBuilder requestBuilder = get("/api/protected/journeys/" + journey.getId())
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andReturn();
+    }
+
+
     /**
      * #169112805
      * Scenario 5. Add Stop Success

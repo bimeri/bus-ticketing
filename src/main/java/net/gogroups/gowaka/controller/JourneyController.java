@@ -52,6 +52,12 @@ public class JourneyController {
         return ResponseEntity.ok(journeyService.getJourneyById(journeyId));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_USERS')")
+    @GetMapping("/journeys/{journeyId}")
+    public ResponseEntity<JourneyResponseDTO> getAJourneyById(@PathVariable("journeyId") Long journeyId){
+        return ResponseEntity.ok(journeyService.getAJourneyById(journeyId));
+    }
+
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/add_stops")
     public ResponseEntity addStops(@PathVariable("journeyId") Long journeyId,
