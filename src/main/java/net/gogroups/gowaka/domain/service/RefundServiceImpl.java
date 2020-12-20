@@ -77,13 +77,16 @@ public class RefundServiceImpl implements RefundService {
     public void responseRefund(Long refundId, ResponseRefundDTO responseRefundDTO, String userId) {
 
         handleApprovalRefundFlow(refundId, userId, (refundPaymentTransaction, user) -> {
+            if (responseRefundDTO.getAmount() > refundPaymentTransaction.getPaymentTransaction().getAgencyAmount()) {
+                throw new ApiException(INVALID_AMOUNT_LIMIT.getMessage(), INVALID_AMOUNT_LIMIT.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
             refundPaymentTransaction.setIsRefundApproved(responseRefundDTO.getIsRefundApproved());
-                refundPaymentTransaction.setAmount(responseRefundDTO.getAmount()); //Todo: validate amount less than or equal to transaction amount
-                refundPaymentTransaction.setApprovalName(user.getFullName());
-                refundPaymentTransaction.setApprovalEmail(user.getEmail());
-                refundPaymentTransaction.setRespondedDate(LocalDateTime.now());
-                refundPaymentTransaction.setRefundResponseMessage(responseRefundDTO.getMessage());
-                refundPaymentTransactionRepository.save(refundPaymentTransaction);
+            refundPaymentTransaction.setAmount(responseRefundDTO.getAmount());
+            refundPaymentTransaction.setApprovalName(user.getFullName());
+            refundPaymentTransaction.setApprovalEmail(user.getEmail());
+            refundPaymentTransaction.setRespondedDate(LocalDateTime.now());
+            refundPaymentTransaction.setRefundResponseMessage(responseRefundDTO.getMessage());
+            refundPaymentTransactionRepository.save(refundPaymentTransaction);
         });
     }
 

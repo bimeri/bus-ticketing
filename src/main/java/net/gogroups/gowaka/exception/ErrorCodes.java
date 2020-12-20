@@ -27,7 +27,8 @@ public enum ErrorCodes {
     PASSENGER_ALREADY_CHECKED_IN("This passenger is already checked in"),
     SEAT_ALREADY_TAKEN("Seat already taken."),
     RESOURCE_ALREADY_EXIST("Resource already exist."),
-    ALREADY_REFUNDED_REQUEST("Request already refunded");
+    ALREADY_REFUNDED_REQUEST("Request already refunded"),
+    INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee");
 
     private String message;
 

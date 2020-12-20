@@ -257,7 +257,7 @@ class RefundServiceImplTest {
                 .thenReturn(Optional.of(user));
         ApiException apiException = assertThrows(ApiException.class, () -> refundService.responseRefund(2L, new ResponseRefundDTO(true, "please refund", 1000.00), "123"));
         assertThat(apiException.getErrorCode()).isEqualTo("ALREADY_REFUNDED_REQUEST");
-        assertThat(apiException.getMessage()).isEqualTo("Request already redunded");
+        assertThat(apiException.getMessage()).isEqualTo("Request already refunded");
         assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
 
     }
@@ -282,10 +282,13 @@ class RefundServiceImplTest {
         bookedJourney.setJourney(journey);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAgencyAmount(1000.0);
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+
+        paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
 
         when(mockRefundPaymentTransactionRepository.findById(2L))
                 .thenReturn(Optional.of(refundPaymentTransaction));
@@ -300,6 +303,45 @@ class RefundServiceImplTest {
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getApprovalName()).isEqualTo("John Doe");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundResponseMessage()).isEqualTo("I have approved");
 
+    }
+
+
+    @Test
+    void responseRefund_throwException_whenAmountLimitInvalid() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency);
+
+        User user = new User();
+        user.setFullName("John Doe");
+        user.setEmail("email@email.com");
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAgencyAmount(1000.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+
+        paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
+
+        when(mockRefundPaymentTransactionRepository.findById(2L))
+                .thenReturn(Optional.of(refundPaymentTransaction));
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        ApiException apiException = assertThrows(ApiException.class, () -> refundService.responseRefund(2L, new ResponseRefundDTO(true, "I have approved", 1500.00), "123"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("INVALID_AMOUNT_LIMIT");
+        assertThat(apiException.getMessage()).isEqualTo("Amount must not be more than ticket fee");
     }
 
     @Test
