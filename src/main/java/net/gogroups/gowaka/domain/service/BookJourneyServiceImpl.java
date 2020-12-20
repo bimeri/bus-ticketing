@@ -389,20 +389,39 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {
+
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
         bookedJourneyStatusDTO.setId(bookedJourney.getId());
-        bookedJourneyStatusDTO.setAmount(bookedJourney.getPaymentTransaction().getAmount());
 
-        bookedJourneyStatusDTO.setServiceChargeAmount(bookedJourney.getPaymentTransaction().getServiceChargeAmount());
-        bookedJourneyStatusDTO.setAgencyAmount(bookedJourney.getPaymentTransaction().getAgencyAmount());
+        PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
 
-        bookedJourneyStatusDTO.setPaymentDate(bookedJourney.getPaymentTransaction().getPaymentDate());
-        bookedJourneyStatusDTO.setCurrencyCode(bookedJourney.getPaymentTransaction().getCurrencyCode());
-        bookedJourneyStatusDTO.setPaymentReason(bookedJourney.getPaymentTransaction().getPaymentReason());
-        bookedJourneyStatusDTO.setPaymentStatus(bookedJourney.getPaymentTransaction().getTransactionStatus());
-        bookedJourneyStatusDTO.setPaymentChannelTransactionNumber(bookedJourney.getPaymentTransaction().getPaymentChannelTransactionNumber());
+        bookedJourneyStatusDTO.setAmount(paymentTransaction.getAmount());
+        bookedJourneyStatusDTO.setServiceChargeAmount(paymentTransaction.getServiceChargeAmount());
+        bookedJourneyStatusDTO.setAgencyAmount(paymentTransaction.getAgencyAmount());
 
-        bookedJourneyStatusDTO.setPaymentChannel(bookedJourney.getPaymentTransaction().getPaymentChannel());
+        bookedJourneyStatusDTO.setPaymentDate(paymentTransaction.getPaymentDate());
+        bookedJourneyStatusDTO.setCurrencyCode(paymentTransaction.getCurrencyCode());
+        bookedJourneyStatusDTO.setPaymentReason(paymentTransaction.getPaymentReason());
+        bookedJourneyStatusDTO.setPaymentStatus(paymentTransaction.getTransactionStatus());
+        bookedJourneyStatusDTO.setTransactionId(paymentTransaction.getId());
+
+        bookedJourneyStatusDTO.setPaymentChannelTransactionNumber(paymentTransaction.getPaymentChannelTransactionNumber());
+        bookedJourneyStatusDTO.setPaymentChannel(paymentTransaction.getPaymentChannel());
+
+        RefundPaymentTransaction refundPaymentTransaction = paymentTransaction.getRefundPaymentTransaction();
+        bookedJourneyStatusDTO.setHasRefundRequest(true);
+        bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.PENDING);
+
+        if (refundPaymentTransaction == null) {
+            bookedJourneyStatusDTO.setHasRefundRequest(false);
+            bookedJourneyStatusDTO.setRefundStatus(null);
+        } else if(!refundPaymentTransaction.getIsRefunded()){
+            bookedJourneyStatusDTO.setRefundStatus(refundPaymentTransaction.getIsRefundApproved() ? BookedJourneyStatusDTO.RefundStatus.APPROVED : BookedJourneyStatusDTO.RefundStatus.DECLINED);
+            bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
+        }else if(refundPaymentTransaction.getIsRefunded()){
+            bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.REFUNDED);
+            bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
+        }
 
         bookedJourneyStatusDTO.setCarDriverName(bookedJourney.getJourney().getDriver().getDriverName());
         bookedJourneyStatusDTO.setCarLicenseNumber(bookedJourney.getJourney().getCar().getLicensePlateNumber());
@@ -410,7 +429,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (bookedJourney.getJourney().getCar().getIsOfficialAgencyIndicator()) {
             Bus bus = (Bus) bookedJourney.getJourney().getCar();
             bookedJourneyStatusDTO.setAgencyName(bus.getOfficialAgency().getAgencyName());
-            bookedJourneyStatusDTO.setAgencyLogo( fileStorageService.getFilePath(bus.getOfficialAgency().getLogo(), "", FileAccessType.PROTECTED));
+            bookedJourneyStatusDTO.setAgencyLogo(fileStorageService.getFilePath(bus.getOfficialAgency().getLogo(), "", FileAccessType.PROTECTED));
         }
 
         Location departureLocation = bookedJourney.getJourney().getDepartureLocation().getLocation();
@@ -561,7 +580,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return true;
     }
 
-
     /**
      * throw exception of journey is not started
      *
@@ -574,7 +592,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
         return true;
     }
-
 
     private boolean paymentAcceptedOrElseReject(PaymentTransaction paymentTransaction) {
         if (paymentTransaction == null) {
@@ -597,7 +614,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private boolean filterCompletedPayments(PaymentTransaction paymentTransaction) {
         return paymentTransaction != null && paymentTransaction.getTransactionStatus().equals(COMPLETED.toString());
     }
-
 
     private String generateCode(String userId, Journey journey, Integer seat) {
 

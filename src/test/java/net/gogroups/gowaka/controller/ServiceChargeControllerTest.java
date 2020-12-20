@@ -2,11 +2,11 @@ package net.gogroups.gowaka.controller;
 
 import net.gogroups.gowaka.dto.ServiceChargeDTO;
 import net.gogroups.gowaka.service.ServiceChargeService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * Author: Edward Tanko <br/>
  * Date: 10/31/20 6:41 AM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ServiceChargeControllerTest {
 
     @Mock
@@ -30,13 +30,13 @@ public class ServiceChargeControllerTest {
 
     private ServiceChargeController serviceChargeController;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         serviceChargeController = new ServiceChargeController(mockServiceChargeService);
     }
 
     @Test
-    public void getServiceCharge_call_ServiceChargeService() {
+    void getServiceCharge_call_ServiceChargeService() {
 
         when(mockServiceChargeService.getServiceCharges())
                 .thenReturn(Collections.singletonList(new ServiceChargeDTO()));
@@ -48,7 +48,7 @@ public class ServiceChargeControllerTest {
     }
 
     @Test
-    public void updateServiceCharge_call_ServiceChargeService() {
+    void updateServiceCharge_call_ServiceChargeService() {
 
         ServiceChargeDTO serviceChargeDTO = new ServiceChargeDTO();
         serviceChargeDTO.setPercentageCharge(10.0);

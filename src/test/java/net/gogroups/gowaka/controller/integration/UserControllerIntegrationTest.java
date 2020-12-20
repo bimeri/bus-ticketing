@@ -9,10 +9,10 @@ import net.gogroups.gowaka.dto.EmailDTO;
 import net.gogroups.gowaka.dto.EmailPasswordDTO;
 import net.gogroups.gowaka.dto.UpdateProfileDTO;
 import net.gogroups.security.model.ApiSecurityAccessToken;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -41,10 +41,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Date: 9/14/19 10:31 AM <br/>
  */
 @SpringBootTest
-@RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ExtendWith(SpringExtension.class)
 public class UserControllerIntegrationTest {
 
     @Autowired
@@ -113,25 +113,24 @@ public class UserControllerIntegrationTest {
 
     private MockRestServiceServer mockServer;
 
-    @Before
-    public void setUp() throws JsonProcessingException {
+    @BeforeEach
+    void setUp() throws JsonProcessingException {
         mockServer = MockRestServiceServer.createServer(restTemplate);
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         mockServer.reset();
     }
 
     private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
-//                .andExpect(header("content-type", "application/json;charset=UTF-8"))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    public void createUser_success_returns_200() throws Exception {
+    void createUser_success_returns_200() throws Exception {
 
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
@@ -142,7 +141,7 @@ public class UserControllerIntegrationTest {
         startMockServerWith("http://localhost:8082/api/public/login",
                 HttpStatus.OK, successNotificationTokenResponse);
         mockServer.expect(requestTo("http://localhost:8082/api/protected/sendEmail"))
-                .andExpect(header("content-type", "application/json;charset=UTF-8"))
+                .andExpect(header("content-type", "application/json"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
@@ -165,7 +164,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void createUser_failure_returns_422() throws Exception {
+    void createUser_failure_returns_422() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
                 HttpStatus.OK, successClientTokenResponse);
@@ -192,7 +191,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void loginUser_success_returns_200() throws Exception {
+    void loginUser_success_returns_200() throws Exception {
 
         User user = new User();
         user.setUserId("12");
@@ -224,7 +223,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void loginUser_failed_returns_401() throws Exception {
+    void loginUser_failed_returns_401() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
                 HttpStatus.UNAUTHORIZED, failureUserTokenResponse);
@@ -248,7 +247,7 @@ public class UserControllerIntegrationTest {
 
 
     @Test
-    public void changeUserPassword_success_returns_204() throws Exception {
+    void changeUserPassword_success_returns_204() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/password",
                 HttpStatus.NO_CONTENT, "");
@@ -268,7 +267,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void changeUserPassword_failure_returns_422() throws Exception {
+    void changeUserPassword_failure_returns_422() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/password",
                 HttpStatus.UNPROCESSABLE_ENTITY, failureChangePasswordResponse);
@@ -291,7 +290,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void forgotUserPassword_success_return_204() throws Exception {
+    void forgotUserPassword_success_return_204() throws Exception {
         startMockServerWith("http://localhost:8082/api/public/v1/users/otp",
                 HttpStatus.NO_CONTENT, "");
 
@@ -308,7 +307,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void updateProfile_success_return_204() throws Exception {
+    void updateProfile_success_return_204() throws Exception {
 
         User user = new User();
         user.setUserId("12");
@@ -336,7 +335,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void verifyEmail_success_return_204() throws Exception {
+    void verifyEmail_success_return_204() throws Exception {
         startMockServerWith("http://localhost:8082/api/public/v1/users/verify_email_link",
                 HttpStatus.NO_CONTENT, "");
 

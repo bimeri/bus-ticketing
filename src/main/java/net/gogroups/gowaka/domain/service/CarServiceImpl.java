@@ -29,6 +29,7 @@ import static net.gogroups.gowaka.exception.ErrorCodes.RESOURCE_NOT_FOUND;
  */
 @Service
 public class CarServiceImpl implements CarService {
+
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
@@ -126,7 +127,8 @@ public class CarServiceImpl implements CarService {
     @Override
     public List<CarDTO> getAllUnapprovedCars() {
         List<Car> unApprovedCars = carRepository.findByIsCarApproved(false);
-        List<CarDTO> carDTOs = unApprovedCars.stream()
+
+        return unApprovedCars.stream()
                 .map(car -> {
                     CarDTO carDTO = new CarDTO();
                     carDTO.setId(car.getId());
@@ -137,8 +139,6 @@ public class CarServiceImpl implements CarService {
                     carDTO.setTimestamp(car.getCreatedAt());
                     return carDTO;
                 }).collect(Collectors.toList());
-
-        return carDTOs;
     }
 
     @Override
@@ -181,7 +181,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
-        List<SeatStructure> seatStructures = new ArrayList<>();
+        List<SeatStructure> seatStructures;
         if (numberOfSeats.equals(0)) {
             seatStructures = seatStructureRepository.findAll();
         } else {
@@ -350,8 +350,8 @@ public class CarServiceImpl implements CarService {
         carDTO.setId(car.getId());
         carDTO.setName(car.getName());
         carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-        carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
-        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
+        carDTO.setIsCarApproved(car.getIsCarApproved() != null && car.getIsCarApproved());
+        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator());
         carDTO.setTimestamp(car.getCreatedAt());
         return carDTO;
     }

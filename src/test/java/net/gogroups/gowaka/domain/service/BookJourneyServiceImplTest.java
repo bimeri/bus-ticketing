@@ -15,27 +15,22 @@ import net.gogroups.payamgo.model.PayAmGoRequestDTO;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
 import net.gogroups.storage.service.FileStorageService;
-import org.hamcrest.core.Is;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -44,7 +39,7 @@ import static org.mockito.Mockito.*;
  * Author: Edward Tanko <br/>
  * Date: 3/25/20 9:51 AM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BookJourneyServiceImplTest {
 
     @Mock
@@ -77,13 +72,10 @@ public class BookJourneyServiceImplTest {
     private ArgumentCaptor<PaymentTransaction> paymentTransactionArgumentCaptor = ArgumentCaptor.forClass(PaymentTransaction.class);
     private ArgumentCaptor<Passenger> passengerArgumentCaptor = ArgumentCaptor.forClass(Passenger.class);
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private Journey journey;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
 
         PaymentUrlResponseProps paymentUrlResponseProps = new PaymentUrlResponseProps();
         paymentUrlResponseProps.setPayAmGoPaymentCancelUrl("http://localhost/cancel");
@@ -174,25 +166,24 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void bookJourney_throwsException_whenJourneyIdNotFound() {
+    void bookJourney_throwsException_whenJourneyIdNotFound() {
 
         when(mockJourneyRepository.findById(anyLong()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.bookJourney(11L, new BookJourneyRequest());
-        verify(mockBookedJourneyRepository).findById(11L);
-        verifyZeroInteractions(mockUserService);
-        verifyZeroInteractions(mockUserRepository);
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, new BookJourneyRequest()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
+
+        verifyNoInteractions(mockUserService);
+        verifyNoInteractions(mockUserRepository);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void bookJourney_throwsException_whenUserNotFound() {
+    void bookJourney_throwsException_whenUserNotFound() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -204,21 +195,20 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.bookJourney(11L, new BookJourneyRequest());
-        verify(mockBookedJourneyRepository).findById(11L);
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, new BookJourneyRequest()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
+
         verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
 
     }
 
     @Test
-    public void bookJourney_throwsException_whenJourneyAlreadyTerminated() {
+    void bookJourney_throwsException_whenJourneyAlreadyTerminated() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -234,21 +224,19 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage())));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, new BookJourneyRequest()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_TERMINATED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage());
 
-        bookJourneyService.bookJourney(11L, new BookJourneyRequest());
-        verify(mockBookedJourneyRepository).findById(11L);
         verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void bookJourney_throwsException_whenSeatAlreadyTaken() {
+    void bookJourney_throwsException_whenSeatAlreadyTaken() {
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
         User user = new User();
@@ -270,25 +258,24 @@ public class BookJourneyServiceImplTest {
         when(mockPassengerRepository.findByBookedJourney_Journey_Id(11L))
                 .thenReturn(Collections.singletonList(passenger));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.SEAT_ALREADY_TAKEN.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.SEAT_ALREADY_TAKEN.getMessage())));
-
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         BookJourneyRequest.Passenger passengerDTO = new BookJourneyRequest.Passenger();
         passengerDTO.setSeatNumber(3);
         bookJourneyRequest.getPassengers().add(passengerDTO);
-        bookJourneyService.bookJourney(11L, bookJourneyRequest);
-        verify(mockBookedJourneyRepository).findById(11L);
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, bookJourneyRequest));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("SEAT_ALREADY_TAKEN");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.SEAT_ALREADY_TAKEN.getMessage());
+
         verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void bookJourney_throwsException_whenJourneyAlreadyStarted() {
+    void bookJourney_throwsException_whenJourneyAlreadyStarted() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -305,21 +292,19 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage())));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, new BookJourneyRequest()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_STARTED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage());
 
-        bookJourneyService.bookJourney(11L, new BookJourneyRequest());
-        verify(mockBookedJourneyRepository).findById(11L);
         verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void bookJourney_throwsException_whenRequestDestinationIndicatorIsFalse_andTransitAndStopNotFound() {
+    void bookJourney_throwsException_whenRequestDestinationIndicatorIsFalse_andTransitAndStopNotFound() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -346,21 +331,18 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.bookJourney(11L, bookJourneyRequest));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
 
-        bookJourneyService.bookJourney(11L, bookJourneyRequest);
-        verify(mockBookedJourneyRepository).findById(11L);
-        verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsTrue() {
+    void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsTrue() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -468,7 +450,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsFalse() {
+    void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsFalse() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -582,7 +564,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void agencyUserBookJourney_makeManualPayment_whenRequestDestinationIndicatorIsFalse() {
+    void agencyUserBookJourney_makeManualPayment_whenRequestDestinationIndicatorIsFalse() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -698,7 +680,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void agencyUserBookJourney_throwsException_whenUserNotInAgency() {
+    void agencyUserBookJourney_throwsException_whenUserNotInAgency() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -716,35 +698,31 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.UNPROCESSABLE_ENTITY)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.USER_NOT_IN_AGENCY.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.USER_NOT_IN_AGENCY.getMessage())));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.agencyUserBookJourney(11L, new BookJourneyRequest()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(apiException.getErrorCode()).isEqualTo("USER_NOT_IN_AGENCY");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.USER_NOT_IN_AGENCY.getMessage());
 
-        bookJourneyService.agencyUserBookJourney(11L, new BookJourneyRequest());
-        verify(mockBookedJourneyRepository).findById(11L);
-        verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("10");
-        verifyZeroInteractions(mockPaymentTransactionRepository);
-        verifyZeroInteractions(mockPayAmGoService);
+        verifyNoInteractions(mockPaymentTransactionRepository);
+        verifyNoInteractions(mockPayAmGoService);
     }
 
     @Test
-    public void getAllBookedSeats_throwsException_whenJourneyIdNotFound() {
+    void getAllBookedSeats_throwsException_whenJourneyIdNotFound() {
 
         when(mockJourneyRepository.findById(anyLong()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.getAllBookedSeats(11L);
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getAllBookedSeats(11L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
 
     }
 
     @Test
-    public void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsCOMPLETED() {
+    void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsCOMPLETED() {
 
         when(mockJourneyRepository.findById(anyLong()))
                 .thenReturn(Optional.of(journey));
@@ -756,7 +734,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsWAITING_AndPaymentWaitTimeLessThanLimit() {
+    void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsWAITING_AndPaymentWaitTimeLessThanLimit() {
 
         Journey journey = new Journey();
         BookedJourney bookedJourney = new BookedJourney();
@@ -779,7 +757,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsWAITING_AndPaymentWaitTimeGreaterThanLimit() {
+    void getAllBookedSeats_returnAListOfBookedSeatNumber_whenJourneyIdExist_AndPaymentIsWAITING_AndPaymentWaitTimeGreaterThanLimit() {
 
         Journey journey = new Journey();
         BookedJourney bookedJourney = new BookedJourney();
@@ -803,34 +781,32 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getBookJourneyStatus_throwException_whenBookJourneyIdDontExit() {
+    void getBookJourneyStatus_throwException_whenBookJourneyIdDontExit() {
 
 
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
 
-        bookJourneyService.getBookJourneyStatus(2L);
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getBookJourneyStatus(2L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
 
     }
 
     @Test
-    public void getUserBookedJourneyHistory_throwException_whenUserNotLogin() {
+    void getUserBookedJourneyHistory_throwException_whenUserNotLogin() {
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(null);
 
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("message", is("Resource Not Found")));
-        expectedException.expect(hasProperty("errorCode", is("RESOURCE_NOT_FOUND")));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getUserBookedJourneyHistory());
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("Resource Not Found");
 
-        bookJourneyService.getUserBookedJourneyHistory();
     }
 
     @Test
-    public void getUserBookedJourneyHistory_returnListOfStatus_whenUserLogin() {
+    void getUserBookedJourneyHistory_returnListOfStatus_whenUserLogin() {
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
@@ -864,7 +840,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getUserBookedJourneyHistory_returnListOfStatus_whenUserLoginAndNoCompletedTransaction() {
+    void getUserBookedJourneyHistory_returnListOfStatus_whenUserLoginAndNoCompletedTransaction() {
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
@@ -879,7 +855,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getBookJourneyStatus_returnStatusResponse_whenBookJourneyIdExit() {
+    void getBookJourneyStatus_returnStatusResponse_whenBookJourneyIdExit() {
 
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);
         when(mockBookedJourneyRepository.findById(2L))
@@ -914,7 +890,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getHtmlReceipt_returnHtmlStringOfReceipt_whenBookJourneyIdExit() {
+    void getHtmlReceipt_returnHtmlStringOfReceipt_whenBookJourneyIdExit() {
 
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);
         when(mockBookedJourneyRepository.findById(2L))
@@ -931,21 +907,21 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void handlePaymentResponse_throwException_whenBookJourneyIdDontExit() {
+    void handlePaymentResponse_throwException_whenBookJourneyIdDontExit() {
 
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
 
-        bookJourneyService.handlePaymentResponse(2L, new PaymentStatusResponseDTO());
+        ApiException apiException = assertThrows(ApiException.class, () ->  bookJourneyService.handlePaymentResponse(2L, new PaymentStatusResponseDTO()));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
+
 
     }
 
     @Test
-    public void handlePaymentResponse_UpdateTransactionStatus_whenBookJourneyIdExitAndTransactionValid() {
+    void handlePaymentResponse_UpdateTransactionStatus_whenBookJourneyIdExitAndTransactionValid() {
 
         PaymentStatusResponseDTO paymentStatusResponseDTO = new PaymentStatusResponseDTO();
         paymentStatusResponseDTO.setAppTransactionNumber("AppTxnNumber");
@@ -983,18 +959,20 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getPassengerOnBoardingInfo_throwsException_whenCheckInCodeNotFound(){
+    void getPassengerOnBoardingInfo_throwsException_whenCheckInCodeNotFound() {
+
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.getPassengerOnBoardingInfo("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getPassengerOnBoardingInfo("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
+
     }
 
     @Test
-    public void getPassengerOnBoardingInfo_throwsException_whenJourneyAlreadyStarted(){
+    void getPassengerOnBoardingInfo_throwsException_whenJourneyAlreadyStarted() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(true);
@@ -1005,15 +983,15 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage())));
-        bookJourneyService.getPassengerOnBoardingInfo("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getPassengerOnBoardingInfo("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_STARTED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage());
     }
 
     @Test
-    public void getPassengerOnBoardingInfo_throwsException_whenJourneyAlreadyTerminated(){
+    void getPassengerOnBoardingInfo_throwsException_whenJourneyAlreadyTerminated() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1025,15 +1003,15 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage())));
-        bookJourneyService.getPassengerOnBoardingInfo("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getPassengerOnBoardingInfo("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_TERMINATED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage());
     }
 
     @Test
-    public void getPassengerOnBoardingInfo_throwsException_whenPaymentDeclined(){
+    void getPassengerOnBoardingInfo_throwsException_whenPaymentDeclined() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1048,15 +1026,15 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.getPassengerOnBoardingInfo("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getPassengerOnBoardingInfo("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
     }
 
     @Test
-    public void getPassengerOnBoardingInfo_returnOnBoardingDTO_whenJourneyNotStartedOrTerminatedAndPaymentCompleted() {
+    void getPassengerOnBoardingInfo_returnOnBoardingDTO_whenJourneyNotStartedOrTerminatedAndPaymentCompleted() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1066,7 +1044,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16,"paul@gmail.com", "66887541", "1101-0001", false));
+        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16, "paul@gmail.com", "66887541", "1101-0001", false));
         Location location = new Location();
         location.setCountry("Cameroon");
         location.setState("SW");
@@ -1102,7 +1080,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void checkInPassenger_throwException_whenJourneyAlreadyStarted() {
+    void checkInPassenger_throwException_whenJourneyAlreadyStarted() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(true);
@@ -1114,15 +1092,15 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage())));
-        bookJourneyService.checkInPassengerByCode("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.checkInPassengerByCode("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_STARTED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage());
     }
 
     @Test
-    public void checkInPassenger_throwException_whenJourneyAlreadyTerminated(){
+    void checkInPassenger_throwException_whenJourneyAlreadyTerminated() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1134,15 +1112,15 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage())));
-        bookJourneyService.checkInPassengerByCode("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.checkInPassengerByCode("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo("JOURNEY_ALREADY_TERMINATED");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage());
     }
 
     @Test
-    public void checkInPassenger_throwException_whenPaymentDeclined(){
+    void checkInPassenger_throwException_whenPaymentDeclined() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1158,27 +1136,27 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.checkInPassengerByCode("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.checkInPassengerByCode("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
     }
 
     @Test
-    public void checkInPassenger_throwException_whenCheckInCodeNotFound(){
+    void checkInPassenger_throwException_whenCheckInCodeNotFound() {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.NOT_FOUND)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage())));
-        bookJourneyService.checkInPassengerByCode("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.checkInPassengerByCode("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
     }
 
     @Test
-    public void checkInPassenger_throwException_whenUserAlreadyCheckedIn(){
+    void checkInPassenger_throwException_whenUserAlreadyCheckedIn() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1195,15 +1173,16 @@ public class BookJourneyServiceImplTest {
 
         when(mockPassengerRepository.findByCheckedInCode(anyString()))
                 .thenReturn(Optional.of(passenger));
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("httpStatus", is(HttpStatus.CONFLICT)));
-        expectedException.expect(hasProperty("errorCode", Is.is(ErrorCodes.PASSENGER_ALREADY_CHECKED_IN.toString())));
-        expectedException.expect(hasProperty("message", Is.is(ErrorCodes.PASSENGER_ALREADY_CHECKED_IN.getMessage())));
-        bookJourneyService.checkInPassengerByCode("someCode");
+
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.checkInPassengerByCode("someCode"));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo("PASSENGER_ALREADY_CHECKED_IN");
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.PASSENGER_ALREADY_CHECKED_IN.getMessage());
+
     }
 
     @Test
-    public void checkInPassenger_checkIn_whenUserNotAlreadyCheckedIn(){
+    void checkInPassenger_checkIn_whenUserNotAlreadyCheckedIn() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1226,7 +1205,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    public void getAllPassengerOnBoardingInfo_returnOnBoardingDTOList() {
+    void getAllPassengerOnBoardingInfo_returnOnBoardingDTOList() {
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(false);
@@ -1236,7 +1215,7 @@ public class BookJourneyServiceImplTest {
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
         bookedJourney.setPaymentTransaction(paymentTransaction);
-        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16,"paul@gmail.com", "66887541", "1101-0001", false));
+        bookedJourney.getPassengers().add(new Passenger("paul", "12345678", 16, "paul@gmail.com", "66887541", "1101-0001", false));
         Location location = new Location();
         location.setCountry("Cameroon");
         location.setState("SW");

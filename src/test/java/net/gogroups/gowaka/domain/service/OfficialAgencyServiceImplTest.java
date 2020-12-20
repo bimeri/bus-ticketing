@@ -17,14 +17,12 @@ import net.gogroups.security.model.ApiSecurityUser;
 import net.gogroups.security.service.ApiSecurityService;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
@@ -34,8 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -46,7 +43,7 @@ import static org.mockito.Mockito.when;
  * Author: Edward Tanko <br/>
  * Date: 9/17/19 9:29 PM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class OfficialAgencyServiceImplTest {
 
     @Mock
@@ -65,25 +62,20 @@ public class OfficialAgencyServiceImplTest {
     @Mock
     private JourneyRepository mockJourneyRepository;
 
-    private ClientUserCredConfig clientUserCredConfig;
-
     private OfficialAgencyService officialAgencyService;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Before
-    public void setUp() {
-        this.clientUserCredConfig = new ClientUserCredConfig();
-        this.clientUserCredConfig.setClientId("client-id");
-        this.clientUserCredConfig.setClientId("client-secret");
-        this.clientUserCredConfig.setAppName("GoWaka");
+    @BeforeEach
+    void setUp() {
+        ClientUserCredConfig clientUserCredConfig = new ClientUserCredConfig();
+        clientUserCredConfig.setClientId("client-id");
+        clientUserCredConfig.setClientId("client-secret");
+        clientUserCredConfig.setAppName("GoWaka");
 
         officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService, mockJourneyRepository);
     }
 
     @Test
-    public void createOfficialAgency_call_OfficialAgencyRepository() {
+    void createOfficialAgency_call_OfficialAgencyRepository() {
 
         ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
         ArgumentCaptor<OfficialAgency> officialAgencyArgumentCaptor = ArgumentCaptor.forClass(OfficialAgency.class);
@@ -151,7 +143,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void uploadAgencyLogo_calls_fileStorageService() throws IOException {
+    void uploadAgencyLogo_calls_fileStorageService() throws IOException {
         MockMultipartFile file = new MockMultipartFile("file", "logo.png", "multipart/form-data", "My logo Content".getBytes());
         when(mockOfficialAgencyRepository.findById(2L))
                 .thenReturn(Optional.of(new OfficialAgency()));
@@ -161,7 +153,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void getAllOfficialAgencies_returnAgencyDTO() {
+    void getAllOfficialAgencies_returnAgencyDTO() {
 
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setLogo("agency_logos/2/logo.png");
@@ -178,7 +170,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void getUserOfficialAgency_throwException_whenUserNotFound() {
+    void getUserOfficialAgency_throwException_whenUserNotFound() {
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId("10");
@@ -187,15 +179,14 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User not found");
-        expectedException.expect(hasProperty("errorCode", is("RESOURCE_NOT_FOUND")));
-        officialAgencyService.getUserAgency();
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.getUserAgency());
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("User not found");
 
     }
 
     @Test
-    public void getUserOfficialAgency_returnAgencyDTO() {
+    void getUserOfficialAgency_returnAgencyDTO() {
 
         OfficialAgency officialAgency = new OfficialAgency();
         Bus car = new Bus();
@@ -232,7 +223,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void updateOfficialAgencies_returnAgencyDTO() {
+    void updateOfficialAgencies_returnAgencyDTO() {
 
 
         ArgumentCaptor<OfficialAgency> officialAgencyArgumentCaptor = ArgumentCaptor.forClass(OfficialAgency.class);
@@ -254,7 +245,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void createOfficialAgency_throws_Exception_when_user_isAlready_inAn_Agency() {
+    void createOfficialAgency_throws_Exception_when_user_isAlready_inAn_Agency() {
 
 
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
@@ -278,16 +269,14 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById(any()))
                 .thenReturn(Optional.of(user));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User already a member of an agency.");
-        expectedException.expect(hasProperty("errorCode", is("USER_ALREADY_IN_AN_AGENCY")));
-
-        officialAgencyService.createOfficialAgency(createOfficialAgencyDTO);
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.createOfficialAgency(createOfficialAgencyDTO));
+        assertThat(apiException.getErrorCode()).isEqualTo("USER_ALREADY_IN_AN_AGENCY");
+        assertThat(apiException.getMessage()).isEqualTo("User already a member of an agency.");
 
     }
 
     @Test
-    public void assignAgencyUserRole_calls_ApiSecurityService() {
+    void assignAgencyUserRole_calls_ApiSecurityService() {
 
         ArgumentCaptor<String> idArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> fieldArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -342,7 +331,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void assignAgencyUserRole_Donot_assign_AGENCY_ADMIN_and_GW_ADMIN() {
+    void assignAgencyUserRole_Donot_assign_AGENCY_ADMIN_and_GW_ADMIN() {
 
         ArgumentCaptor<String> idArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> fieldArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -397,7 +386,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void assignAgencyUserRole_throw_Exception_when_User_not_inSameAgency_as_AuthUser() {
+    void assignAgencyUserRole_throw_Exception_when_User_not_inSameAgency_as_AuthUser() {
 
         OfficialAgency userOfficialAgency = new OfficialAgency();
         userOfficialAgency.setId(88L);
@@ -420,16 +409,14 @@ public class OfficialAgencyServiceImplTest {
         officialAgencyUserRoleRequestDTO.setUserId("12");
         officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_ADMIN", "AGENCY_MANAGER"));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User must be a member to your agency.");
-        expectedException.expect(hasProperty("errorCode", is("USER_NOT_IN_AGENCY")));
-
-        officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.assignAgencyUserRole(officialAgencyUserRoleRequestDTO));
+        assertThat(apiException.getErrorCode()).isEqualTo("USER_NOT_IN_AGENCY");
+        assertThat(apiException.getMessage()).isEqualTo("User must be a member to your agency.");
 
     }
 
     @Test
-    public void getAgencyUsers_getAll_Users_in_Agency() {
+    void getAgencyUsers_getAll_Users_in_Agency() {
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
@@ -476,7 +463,7 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void addAgencyUsers_throw_Exception_when_authUser_NotFound() {
+    void addAgencyUsers_throw_Exception_when_authUser_NotFound() {
 
         EmailDTO emailDTO = new EmailDTO();
         emailDTO.setEmail("example@example.com");
@@ -488,15 +475,14 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById(any()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User not found.");
-        expectedException.expect(hasProperty("errorCode", is("RESOURCE_NOT_FOUND")));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("User not found.");
 
-        officialAgencyService.addAgencyUser(emailDTO);
     }
 
     @Test
-    public void addAgencyUsers_throw_Exception_when_user_is_already_a_member_of_An_Agency() {
+    void addAgencyUsers_throw_Exception_when_user_is_already_a_member_of_An_Agency() {
 
         EmailDTO emailDTO = new EmailDTO();
         emailDTO.setEmail("example@example.com");
@@ -536,15 +522,13 @@ public class OfficialAgencyServiceImplTest {
         when(mockApiSecurityService.getUserByUsername(any(), any()))
                 .thenReturn(apiSecurityUser);
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User already a member of an agency.");
-        expectedException.expect(hasProperty("errorCode", is("USER_ALREADY_IN_AN_AGENCY")));
-
-        officialAgencyService.addAgencyUser(emailDTO);
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO));
+        assertThat(apiException.getErrorCode()).isEqualTo("USER_ALREADY_IN_AN_AGENCY");
+        assertThat(apiException.getMessage()).isEqualTo("User already a member of an agency.");
     }
 
     @Test
-    public void addAgencyUsers_call_OfficialAgencyRepository() {
+    void addAgencyUsers_call_OfficialAgencyRepository() {
 
         EmailDTO emailDTO = new EmailDTO();
         emailDTO.setEmail("example@example.com");
@@ -590,20 +574,20 @@ public class OfficialAgencyServiceImplTest {
         verify(mockUserRepository).save(any());
         assertThat(officialAgencyUserDTO.getId()).isEqualTo("10");
         assertThat(officialAgencyUserDTO.getFullName()).isEqualTo("John Doe");
-        assertThat(officialAgencyUserDTO.getRoles()).isEqualTo(Arrays.asList("USERS"));
+        assertThat(officialAgencyUserDTO.getRoles()).isEqualTo(Collections.singletonList("USERS"));
 
         assertThat(user.getOfficialAgency()).isEqualTo(officialAgency);
     }
 
     @Test
-    public void removeAgencyUser_remove_a_user_from_an_Agency() {
+    void removeAgencyUser_remove_a_user_from_an_Agency() {
 
         String userId = "10";
         User user = new User();
         user.setUserId(userId);
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.getUsers().add(user);
-        officialAgency.setId(1l);
+        officialAgency.setId(1L);
         user.setOfficialAgency(officialAgency);
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.of(user));
@@ -643,13 +627,13 @@ public class OfficialAgencyServiceImplTest {
     }
 
     @Test
-    public void removeAgencyUser_throw_Exception_when_user_is_not_a_member_Agency() {
+    void removeAgencyUser_throw_Exception_when_user_is_not_a_member_Agency() {
         String userId = "10";
         User user = new User();
         user.setUserId(userId);
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.getUsers().add(user);
-        officialAgency.setId(1l);
+        officialAgency.setId(1L);
         user.setOfficialAgency(officialAgency);
         when(mockUserRepository.findById("10"))
                 .thenReturn(Optional.of(user));
@@ -664,11 +648,9 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById("12"))
                 .thenReturn(Optional.of(authUser));
 
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("User must be a member to your agency.");
-        expectedException.expect(hasProperty("errorCode", is("USER_NOT_IN_AGENCY")));
-
-        officialAgencyService.removeAgencyUser(userId);
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.removeAgencyUser(userId));
+        assertThat(apiException.getErrorCode()).isEqualTo("USER_NOT_IN_AGENCY");
+        assertThat(apiException.getMessage()).isEqualTo("User must be a member to your agency.");
 
     }
 

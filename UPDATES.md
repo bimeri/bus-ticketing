@@ -12,3 +12,5 @@
         2. add agencyAmount to the payment transaction entity
     * BookedJourney entity
         1. add isAgencyBooking to the entity    
+* Dec 17th, 2020
+    * Add RefundPaymentTransaction entity

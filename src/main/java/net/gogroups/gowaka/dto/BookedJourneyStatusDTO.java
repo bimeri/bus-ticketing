@@ -14,6 +14,8 @@ import java.util.List;
 public class BookedJourneyStatusDTO {
 
     private Long id;
+    private Long transactionId;
+
     private Double amount;
     private String currencyCode;
     private String paymentStatus;
@@ -38,5 +40,16 @@ public class BookedJourneyStatusDTO {
     private Double agencyAmount;
     private Double serviceChargeAmount;
 
+    private Boolean hasRefundRequest;
+    private Long refundId;
+    private RefundStatus refundStatus;
+    private Double refundAmount;
+
+    public enum RefundStatus {
+        PENDING,
+        APPROVED,
+        DECLINED,
+        REFUNDED
+    }
 
 }

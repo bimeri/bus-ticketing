@@ -8,10 +8,10 @@ import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ErrorCodes;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -37,9 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 @ActiveProfiles("test")
+@ExtendWith(SpringExtension.class)
 public class CarControllerIntegrationTest {
 
     @Value("${security.jwt.token.privateKey}")
@@ -57,11 +55,6 @@ public class CarControllerIntegrationTest {
     @Autowired
     private CarRepository carRepository;
 
-    @Autowired
-    private TransitAndStopRepository transitAndStopRepository;
-
-    @Autowired
-    private JourneyRepository journeyRepository;
     @Autowired
     private SeatStructureRepository seatStructureRepository;
 
@@ -86,8 +79,8 @@ public class CarControllerIntegrationTest {
             "}";
     private String jwtToken;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
 
         mockServer = MockRestServiceServer.createServer(restTemplate);
         User newUser = new User();
@@ -99,20 +92,20 @@ public class CarControllerIntegrationTest {
         jwtToken = TestUtils.createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
-    public SeatStructure initSeatStructure(Long id, Integer numberOfSeats) {
+    SeatStructure initSeatStructure(Long id, Integer numberOfSeats) {
         SeatStructure seatStructure = new SeatStructure();
         seatStructure.setId(id);
         seatStructure.setNumberOfSeats(numberOfSeats);
         return seatStructureRepository.save(seatStructure);
     }
 
-    @AfterClass
-    public static void tearDown() {
+    @AfterEach
+    void tearDown() {
         TimeProviderTestUtil.useSystemClock();
     }
 
     @Test
-    public void official_agency_add_bus_should_return_200_ok_status_code_with_responseBusDTO() throws Exception {
+    void official_agency_add_bus_should_return_200_ok_status_code_with_responseBusDTO() throws Exception {
         BusDTO busDTO = new BusDTO();
         busDTO.setLicensePlateNumber("12345LT");
         busDTO.setNumberOfSeats(5);
@@ -137,7 +130,7 @@ public class CarControllerIntegrationTest {
                 .andReturn();
     }
     @Test
-    public void official_agency_should_return_400_with_validation_error() throws Exception {
+    void official_agency_should_return_400_with_validation_error() throws Exception {
         BusDTO busDTO = new BusDTO();
         busDTO.setName("Malingo Royal");
 
@@ -153,7 +146,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void personal_agency_add_sharedRide_should_return_200_ok_status_code_with_responseSharedRideDTO() throws Exception {
+    void personal_agency_add_sharedRide_should_return_200_ok_status_code_with_responseSharedRideDTO() throws Exception {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         sharedRideDTO.setCarOwnerIdNumber("12345");
         sharedRideDTO.setName("Danfo Driver");
@@ -180,7 +173,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void personal_agency_should_return_400_with_validation_error() throws Exception {
+    void personal_agency_should_return_400_with_validation_error() throws Exception {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         sharedRideDTO.setName("Danfo Driver");
 
@@ -196,7 +189,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTOList() throws Exception {
+    void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTOList() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
         officialAgencyRepository.save(officialAgency);
@@ -234,7 +227,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void personal_agency_get_shared_rides_should_return_200_with_shared_ride_list() throws Exception {
+    void personal_agency_get_shared_rides_should_return_200_with_shared_ride_list() throws Exception {
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgency.setName("Homer home");
         personalAgencyRepository.save(personalAgency);
@@ -266,7 +259,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void approve_should_return_204() throws Exception {
+    void approve_should_return_204() throws Exception {
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         approveCarDTO.setApprove(true);
         SharedRide sharedRide = new SharedRide();
@@ -284,7 +277,7 @@ public class CarControllerIntegrationTest {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
-    public void gw_admin_get_unapproved_cars_should_return_200_with_car_list() throws Exception {
+    void gw_admin_get_unapproved_cars_should_return_200_with_car_list() throws Exception {
 
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgency.setName("Homer home");
@@ -317,7 +310,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void gw_admin_search_should_return_200_ok_status_code_with_responseCarDTO() throws Exception {
+    void gw_admin_search_should_return_200_ok_status_code_with_responseCarDTO() throws Exception {
         SharedRide sharedRide = new SharedRide();
         sharedRide.setLicensePlateNumber("1234");
         sharedRide.setName("H3");
@@ -343,7 +336,7 @@ public class CarControllerIntegrationTest {
      * Scenario: 3. Update success
      */
     @Test
-    public void update_car_should_update_car_and_return_no_content() throws Exception {
+    void update_car_should_update_car_and_return_no_content() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
         officialAgencyRepository.save(officialAgency);
@@ -376,7 +369,7 @@ public class CarControllerIntegrationTest {
      * Scenario: 3 delete successfully
      */
     @Test
-    public void delete_car_should_delete_car_and_return_no_content() throws Exception {
+    void delete_car_should_delete_car_and_return_no_content() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
         officialAgencyRepository.save(officialAgency);
@@ -402,7 +395,7 @@ public class CarControllerIntegrationTest {
      */
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
-    public void get_all_official_agency_buses_should_return_list_of_buses_for_operators() throws Exception {
+    void get_all_official_agency_buses_should_return_list_of_buses_for_operators() throws Exception {
         String customJwtToken = TestUtils.createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "AGENCY_OPERATOR");
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
@@ -439,7 +432,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void get_seat_structures_should_return_list_of_seat_structure_dtos() throws Exception {
+    void get_seat_structures_should_return_list_of_seat_structure_dtos() throws Exception {
         SeatStructure seatStructure = new SeatStructure();
         seatStructure.setId(1L);
         seatStructure.setNumberOfSeats(10);

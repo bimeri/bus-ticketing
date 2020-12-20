@@ -8,12 +8,12 @@ import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.CarService;
 import net.gogroups.gowaka.service.UserService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +25,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,34 +35,27 @@ import static org.mockito.Mockito.when;
  * @author Nnouka Stephen
  * @date 26 Sep 2019
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class CarControllerTest {
     @Mock
     private CarService mockCarService;
-    @Mock
-    private UserService mockUserService;
-    @Mock
-    private UserRepository mockUserRepository;
-    @Mock
-    private CarRepository mockCarRepository;
 
     private CarController carController;
-    private CarService carService;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         carController = new CarController(mockCarService);
     }
 
     @Test
-    public void official_agency_should_call_car_service_add_agency_bus_method() {
+    void official_agency_should_call_car_service_add_agency_bus_method() {
         BusDTO busDTO = new BusDTO();
         carController.addAgencyBus(busDTO);
         verify(mockCarService).addOfficialAgencyBus(busDTO);
     }
 
     @Test
-    public void official_agency_should_return_200_ok_status_code_with_responseBusDTO() {
+    void official_agency_should_return_200_ok_status_code_with_responseBusDTO() {
         BusDTO busDTO = new BusDTO();
         busDTO.setName("Malingo Royal");
         busDTO.setNumberOfSeats(5);
@@ -88,14 +83,14 @@ public class CarControllerTest {
     }
 
     @Test
-    public void personal_agency_should_call_car_service_add_sharedRide_method() {
+    void personal_agency_should_call_car_service_add_sharedRide_method() {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         carController.addSharedRide(sharedRideDTO);
         verify(mockCarService).addSharedRide(sharedRideDTO);
     }
 
     @Test
-    public void personal_agency_should_return_200_ok_status_code_with_responseSharedRideDTO() {
+    void personal_agency_should_return_200_ok_status_code_with_responseSharedRideDTO() {
         SharedRideDTO sharedRideDTO = new SharedRideDTO();
         sharedRideDTO.setCarOwnerIdNumber("12345");
         sharedRideDTO.setName("Danfo Driver");
@@ -125,20 +120,20 @@ public class CarControllerTest {
     }
 
     @Test
-    public void official_agency_get_all_buses_should_call_car_service_get_all_buses() {
+    void official_agency_get_all_buses_should_call_car_service_get_all_buses() {
         carController.getAllOfficialAgencyBuses();
         verify(mockCarService).getAllOfficialAgencyBuses();
     }
 
     @Test
-    public void official_agency_get_buses_should_call_car_service_get_all_buses() {
+    void official_agency_get_buses_should_call_car_service_get_all_buses() {
         ResponseEntity<BusResponseDTO> response = carController.getOfficialAgencyBuses(1L);
         verify(mockCarService).getOfficialAgencyBuses(1L);
         assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
 
     @Test
-    public void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTO_list() {
+    void official_agency_get_all_buses_should_return_200_ok_with_responseBusDTO_list() {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setName("Happy");
@@ -166,13 +161,13 @@ public class CarControllerTest {
     }
 
     @Test
-    public void personal_agency_get_shareRides_should_call_car_service_getShareRides() {
+    void personal_agency_get_shareRides_should_call_car_service_getShareRides() {
         carController.getSharedRides();
         verify(mockCarService).getAllSharedRides();
     }
 
     @Test
-    public void personal_agency_get_shared_rides_should_return_200_with_response_shared_rides_list() {
+    void personal_agency_get_shared_rides_should_return_200_with_response_shared_rides_list() {
         SharedRide sharedRide = new SharedRide();
         sharedRide.setId(1L);
         sharedRide.setName("OK");
@@ -200,14 +195,14 @@ public class CarControllerTest {
     }
 
     @Test
-    public void approve_should_call_car_service_approve_method() {
+    void approve_should_call_car_service_approve_method() {
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         carController.shallApprove(approveCarDTO, "1");
         verify(mockCarService).approve(approveCarDTO, 1L);
     }
 
     @Test
-    public void approve_should_return_204_no_content_status_code() {
+    void approve_should_return_204_no_content_status_code() {
         Car car = new Bus();
         ApproveCarDTO approveCarDTO = new ApproveCarDTO();
         car.setId(1L);
@@ -224,13 +219,13 @@ public class CarControllerTest {
     }
 
     @Test
-    public void getAllUnapprovedCars_calls_carService() {
+    void getAllUnapprovedCars_calls_carService() {
         carController.getAllUnapprovedCars();
         verify(mockCarService).getAllUnapprovedCars();
     }
 
     @Test
-    public void getSeatStructures_returnsListOfSeatStructure() {
+    void getSeatStructures_returnsListOfSeatStructure() {
         when(mockCarService.getSeatStructures(10))
                 .thenReturn(Collections.singletonList(new SeatStructureDTO()));
 

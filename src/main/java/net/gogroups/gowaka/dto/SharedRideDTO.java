@@ -11,6 +11,7 @@ import javax.validation.constraints.NotBlank;
  */
 @Data
 public class SharedRideDTO {
+    @NotBlank(message = "name is required")
     private String name;
     @NotBlank(message = "licensePlateNumber is required")
     private String licensePlateNumber;

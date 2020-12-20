@@ -1,11 +1,13 @@
 package net.gogroups.gowaka.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.gogroups.gowaka.domain.model.SeatStructure;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class SeatStructureDTO {
     private Long id;
     private int numberOfSeats;

@@ -5,11 +5,11 @@ import net.gogroups.gowaka.dto.EmailDTO;
 import net.gogroups.gowaka.dto.OfficialAgencyDTO;
 import net.gogroups.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
 import net.gogroups.gowaka.service.OfficialAgencyService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
@@ -23,20 +23,20 @@ import static org.mockito.Mockito.verify;
  * Author: Edward Tanko <br/>
  * Date: 9/17/19 8:41 PM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class OfficialAgencyControllerTest {
 
     @Mock
     private OfficialAgencyService mockOfficialAgencyService;
 
     private OfficialAgencyController officialAgencyController;
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         officialAgencyController = new OfficialAgencyController(mockOfficialAgencyService);
     }
 
     @Test
-    public void createOfficialAgency_calls_OfficialAgencyService() {
+    void createOfficialAgency_calls_OfficialAgencyService() {
 
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
         officialAgencyController.createOfficialAgency(createOfficialAgencyDTO);
@@ -45,7 +45,7 @@ public class OfficialAgencyControllerTest {
     }
 
     @Test
-    public void uploadAgencyLogo_calls_OfficialAgencyService() {
+    void uploadAgencyLogo_calls_OfficialAgencyService() {
 
         MockMultipartFile file = new MockMultipartFile("logo.png", "".getBytes());
         officialAgencyController.uploadAgencyLogo(1L, file);
@@ -54,7 +54,7 @@ public class OfficialAgencyControllerTest {
     }
 
     @Test
-    public void getOfficialAgency_calls_OfficialAgencyService() {
+    void getOfficialAgency_calls_OfficialAgencyService() {
 
         ResponseEntity<List<OfficialAgencyDTO>> response = officialAgencyController.getOfficialAgencies();
         verify(mockOfficialAgencyService).getAllAgencies();
@@ -62,7 +62,7 @@ public class OfficialAgencyControllerTest {
 
     }
     @Test
-    public void getUserOfficialAgency_calls_OfficialAgencyService() {
+    void getUserOfficialAgency_calls_OfficialAgencyService() {
 
         ResponseEntity<OfficialAgencyDTO> response = officialAgencyController.getUserOfficialAgency();
         verify(mockOfficialAgencyService).getUserAgency();
@@ -70,7 +70,7 @@ public class OfficialAgencyControllerTest {
 
     }
     @Test
-    public void updateOfficialAgency_calls_OfficialAgencyService() {
+    void updateOfficialAgency_calls_OfficialAgencyService() {
 
         OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
         ResponseEntity<Void> response = officialAgencyController.updateOfficialAgency(2L, officialAgencyDTO);
@@ -81,7 +81,7 @@ public class OfficialAgencyControllerTest {
 
 
     @Test
-    public void assignAgencyUserRole_calls_OfficialAgencyService() {
+    void assignAgencyUserRole_calls_OfficialAgencyService() {
 
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
         officialAgencyController.assignAgencyUserRole(officialAgencyUserRoleRequestDTO);
@@ -90,20 +90,20 @@ public class OfficialAgencyControllerTest {
     }
 
     @Test
-    public void getAgencyUser_calls_OfficialAgencyService() {
+    void getAgencyUser_calls_OfficialAgencyService() {
         officialAgencyController.getAgencyUsers();
         verify(mockOfficialAgencyService).getAgencyUsers();
 
     }
     @Test
-    public void removeAgencyUser_calls_OfficialAgencyService() {
+    void removeAgencyUser_calls_OfficialAgencyService() {
         officialAgencyController.removeAgencyUser("12");
         verify(mockOfficialAgencyService).removeAgencyUser("12");
 
     }
 
     @Test
-    public void addAgencyUser_calls_OfficialAgencyService() {
+    void addAgencyUser_calls_OfficialAgencyService() {
         EmailDTO emailDTO = new EmailDTO();
         officialAgencyController.addAgencyUser(emailDTO);
         verify(mockOfficialAgencyService).addAgencyUser(emailDTO);

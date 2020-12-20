@@ -1,63 +1,52 @@
 package net.gogroups.gowaka.domain.service;
 
-import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.model.BookedJourney;
+import net.gogroups.gowaka.domain.model.JourneyStop;
+import net.gogroups.gowaka.domain.model.Location;
+import net.gogroups.gowaka.domain.model.TransitAndStop;
 import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
-import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.dto.LocationResponseDTO;
 import net.gogroups.gowaka.dto.LocationDTO;
+import net.gogroups.gowaka.dto.LocationResponseDTO;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.TransitAndStopService;
-import net.gogroups.gowaka.service.UserService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Nnouka Stephen
- * @date 07 Oct 2019
+ * Date 07 Oct 2019
  */
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TransitAndStopImplTest {
-
 
 
     private TransitAndStopService transitAndStopService;
 
     @Mock
-    private UserService mockUserService;
-    @Mock
-    private UserRepository mockUserRepository;
-    @Mock
-    private User user;
-
-    @Mock
     private TransitAndStopRepository transitAndStopRepository;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
-    @Before
-    public void setup(){
+    @BeforeEach
+    void setup() {
         transitAndStopService = new TransitAndStopServiceServiceImpl(transitAndStopRepository);
     }
 
     @Test
-    public void should_save_new_transit_and_stop_entity(){
+    void should_save_new_transit_and_stop_entity() {
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -70,20 +59,20 @@ public class TransitAndStopImplTest {
     }
 
     @Test
-    public void should_throw_transit_and_stop_already_in_use_api_exception(){
+    void should_throw_transit_and_stop_already_in_use_api_exception() {
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.of(transitAndStop));
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("TransitAndStop already Exists");
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString())));
-        transitAndStopService.addLocation(locationDTO);
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.addLocation(locationDTO));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString()));
+        assertThat(apiException.getMessage(), is("TransitAndStop already Exists"));
     }
+
     @Test
-    public void should_update_transit_and_stop(){
+    void should_update_transit_and_stop() {
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -98,17 +87,19 @@ public class TransitAndStopImplTest {
     }
 
     @Test
-    public void update_location_should_throw_transit_and_stop_not_found_api_exception(){
+    void update_location_should_throw_transit_and_stop_not_found_api_exception() {
         LocationDTO locationDTO = new LocationDTO();
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("TransitAndStop not found");
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        transitAndStopService.updateLocation(1L, locationDTO);
+
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.updateLocation(1L, locationDTO));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
+        assertThat(apiException.getMessage(), is("TransitAndStop not found"));
+
     }
+
     @Test
-    public void update_location_should_throw_transit_and_stop_already_in_use_exception(){
-       LocationDTO locationDTO = new LocationDTO();
+    void update_location_should_throw_transit_and_stop_already_in_use_exception() {
+        LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
@@ -116,33 +107,34 @@ public class TransitAndStopImplTest {
         when(transitAndStopRepository.findDistinctFirstByLocation(location))
                 .thenReturn(Optional.of(transitAndStop));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage("TransitAndStop already Exists");
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString())));
-        transitAndStopService.updateLocation(1L, locationDTO);
+
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.updateLocation(1L, locationDTO));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString()));
+        assertThat(apiException.getMessage(), is("TransitAndStop already Exists"));
     }
 
     @Test
-    public void delete_transit_should_throw_journey_exist_api_exception(){
+    void delete_transit_should_throw_journey_exist_api_exception() {
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setJourneyStops(Collections.singletonList(new JourneyStop()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage());
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString())));
-        transitAndStopService.deleteLocation(1L);
+
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.deleteLocation(1L));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString()));
+        assertThat(apiException.getMessage(), is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage()));
     }
 
     @Test
-    public void delete_transit_should_throw_transit_not_found_exception(){
-       when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
-        expectedException.expect(ApiException.class);
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.RESOURCE_NOT_FOUND.toString())));
-        expectedException.expectMessage("TransitAndStop not found");
-        transitAndStopService.deleteLocation(1L);
+    void delete_transit_should_throw_transit_not_found_exception() {
+        when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.deleteLocation(1L));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
+        assertThat(apiException.getMessage(), is("TransitAndStop not found"));
     }
+
     @Test
-    public void delete_transit_should_call_delete_by_id(){
+    void delete_transit_should_call_delete_by_id() {
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setId(1L);
 
@@ -152,7 +144,7 @@ public class TransitAndStopImplTest {
     }
 
     @Test
-    public void get_all_transit_and_stop_locations_should_return_location_list(){
+    void get_all_transit_and_stop_locations_should_return_location_list() {
         TransitAndStop transitAndStop = new TransitAndStop();
         Location location = new Location();
         location.setState("SW");
@@ -165,7 +157,7 @@ public class TransitAndStopImplTest {
     }
 
     @Test
-    public void search_transit_and_stop_by_city_should_return_location_list(){
+    void search_transit_and_stop_by_city_should_return_location_list() {
         TransitAndStop transitAndStop = new TransitAndStop();
         Location location = new Location();
         location.setState("SW");
@@ -185,7 +177,7 @@ public class TransitAndStopImplTest {
      * restrict stop updates to non booked journeys
      */
     @Test
-    public void update_stop_should_throw_location_has_booked_journey_api_exception() {
+    void update_stop_should_throw_location_has_booked_journey_api_exception() {
         LocationDTO locationDTO = new LocationDTO();
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -193,9 +185,9 @@ public class TransitAndStopImplTest {
         transitAndStop.setId(1L);
         transitAndStop.setBookedJourneys(Collections.singletonList(new BookedJourney()));
         when(transitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
-        expectedException.expect(ApiException.class);
-        expectedException.expectMessage(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage());
-        expectedException.expect(hasProperty("errorCode", is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString())));
-        transitAndStopService.updateLocation(1L, locationDTO);
+
+        ApiException apiException = assertThrows(ApiException.class, () -> transitAndStopService.updateLocation(1L, locationDTO));
+        assertThat(apiException.getErrorCode(), is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString()));
+        assertThat(apiException.getMessage(), is(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage()));
     }
 }

@@ -1,7 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
@@ -15,13 +15,13 @@ public class HtmlToPdfGenaratorTest {
 
     private HtmlToPdfGenarator htmlToPdfGenarator;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         htmlToPdfGenarator = new HtmlToPdfGenarator();
     }
 
     @Test
-    public void createPdf() throws Exception {
+    void createPdf() throws Exception {
         String html = "<!DOCTYPE HTML>\n" +
                 "<html>\n" +
                 "<head>\n" +

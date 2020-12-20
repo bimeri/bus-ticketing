@@ -9,10 +9,10 @@ import net.gogroups.gowaka.dto.CreateOfficialAgencyDTO;
 import net.gogroups.gowaka.dto.EmailDTO;
 import net.gogroups.gowaka.dto.OfficialAgencyDTO;
 import net.gogroups.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -44,10 +44,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Date: 9/18/19 7:24 PM <br/>
  */
 @SpringBootTest
-@RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ActiveProfiles("test")
+@ExtendWith(SpringExtension.class)
 public class OfficialAgencyControllerIntegrationTest {
 
 
@@ -79,7 +78,7 @@ public class OfficialAgencyControllerIntegrationTest {
             "  \"token\": \"jwt-token\"\n" +
             "}";
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -92,7 +91,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         mockServer.reset();
     }
@@ -120,8 +119,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         startMockServerWith("http://localhost:8082/api/protected/v1/users/10/ROLES?value=USERS;AGENCY_ADMIN",
                 HttpStatus.NO_CONTENT, "");
-
-
 
         User agencyAdminUser = new User();
         agencyAdminUser.setUserId("10");

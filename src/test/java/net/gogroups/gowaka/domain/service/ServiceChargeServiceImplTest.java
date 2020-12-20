@@ -3,21 +3,21 @@ package net.gogroups.gowaka.domain.service;
 import net.gogroups.gowaka.domain.model.ServiceCharge;
 import net.gogroups.gowaka.domain.repository.ServiceChargeServiceRepository;
 import net.gogroups.gowaka.dto.ServiceChargeDTO;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.ServiceChargeService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * Author: Edward Tanko <br/>
  * Date: 10/31/20 7:00 AM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ServiceChargeServiceImplTest {
 
     @Mock
@@ -34,17 +34,13 @@ public class ServiceChargeServiceImplTest {
 
     private ServiceChargeService serviceChargeService;
 
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         serviceChargeService = new ServiceChargeServiceImpl(mockServiceChargeServiceRepository);
     }
 
     @Test
-    public void getServiceCharges_returnListOf_serviceCharges() {
+    void getServiceCharges_returnListOf_serviceCharges() {
 
         ServiceCharge serviceCharge = new ServiceCharge();
         serviceCharge.setId("sc-id");
@@ -60,7 +56,7 @@ public class ServiceChargeServiceImplTest {
     }
 
     @Test
-    public void updateServiceCharge_throwsException_whenIdDont_exist() {
+    void updateServiceCharge_throwsException_whenIdDont_exist() {
 
         ServiceChargeDTO serviceChargeDTO = new ServiceChargeDTO();
         serviceChargeDTO.setId("sc-id");
@@ -68,14 +64,14 @@ public class ServiceChargeServiceImplTest {
         when(mockServiceChargeServiceRepository.findById(anyString()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expectMessage("Service charge not found");
-        serviceChargeService.updateServiceCharge(serviceChargeDTO);
+        ResourceNotFoundException resourceNotFoundException = assertThrows(ResourceNotFoundException.class, () -> serviceChargeService.updateServiceCharge(serviceChargeDTO));
+        assertThat(resourceNotFoundException.getMessage()).isEqualTo("Service charge not found");
         verify(mockServiceChargeServiceRepository).findById("sc-id");
 
     }
 
     @Test
-    public void updateServiceCharge_update_whenIdExist() {
+    void updateServiceCharge_update_whenIdExist() {
 
         ArgumentCaptor<ServiceCharge> serviceChargeArgumentCaptor = ArgumentCaptor.forClass(ServiceCharge.class);
 

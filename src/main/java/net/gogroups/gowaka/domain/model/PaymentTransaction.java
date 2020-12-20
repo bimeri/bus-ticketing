@@ -42,5 +42,8 @@ public class PaymentTransaction extends BaseEntity{
     @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
     private BookedJourney bookedJourney;
 
+    @OneToOne(mappedBy = "paymentTransaction")
+    private RefundPaymentTransaction refundPaymentTransaction;
+
 
 }

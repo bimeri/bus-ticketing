@@ -1,12 +1,11 @@
 package net.gogroups.gowaka.controller.integration;
 
+import net.gogroups.gowaka.TimeProviderTestUtil;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
-import net.gogroups.gowaka.TimeProviderTestUtil;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.event.annotation.AfterTestClass;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
@@ -25,18 +24,19 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static net.gogroups.gowaka.TestUtils.createToken;
-import static org.hamcrest.CoreMatchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 @ActiveProfiles("test")
+@ExtendWith(SpringExtension.class)
 public class JourneyControllerIntegrationTest {
 
     @Value("${security.jwt.token.privateKey}")
@@ -83,7 +83,7 @@ public class JourneyControllerIntegrationTest {
             "}";
     private String jwtToken;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         User newUser = new User();
@@ -95,7 +95,7 @@ public class JourneyControllerIntegrationTest {
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
-    @AfterClass
+    @AfterTestClass
     public static void tearDown() {
         TimeProviderTestUtil.useSystemClock();
     }
@@ -167,7 +167,6 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andReturn();
 
     }
@@ -374,7 +373,6 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }
@@ -1002,7 +1000,6 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andReturn();
     }
 
@@ -1211,7 +1208,6 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }

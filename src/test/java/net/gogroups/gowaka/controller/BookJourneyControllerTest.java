@@ -4,12 +4,12 @@ import net.gogroups.gowaka.domain.model.BookedJourney;
 import net.gogroups.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.BookJourneyService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * Author: Edward Tanko <br/>
  * Date: 3/25/20 9:40 AM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BookJourneyControllerTest {
 
     @Mock
@@ -38,13 +38,13 @@ public class BookJourneyControllerTest {
 
     private BookJourneyController bookJourneyController;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         bookJourneyController = new BookJourneyController(mockBookJourneyService, mockHtmlToPdfGenarator);
     }
 
     @Test
-    public void bookJourney_callsBookJourneyService() {
+    void bookJourney_callsBookJourneyService() {
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         PaymentUrlDTO paymentUrl = new PaymentUrlDTO();
         paymentUrl.setPaymentUrl("http://payamgo.com/xyz");
@@ -60,7 +60,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void agencyUserBookJourney_callsBookJourneyService() {
+    void agencyUserBookJourney_callsBookJourneyService() {
 
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setTransitAndStopId(1L);
@@ -72,7 +72,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void getAllBookedSeats_callsBookJourneyService() {
+    void getAllBookedSeats_callsBookJourneyService() {
 
         when(mockBookJourneyService.getAllBookedSeats(anyLong()))
                 .thenReturn(Arrays.asList(1, 2, 3, 4));
@@ -89,7 +89,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void getBookJourneyStatus_callsBookJourneyService() {
+    void getBookJourneyStatus_callsBookJourneyService() {
 
         BookedJourneyStatusDTO bookedJourneyStatus = new BookedJourneyStatusDTO();
         bookedJourneyStatus.setId(10L);
@@ -104,7 +104,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void downloadReceipt_callsBookJourneyServiceAndHtmlToPdfGenarator() throws Exception {
+    void downloadReceipt_callsBookJourneyServiceAndHtmlToPdfGenarator() throws Exception {
 
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
@@ -126,7 +126,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void handlePaymentResponse_callsBookJourneyService() {
+    void handlePaymentResponse_callsBookJourneyService() {
 
         PaymentStatusResponseDTO paymentStatusResponseDTO = new PaymentStatusResponseDTO();
         paymentStatusResponseDTO.setProcessingNumber("12345");
@@ -138,7 +138,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void bookedJourneyHistory_callsBookJourneyService() {
+    void bookedJourneyHistory_callsBookJourneyService() {
 
         when(mockBookJourneyService.getUserBookedJourneyHistory())
                 .thenReturn(Collections.singletonList(new BookedJourneyStatusDTO()));
@@ -150,7 +150,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void getOnBoardingInfoResponse_callsBookJourneyService() {
+    void getOnBoardingInfoResponse_callsBookJourneyService() {
         when(mockBookJourneyService.getPassengerOnBoardingInfo(anyString()))
                 .thenReturn(new OnBoardingInfoDTO(new BookedJourney()));
         ResponseEntity<OnBoardingInfoDTO> responseEntity = bookJourneyController.getOnBoardingInfoResponse("someCode");
@@ -160,7 +160,7 @@ public class BookJourneyControllerTest {
     }
 
     @Test
-    public void checkInPassengerByCode_callsBookJourneyService() {
+    void checkInPassengerByCode_callsBookJourneyService() {
         bookJourneyController.checkInPassengerByCode(new CodeDTO("someCode"));
         verify(mockBookJourneyService).checkInPassengerByCode("someCode");
     }

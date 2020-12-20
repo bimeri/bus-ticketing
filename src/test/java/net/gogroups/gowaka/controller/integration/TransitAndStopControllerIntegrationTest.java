@@ -6,13 +6,11 @@ import net.gogroups.gowaka.domain.model.TransitAndStop;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.dto.LocationResponseDTO;
 import net.gogroups.gowaka.dto.LocationDTO;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import net.gogroups.gowaka.dto.LocationResponseDTO;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -42,9 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 @ActiveProfiles("test")
+@ExtendWith(SpringExtension.class)
 public class TransitAndStopControllerIntegrationTest {
 
     @Value("${security.jwt.token.privateKey}")
@@ -63,9 +59,6 @@ public class TransitAndStopControllerIntegrationTest {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private User user;
 
     private MockRestServiceServer mockServer;
@@ -80,7 +73,7 @@ public class TransitAndStopControllerIntegrationTest {
             "}";
     private String jwtToken;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         mockServer = MockRestServiceServer.createServer(restTemplate);

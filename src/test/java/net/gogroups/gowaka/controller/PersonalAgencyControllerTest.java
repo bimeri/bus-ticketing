@@ -2,11 +2,11 @@ package net.gogroups.gowaka.controller;
 
 import net.gogroups.gowaka.dto.CreatePersonalAgencyDTO;
 import net.gogroups.gowaka.service.PersonalAgencyService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.verify;
 
@@ -14,22 +14,22 @@ import static org.mockito.Mockito.verify;
  * Author: Edward Tanko <br/>
  * Date: 9/21/19 11:00 AM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PersonalAgencyControllerTest {
 
     @Mock
     private PersonalAgencyService mockPersonalAgencyService;
     private PersonalAgencyController personalAgencyController;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
 
         personalAgencyController = new PersonalAgencyController(mockPersonalAgencyService);
 
     }
 
     @Test
-    public void createPersonalAgency_Calls_PersonalAgencyService() {
+    void createPersonalAgency_Calls_PersonalAgencyService() {
 
         CreatePersonalAgencyDTO createPersonalAgencyDTO = new CreatePersonalAgencyDTO();
         personalAgencyController.createPersonalAgency(createPersonalAgencyDTO);

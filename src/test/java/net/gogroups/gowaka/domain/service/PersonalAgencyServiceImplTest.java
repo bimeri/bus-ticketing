@@ -9,18 +9,17 @@ import net.gogroups.gowaka.dto.UserDTO;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.PersonalAgencyService;
 import net.gogroups.gowaka.service.UserService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -30,7 +29,7 @@ import static org.mockito.Mockito.when;
  * Author: Edward Tanko <br/>
  * Date: 9/21/19 2:29 PM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PersonalAgencyServiceImplTest {
 
 
@@ -43,17 +42,14 @@ public class PersonalAgencyServiceImplTest {
 
     private PersonalAgencyService personalAgencyService;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
-
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         personalAgencyService = new PersonalAgencyServiceImpl(mockUserService, mockUserRepository, mockPersonalAgencyRepository);
     }
 
     @Test
-    public void createPersonalAgency_Calls_PersonalAgencyRepository() {
+    void createPersonalAgency_Calls_PersonalAgencyRepository() {
 
         ArgumentCaptor<PersonalAgency> personalAgencyArgumentCaptor = ArgumentCaptor.forClass(PersonalAgency.class);
 
@@ -83,14 +79,13 @@ public class PersonalAgencyServiceImplTest {
 
 
     @Test
-    public void createPersonalAgency_throw_exception_when() {
+    void createPersonalAgency_throw_exception_when() {
 
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(new UserDTO());
 
-        expectedException.expect(ResourceNotFoundException.class);
-        expectedException.expectMessage("User not found.");
-        personalAgencyService.createPersonalAgency(new CreatePersonalAgencyDTO());
+        ResourceNotFoundException resourceNotFoundException = assertThrows(ResourceNotFoundException.class, () -> personalAgencyService.createPersonalAgency(new CreatePersonalAgencyDTO()));
+        assertThat(resourceNotFoundException.getMessage()).isEqualTo("User not found.");
 
     }
 }
