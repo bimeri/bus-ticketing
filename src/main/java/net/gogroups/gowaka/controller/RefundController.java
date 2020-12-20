@@ -67,7 +67,7 @@ public class RefundController {
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
-    @GetMapping("/bookedJourneys/refund/{id}/refunded")
+    @PostMapping("/bookedJourneys/refund/{id}/refunded")
     public ResponseEntity<Void> refunded(@PathVariable("id") Long refundId) {
         String userId = authorizedUserService.getUserDetails().getId();
         log.info("refund refundId: {}, by userId: {},", refundId, userId);

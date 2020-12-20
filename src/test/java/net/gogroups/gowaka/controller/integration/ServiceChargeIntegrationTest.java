@@ -36,8 +36,6 @@ public class ServiceChargeIntegrationTest {
     @Autowired
     private ServiceChargeServiceRepository serviceChargeServiceRepository;
 
-
-
     @Autowired
     private MockMvc mockMvc;
 

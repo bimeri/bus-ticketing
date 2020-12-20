@@ -32,11 +32,11 @@ public class RefundPaymentTransaction extends BaseEntity {
     private String approvalName;
     private String approvalEmail;
 
-    private String refundName;
-    private String refundEmail;
+    private String refunderName;
+    private String refunderEmail;
     private LocalDateTime refundedDate;
 
-    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.DETACH} )
+    @OneToOne()
     @JoinColumn(name = "payment_transaction_id", referencedColumnName = "id")
     private PaymentTransaction paymentTransaction;
 

@@ -30,8 +30,8 @@ public class RefundDTO {
     private String approvalName;
     private String approvalEmail;
 
-    private String refundName;
-    private String refundEmail;
+    private String refunderName;
+    private String refunderEmail;
     private LocalDateTime refundedDate;
 
 }

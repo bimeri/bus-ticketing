@@ -25,7 +25,9 @@ public enum ErrorCodes {
     LOCATION_HAS_BOOKED_JOURNEY("This location has one or more booked journeys"),
     SEAT_STRUCTURE_NOT_FOUND("The seat structure does not exist or may have been deleted"),
     PASSENGER_ALREADY_CHECKED_IN("This passenger is already checked in"),
-    SEAT_ALREADY_TAKEN("Seat already taken.");
+    SEAT_ALREADY_TAKEN("Seat already taken."),
+    RESOURCE_ALREADY_EXIST("Resource already exist."),
+    ALREADY_REFUNDED_REQUEST("Request already refunded");
 
     private String message;
 

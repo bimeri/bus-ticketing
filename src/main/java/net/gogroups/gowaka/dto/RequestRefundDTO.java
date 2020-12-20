@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 /**
@@ -16,10 +17,10 @@ import javax.validation.constraints.Size;
 @AllArgsConstructor
 public class RequestRefundDTO {
 
-    @NotBlank(message = "bookedJourneyId required")
+    @NotNull(message = "bookedJourneyId required")
     private Long bookedJourneyId;
 
-    @NotBlank(message = "transactionId required")
+    @NotNull(message = "transactionId required")
     private Long transactionId;
 
     @NotBlank(message = "message required")
