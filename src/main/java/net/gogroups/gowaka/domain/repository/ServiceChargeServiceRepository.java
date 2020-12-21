@@ -12,5 +12,4 @@ import java.util.Optional;
  */
 @Repository
 public interface ServiceChargeServiceRepository extends JpaRepository<ServiceCharge, String> {
-
 }
