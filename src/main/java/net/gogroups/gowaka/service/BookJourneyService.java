@@ -1,5 +1,7 @@
 package net.gogroups.gowaka.service;
 
+import io.swagger.models.auth.In;
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.dto.*;
 
 import java.util.List;
@@ -18,7 +20,7 @@ public interface BookJourneyService {
 
     BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId);
 
-    List<BookedJourneyStatusDTO> getUserBookedJourneyHistory();
+    PaginatedResponse<BookedJourneyStatusDTO> getUserBookedJourneyHistory(Integer pageNumber, Integer limit);
 
     void handlePaymentResponse(Long bookedJourneyId, PaymentStatusResponseDTO paymentStatusResponseDTO);
 

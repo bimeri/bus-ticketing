@@ -1,6 +1,9 @@
 package net.gogroups.gowaka.domain.repository;
 
 import net.gogroups.gowaka.domain.model.Journey;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +21,7 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
     List<Journey> findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
 
     List<Journey> findByArrivalIndicatorTrue();
+
+    Page<Journey> findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(List<Long> carId, Pageable pageable);
+
 }

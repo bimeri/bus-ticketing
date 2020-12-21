@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gogroups.gowaka.domain.model.*;
@@ -22,6 +23,9 @@ import net.gogroups.payamgo.service.PayAmGoService;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -187,16 +191,30 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
-    public List<BookedJourneyStatusDTO> getUserBookedJourneyHistory() {
+    public PaginatedResponse<BookedJourneyStatusDTO> getUserBookedJourneyHistory(Integer pageNumber, Integer limit) {
+
+        Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
+
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
         if (currentAuthUser == null || currentAuthUser.getId() == null) {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
-        return bookedJourneyRepository.findAllByUserUserId(currentAuthUser.getId()).stream()
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString()))
+
+        Page<BookedJourney> bookedJourneyPage = bookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(COMPLETED.toString(), currentAuthUser.getId(), paging);
+
+        List<BookedJourneyStatusDTO> journeyStatusDTOS = bookedJourneyPage.stream()
                 .map(this::getBookedJourneyStatusDTO)
                 .collect(Collectors.toList());
+
+        return PaginatedResponse.<BookedJourneyStatusDTO>builder()
+                .items(journeyStatusDTOS)
+                .count(journeyStatusDTOS.size())
+                .total((int) bookedJourneyPage.getTotalElements())
+                .totalPages(bookedJourneyPage.getTotalPages())
+                .limit(limit)
+                .offset((int) paging.getOffset())
+                .pageNumber(pageNumber)
+                .build();
     }
 
     @Override
@@ -415,10 +433,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (refundPaymentTransaction == null) {
             bookedJourneyStatusDTO.setHasRefundRequest(false);
             bookedJourneyStatusDTO.setRefundStatus(null);
-        } else if(!refundPaymentTransaction.getIsRefunded()){
+        } else if (!refundPaymentTransaction.getIsRefunded()) {
             bookedJourneyStatusDTO.setRefundStatus(refundPaymentTransaction.getIsRefundApproved() ? BookedJourneyStatusDTO.RefundStatus.APPROVED : BookedJourneyStatusDTO.RefundStatus.DECLINED);
             bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
-        }else if(refundPaymentTransaction.getIsRefunded()){
+        } else if (refundPaymentTransaction.getIsRefunded()) {
             bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.REFUNDED);
             bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
         }

@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.cfs.service.CfsClientService;
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -232,6 +234,41 @@ public class JourneyServiceImplTest {
                 .thenReturn(Collections.emptyList());
         List<JourneyResponseDTO> journeyResponseDTOList = journeyService.getAllOfficialAgencyJourneys();
         assertTrue(journeyResponseDTOList.isEmpty());
+    }
+
+    @Test
+    void getOfficialAgencyJourneys_should_return_list_of_journeys() {
+
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
+
+        User user = new User();
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setBuses(Collections.singletonList(bus));
+        user.setOfficialAgency(officialAgency);
+        when(mockUserRepository.findById("1"))
+                .thenReturn(Optional.of(user));
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+
+        when(mockJourneyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(any(), any()))
+                .thenReturn(new PageImpl<>(Collections.singletonList(journey)));
+
+        PaginatedResponse<JourneyResponseDTO> officialAgencyJourneys = journeyService.getOfficialAgencyJourneys(1, 10);
+        assertFalse(officialAgencyJourneys.getItems().isEmpty());
+        assertThat(officialAgencyJourneys.getTotalPages(), is(1));
+        assertThat(officialAgencyJourneys.getPageNumber(), is(1));
+        assertThat(officialAgencyJourneys.getTotal(), is(1));
+        assertThat(officialAgencyJourneys.getItems().get(0).getCar().getName(), is("Muea boy"));
+        assertThat(officialAgencyJourneys.getItems().get(0).isDepartureTimeDue(), is(true));
     }
 
     /**

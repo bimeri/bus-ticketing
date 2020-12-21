@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.controller;
 
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.model.BookedJourney;
 import net.gogroups.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gogroups.gowaka.dto.*;
@@ -16,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -140,12 +140,12 @@ public class BookJourneyControllerTest {
     @Test
     void bookedJourneyHistory_callsBookJourneyService() {
 
-        when(mockBookJourneyService.getUserBookedJourneyHistory())
-                .thenReturn(Collections.singletonList(new BookedJourneyStatusDTO()));
+        when(mockBookJourneyService.getUserBookedJourneyHistory(1, 10))
+                .thenReturn(new PaginatedResponse<>());
 
-        ResponseEntity<List<BookedJourneyStatusDTO>> listResponseEntity = bookJourneyController.bookedJourneyHistory();
+        ResponseEntity<PaginatedResponse<BookedJourneyStatusDTO>> listResponseEntity = bookJourneyController.bookedJourneyHistory(1, 10);
         assertThat(listResponseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(listResponseEntity.getBody()).isInstanceOf(List.class);
+        assertThat(listResponseEntity.getBody()).isInstanceOf(PaginatedResponse.class);
 
     }
 

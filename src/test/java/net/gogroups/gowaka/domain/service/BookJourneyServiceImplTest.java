@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
@@ -21,6 +22,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
@@ -799,7 +803,7 @@ public class BookJourneyServiceImplTest {
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(null);
 
-        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getUserBookedJourneyHistory());
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getUserBookedJourneyHistory(1, 10));
         assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(apiException.getMessage()).isEqualTo("Resource Not Found");
 
@@ -811,10 +815,10 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDto);
-        when(mockBookedJourneyRepository.findAllByUserUserId(anyString()))
-                .thenReturn(Collections.singletonList(journey.getBookedJourneys().get(0)));
+        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(anyString(), anyString(), any()))
+                .thenReturn(new PageImpl<>(Collections.singletonList(journey.getBookedJourneys().get(0))));
 
-        BookedJourneyStatusDTO userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory().get(0);
+        BookedJourneyStatusDTO userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory(1, 10).getItems().get(0);
         assertThat(userBookedJourneyHistory.getAmount()).isEqualTo(2000.00);
         assertThat(userBookedJourneyHistory.getCurrencyCode()).isEqualTo("XAF");
         assertThat(userBookedJourneyHistory.getPaymentStatus()).isEqualTo("COMPLETED");
@@ -845,13 +849,15 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDto);
-        BookedJourney bookedJourney = journey.getBookedJourneys().get(0);
-        bookedJourney.getPaymentTransaction().setTransactionStatus("DECLINED");
-        when(mockBookedJourneyRepository.findAllByUserUserId(anyString()))
-                .thenReturn(Collections.singletonList(bookedJourney));
+        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(anyString(), anyString(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        List<BookedJourneyStatusDTO> userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory();
-        assertThat(userBookedJourneyHistory.size()).isEqualTo(0);
+        PaginatedResponse<BookedJourneyStatusDTO> userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory(1, 10);
+        assertThat(userBookedJourneyHistory.getTotal()).isEqualTo(0);
+        assertThat(userBookedJourneyHistory.getTotalPages()).isEqualTo(1);
+        assertThat(userBookedJourneyHistory.getItems().size()).isEqualTo(0);
+        assertThat(userBookedJourneyHistory.getCount()).isEqualTo(0);
+        assertThat(userBookedJourneyHistory.getPageNumber()).isEqualTo(1);
     }
 
     @Test

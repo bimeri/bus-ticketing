@@ -73,7 +73,6 @@ public class JourneyControllerIntegrationTest {
     private User user;
 
 
-
     private String successClientTokenResponse = "{\n" +
             "  \"header\": \"Authorization\",\n" +
             "  \"type\": \"Bearer\",\n" +
@@ -157,8 +156,8 @@ public class JourneyControllerIntegrationTest {
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop.getId() + ",\n" +
                 "  \"destination\": {\"transitAndStopId\":" + transitAndStop1.getId() + ",\"amount\": 1000 }, \n" +
-                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 1000}, " +
-                "{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 2000}]\n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/cars/" + bus.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -172,7 +171,7 @@ public class JourneyControllerIntegrationTest {
     }
 
     @Test
-    public void add_journey_should_return_validation_date_time_error() throws Exception{
+    public void add_journey_should_return_validation_date_time_error() throws Exception {
         LocalDateTime localDateTime = LocalDateTime.now();
         String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         String reqBody = "{\n" +
@@ -228,6 +227,7 @@ public class JourneyControllerIntegrationTest {
 
     /**
      * Scenario 5 valid request
+     *
      * @throws Exception
      */
     @Test
@@ -314,7 +314,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Kumba\"," +
@@ -330,7 +330,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
@@ -363,10 +363,10 @@ public class JourneyControllerIntegrationTest {
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop1.getId() + ",\n" +
                 "  \"destination\": {\"transitAndStopId\":" + transitAndStop.getId() + ",\"amount\": 1000 }, \n" +
-                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 1000}, " +
-                "{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 2000}]\n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
-        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/"+ journey.getId() + "/cars/" + bus.getId())
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/cars/" + bus.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
@@ -412,7 +412,6 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
-
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
@@ -495,7 +494,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Kumba\"," +
@@ -511,7 +510,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Ekona\"," +
@@ -543,6 +542,101 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
+    }
+
+
+    @Test
+    public void getOfficialAgencyJourneys_should_return_list_of_journey_response_dtos() throws Exception {
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("Malingo Major");
+        officialAgencyRepository.save(officialAgency);
+        Bus bus = new Bus();
+        bus.setName("Kumba One Chances");
+        bus.setNumberOfSeats(3);
+        bus.setIsCarApproved(true);
+        bus.setIsOfficialAgencyIndicator(true);
+        bus.setLicensePlateNumber("123454387");
+
+        user.setOfficialAgency(officialAgency);
+        userRepository.save(user);
+        Location location = new Location();
+        location.setAddress("Mile 17 Motto Park");
+        location.setCity("Buea");
+        location.setState("South West");
+        location.setCountry("Cameroon");
+        TransitAndStop transitAndStop = new TransitAndStop();
+        transitAndStop.setLocation(location);
+        transitAndStopRepository.save(transitAndStop);
+        Location location1 = new Location();
+        location1.setState("South West");
+        location1.setCountry("Cameroon");
+        location1.setCity("Kumba");
+        location1.setAddress("Buea Road Motor Park");
+        TransitAndStop transitAndStop1 = new TransitAndStop();
+        transitAndStop1.setLocation(location1);
+        transitAndStopRepository.save(transitAndStop1);
+        Location location2 = new Location();
+        location2.setState("South West");
+        location2.setCountry("Cameroon");
+        location2.setCity("Muyuka");
+        location2.setAddress("Muyuka Main Park");
+        TransitAndStop transitAndStop2 = new TransitAndStop();
+        transitAndStop2.setLocation(location2);
+        transitAndStopRepository.save(transitAndStop2);
+        Location location3 = new Location();
+        location3.setState("South West");
+        location3.setCountry("Cameroon");
+        location3.setCity("Ekona");
+        location3.setAddress("Ekona Main Park");
+        TransitAndStop transitAndStop3 = new TransitAndStop();
+        transitAndStop3.setLocation(location3);
+        transitAndStopRepository.save(transitAndStop3);
+
+        TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
+        ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
+        bus.setCreatedAt(TimeProviderTestUtil.now());
+        bus.setOfficialAgency(officialAgency);
+        bus = carRepository.save(bus);
+
+        Journey journey = new Journey();
+        journey.setDepartureLocation(transitAndStop1);
+        journey.setDestination(transitAndStop);
+        journey.setDepartureTime(localDateTime.toLocalDateTime());
+        journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+
+        JourneyStop journeyStop = new JourneyStop();
+        journeyStop.setTransitAndStop(transitAndStop2);
+        journeyStop.setAmount(1500);
+        journeyStop.setJourney(journey);
+        JourneyStop journeyStop1 = new JourneyStop();
+        journeyStop1.setTransitAndStop(transitAndStop3);
+        journeyStop1.setJourney(journey);
+        journeyStop1.setAmount(500);
+        List<JourneyStop> journeyStops = journey.getJourneyStops();
+        journeyStops.add(journeyStop);
+        journeyStops.add(journeyStop1);
+
+        Driver driver = new Driver();
+        driver.setDriverName("John Doe");
+        driver.setDriverLicenseNumber("1234567899");
+        journey.setDriver(driver);
+        journey.setCar(bus);
+        journey.setCreatedAt(localDateTime.toLocalDateTime());
+        journeyRepository.save(journey);
+
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1")
+                .header("Authorization", "Bearer " + jwtToken)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.offset").value(0))
+                .andExpect(jsonPath("$.pageNumber").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(journey.getId()));
     }
 
     /**
@@ -734,7 +828,7 @@ public class JourneyControllerIntegrationTest {
      * Scenario 5. Add Stop Success
      */
     @Test
-    public void add_stops_should_return_204_no_content() throws Exception{
+    public void add_stops_should_return_204_no_content() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgencyRepository.save(officialAgency);
         Bus bus = new Bus();
@@ -798,13 +892,14 @@ public class JourneyControllerIntegrationTest {
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
         journeyRepository.save(journey);
-        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() )
+        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
+
     /**
      * #169114980
      * Scenario: 4. change Journey departureIndicator state
@@ -828,7 +923,7 @@ public class JourneyControllerIntegrationTest {
         journey.setCar(bus);
         journeyRepository.save(journey);
         String reqBody = "{\"departureIndicator\": true}";
-        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure" )
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
@@ -865,7 +960,7 @@ public class JourneyControllerIntegrationTest {
         journey.setCar(bus);
         journeyRepository.save(journey);
         String reqBody = "{\"arrivalIndicator\": true}";
-        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/arrival" )
+        RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/arrival")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
@@ -932,6 +1027,7 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }
+
     /**
      * **USERS** Should be able to SharedRide Journey
      * #169527991
@@ -990,8 +1086,8 @@ public class JourneyControllerIntegrationTest {
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop.getId() + ",\n" +
                 "  \"destination\": {\"transitAndStopId\":" + transitAndStop1.getId() + ",\"amount\": 1000 }, \n" +
-                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 1000}, " +
-                "{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 2000}]\n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/cars/" + sharedRide.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -1004,7 +1100,7 @@ public class JourneyControllerIntegrationTest {
     }
 
     /**
-     ***USERS** can update information about  Journey for PersonalAgency
+     * **USERS** can update information about  Journey for PersonalAgency
      * #169528238
      * scenario: 3 Invalid input object missing field
      */
@@ -1013,8 +1109,8 @@ public class JourneyControllerIntegrationTest {
         LocalDateTime localDateTime = LocalDateTime.now();
         String depTime = localDateTime.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String badRequest = "{\n" +
-                "  \"departureTime\": \""+ depTime + "\",\n" +
-                "  \"estimatedArrivalTime\": \""+ depTime +"\",\n" +
+                "  \"departureTime\": \"" + depTime + "\",\n" +
+                "  \"estimatedArrivalTime\": \"" + depTime + "\",\n" +
                 "  \"driver\": {\n" +
                 "    \"driverName\": \"John Doe\",\n" +
                 "    \"driverLicenseNumber\": \"1234567899\"\n" +
@@ -1032,8 +1128,9 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(jsonPath("$.errors.[0].field").value("destination"))
                 .andExpect(jsonPath("$.errors.[0].message").value("destination is required"));
     }
+
     /**
-     ***USERS** can update information about  Journey for PersonalAgency
+     * **USERS** can update information about  Journey for PersonalAgency
      * #169528238
      * scenario: 3 Invalid input object missing field
      */
@@ -1062,9 +1159,8 @@ public class JourneyControllerIntegrationTest {
 
     /**
      * **USERS** can update information about  Journey for PersonalAgency
-     *#169528238
+     * #169528238
      * scenario: 5 Success throws Exception
-     *
      */
     @Test
     public void update_shared_ride_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
@@ -1149,7 +1245,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Limbe\"," +
@@ -1165,7 +1261,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Tole\"," +
@@ -1198,10 +1294,10 @@ public class JourneyControllerIntegrationTest {
                 "  },\n" +
                 "  \"departureLocation\": " + transitAndStop1.getId() + ",\n" +
                 "  \"destination\": {\"transitAndStopId\":" + transitAndStop.getId() + ",\"amount\": 1000 }, \n" +
-                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId()+", \"amount\": 1000}, " +
-                "{\"transitAndStopId\":" + transitAndStop2.getId()+", \"amount\": 2000}]\n" +
+                "  \"transitAndStops\": [{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 1000}, " +
+                "{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
-        RequestBuilder requestBuilder = post("/api/protected/users/journeys/"+ journey.getId() + "/cars/" + sharedRide.getId())
+        RequestBuilder requestBuilder = post("/api/protected/users/journeys/" + journey.getId() + "/cars/" + sharedRide.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
@@ -1309,7 +1405,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Mutengene\"," +
@@ -1325,7 +1421,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Mile 17\"," +
@@ -1349,12 +1445,13 @@ public class JourneyControllerIntegrationTest {
                 "\"isCarApproved\":true," +
                 "\"timestamp\":\"" + currentDateTime + "\"" +
                 "}}";
-        RequestBuilder requestBuilder = get("/api/protected/users/journeys/"+journey.getId())
+        RequestBuilder requestBuilder = get("/api/protected/users/journeys/" + journey.getId())
                 .header("Authorization", "Bearer " + jwtToken);
         mockMvc.perform(requestBuilder)
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
     }
+
     /**
      * **USERS**  can view all Journey for PersonalAgency ordered by date and arrivalIndicator
      * * #169528531
@@ -1453,7 +1550,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"Mutengenes\"," +
@@ -1469,7 +1566,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"Miles 17\"," +
@@ -1506,7 +1603,7 @@ public class JourneyControllerIntegrationTest {
      * Scenario:  4. change  Journey departureIndicator state
      */
     @Test
-    public  void  given_journeyId_passed_as_parameter_exist_and_journey_arrivalIndicator_false_and_Journey_car_is_IN_AuthUser_Agency_then_change_departure_state() throws Exception {
+    public void given_journeyId_passed_as_parameter_exist_and_journey_arrivalIndicator_false_and_Journey_car_is_IN_AuthUser_Agency_then_change_departure_state() throws Exception {
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgencyRepository.save(personalAgency);
 
@@ -1532,13 +1629,14 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isNoContent())
                 .andReturn();
     }
+
     /**
      * **USERS** can change arrivalIndicator state
      * #169528624
      * Scenario:  4. change  Journey arrivalIndicator state
      */
     @Test
-    public  void given_journeyId_passed_as_parameter_exist_and_journey_departureIndicator_true_and_Journey_car_is_in_AuthUser_Agency_then_change_departure_state() throws Exception{
+    public void given_journeyId_passed_as_parameter_exist_and_journey_departureIndicator_true_and_Journey_car_is_in_AuthUser_Agency_then_change_departure_state() throws Exception {
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgencyRepository.save(personalAgency);
 
@@ -1556,7 +1654,7 @@ public class JourneyControllerIntegrationTest {
         journeyRepository.save(journey);
         String reqBody = "{\"arrivalIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/" + journey.getId() + "/arrival")
-                .header("Authorization","Bearer " + jwtToken)
+                .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(reqBody);
@@ -1565,13 +1663,14 @@ public class JourneyControllerIntegrationTest {
                 .andReturn();
 
     }
+
     /**
      * **USERS** can delete  Journey for PersonalAgency  if NO booking and arrivalIndicator = false
      * #169528640
-     *Scenario:  4. Delete Journey Success
+     * Scenario:  4. Delete Journey Success
      */
     @Test
-    public void delete_shared_journey_should_delete_journey_and_return_204() throws Exception{
+    public void delete_shared_journey_should_delete_journey_and_return_204() throws Exception {
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgencyRepository.save(personalAgency);
 
@@ -1588,19 +1687,19 @@ public class JourneyControllerIntegrationTest {
         journey.setCar(sharedRide);
         journeyRepository.save(journey);
         RequestBuilder requestBuilder = delete("/api/protected/users/journeys/" + journey.getId())
-                .header("Authorization","Bearer " + jwtToken);
+                .header("Authorization", "Bearer " + jwtToken);
         mockMvc.perform(requestBuilder).andExpect(status().isNoContent()).andReturn();
 
 
     }
 
     /**
-     ***USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
+     * **USERS** can add Journey STOPS  Journey for PersonalAgency  if  arrivalIndicator = false
      * Scenario:  5. Add Journey Success
      * #169528838
      */
     @Test
-    public void add_stops_to_personal_agency_should_return_204_no_content() throws Exception{
+    public void add_stops_to_personal_agency_should_return_204_no_content() throws Exception {
 
         PersonalAgency personalAgency = new PersonalAgency();
         personalAgencyRepository.save(personalAgency);
@@ -1643,7 +1742,7 @@ public class JourneyControllerIntegrationTest {
      * Scenario: 2. Success search with input data passeds
      */
     @Test
-    public void  return_a_list_of_journeyDto_on_successful_search() throws Exception {
+    public void return_a_list_of_journeyDto_on_successful_search() throws Exception {
 
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("Malingo Major");
@@ -1736,7 +1835,7 @@ public class JourneyControllerIntegrationTest {
                 "\"driverLicenseNumber\":\"1234567899\"" +
                 "}," +
                 "\"departureLocation\":{" +
-                "\"id\":"+ transitAndStop1.getId() + "," +
+                "\"id\":" + transitAndStop1.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\":\"South West\"," +
                 "\"city\":\"bova\"," +
@@ -1752,7 +1851,7 @@ public class JourneyControllerIntegrationTest {
                 "}," +
                 "\"transitAndStops\":[" +
                 "{" +
-                "\"id\":"+ transitAndStop3.getId() + "," +
+                "\"id\":" + transitAndStop3.getId() + "," +
                 "\"country\":\"Cameroon\"," +
                 "\"state\": \"South West\"," +
                 "\"city\":\"mautu\"," +
@@ -1839,7 +1938,7 @@ public class JourneyControllerIntegrationTest {
         bookedJourney1.setJourney(journey1);
         bookedJourneyRepository.save(bookedJourney1);
 
-        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() + "/transitAndStops/" + transitAndStop1.getId() )
+        RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId() + "/transitAndStops/" + transitAndStop1.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)

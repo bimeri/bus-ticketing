@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.service.HtmlToPdfGenarator;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.BookJourneyService;
@@ -70,7 +71,7 @@ public class BookJourneyController {
     @GetMapping("/protected/bookJourney/{bookedJourneyId}/receipt")
     ResponseEntity<Resource> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
         String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId);
-        String filename = "GowakaReceipt_"+new Date();
+        String filename = "GowakaReceipt_" + new Date();
         File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
 
         HttpHeaders headers = new HttpHeaders();
@@ -88,8 +89,11 @@ public class BookJourneyController {
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/history")
-    ResponseEntity<List<BookedJourneyStatusDTO>> bookedJourneyHistory() {
-        return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory());
+    ResponseEntity<PaginatedResponse<BookedJourneyStatusDTO>> bookedJourneyHistory(
+            @RequestParam(name = "pageNumber", defaultValue = "0", required = false) Integer pageNumber,
+            @RequestParam(name = "limit", defaultValue = Integer.MAX_VALUE + "", required = false) Integer limit
+    ) {
+        return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory(pageNumber, limit));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")

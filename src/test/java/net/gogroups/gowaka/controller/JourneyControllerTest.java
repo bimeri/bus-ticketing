@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.controller;
 
 
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.dto.JourneyDTO;
 import net.gogroups.gowaka.dto.JourneyResponseDTO;
 import net.gogroups.gowaka.service.JourneyService;
@@ -13,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Nnouka Stephen
@@ -44,5 +47,16 @@ public class JourneyControllerTest {
         ResponseEntity<JourneyResponseDTO> response = journeyController.getAJourneyById(1L);
         verify(mockJourneyService).getAJourneyById(1L);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void getOfficialAgencyJourneys_callJourneyService() {
+
+        when(mockJourneyService.getOfficialAgencyJourneys(anyInt(), anyInt()))
+                .thenReturn(new PaginatedResponse<>());
+        ResponseEntity<PaginatedResponse<JourneyResponseDTO>> response = journeyController.getOfficialAgencyJourneys(1, 10);
+        verify(mockJourneyService).getOfficialAgencyJourneys(1, 10);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isInstanceOf(PaginatedResponse.class);
     }
 }

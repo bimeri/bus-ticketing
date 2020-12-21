@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.gogroups.cfs.model.CustomerDTO;
 import net.gogroups.cfs.model.SurveyDTO;
 import net.gogroups.cfs.service.CfsClientService;
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.DTFFromDateStr;
@@ -18,6 +19,9 @@ import net.gogroups.gowaka.service.UserService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -88,6 +92,30 @@ public class JourneyServiceImpl implements JourneyService {
                     }
                     return false;
                 }).map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit) {
+
+        Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
+
+        List<Long> busIds = verifyCurrentAuthUser().getOfficialAgency().getBuses().stream()
+                .map(Car::getId)
+                .collect(Collectors.toList());
+        Page<Journey> journeyPage = journeyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(busIds, paging);
+
+        List<JourneyResponseDTO> journeys = journeyPage.stream()
+                .map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+
+        return PaginatedResponse.<JourneyResponseDTO>builder()
+                .items(journeys)
+                .count(journeys.size())
+                .total((int) journeyPage.getTotalElements())
+                .totalPages(journeyPage.getTotalPages())
+                .limit(limit)
+                .offset((int) paging.getOffset())
+                .pageNumber(pageNumber)
+                .build();
     }
 
     @Override
