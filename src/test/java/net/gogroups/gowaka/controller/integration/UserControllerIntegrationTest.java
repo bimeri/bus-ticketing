@@ -351,4 +351,40 @@ public class UserControllerIntegrationTest {
                 .andReturn();
     }
 
+    @Test
+    void validateGWUserByEmail_failure_returns_404() throws Exception {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("info@go-groups.net");
+
+        RequestBuilder requestBuilder = post("/api/protected/users/verify_user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+    @Test
+    void validateGWUserByEmail_success_returns_200() throws Exception {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("you.there@example.com");
+        User user = new User();
+        user.setUserId("3");
+        user.setFullName("you there");
+        user.setEmail(emailDTO.getEmail());
+        userRepository.save(user);
+
+        String expectedResponse = "{\"email\":\"you.there@example.com\",\"fullName\":\"you there\"}";
+        RequestBuilder requestBuilder = post("/api/protected/users/validate_user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
 }
