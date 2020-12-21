@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
@@ -252,7 +253,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User authUser = userRepository.findById("12").get();
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setId(1L);
         officialAgency.setAgencyName("My Agency");
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
@@ -311,7 +311,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User authUser = userRepository.findById("12").get();
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setId(1L);
         officialAgency.setAgencyName("My Agency");
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
@@ -363,7 +362,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User authUser = userRepository.findById("12").get();
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setId(1L);
         officialAgency.setAgencyName("My Agency");
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
@@ -396,6 +394,7 @@ public class OfficialAgencyControllerIntegrationTest {
     }
 
     @Test
+    @Transactional
     public void removeAgencyUser_success_return_204() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
@@ -412,7 +411,6 @@ public class OfficialAgencyControllerIntegrationTest {
 
         User authUser = userRepository.findById("12").get();
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgency.setId(1L);
         officialAgency.setAgencyName("My Agency");
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
