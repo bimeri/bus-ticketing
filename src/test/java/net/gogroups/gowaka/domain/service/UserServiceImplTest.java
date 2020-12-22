@@ -5,6 +5,8 @@ import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
+import net.gogroups.gowaka.exception.ApiException;
+import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
@@ -13,6 +15,7 @@ import net.gogroups.security.accessconfig.JwtTokenProvider;
 import net.gogroups.security.accessconfig.UserDetailsImpl;
 import net.gogroups.security.model.*;
 import net.gogroups.security.service.ApiSecurityService;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +30,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -356,5 +360,31 @@ public class UserServiceImplTest {
         assertThat(value.getUsername()).isEqualTo("example@example.com");
     }
 
+    @Test
+    public void validateGWUserByEmail_whenEmailInvalid_shouldThrowResourceNotFoundException(){
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.empty());
+        EmailDTO dto = new EmailDTO();
+        dto.setEmail("example@example.com");
+        ApiException apiException = assertThrows(ApiException.class,
+                () -> userService.validateGWUserByEmail(dto));
+        MatcherAssert.assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
+        MatcherAssert.assertThat(apiException.getMessage(), is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage()));
+    }
+
+    @Test
+    public void validateGWUserByEmail_whenEmailValid_shouldReturnGWUserDTO() {
+        User you = new User();
+        you.setEmail("you@example.com");
+        you.setFullName("you");
+        EmailDTO dto = new EmailDTO();
+        dto.setEmail(you.getEmail());
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.of(you));
+        GWUserDTO userDTO = userService.validateGWUserByEmail(dto);
+        verify(mockUserRepository).findFirstByEmail(stringArgumentCaptor.capture());
+        String emailChecked = stringArgumentCaptor.getValue();
+        assertThat(emailChecked).isEqualTo(dto.getEmail());
+        assertThat(userDTO.getEmail()).isEqualTo(you.getEmail());
+        assertThat(userDTO.getFullName()).isEqualTo(you.getFullName());
+    }
 
 }

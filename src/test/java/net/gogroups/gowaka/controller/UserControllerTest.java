@@ -81,4 +81,12 @@ class UserControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 
+    @Test
+    void validateGWUserByEmail_calls_UserService() {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("email@email.com");
+        userController.validateGWUserByEmail(emailDTO);
+        verify(mockUserService).validateGWUserByEmail(emailDTO);
+    }
+
 }

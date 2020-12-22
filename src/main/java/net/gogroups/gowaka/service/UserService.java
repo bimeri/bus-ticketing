@@ -23,4 +23,6 @@ public interface UserService {
     void updateProfile(UpdateProfileDTO updateProfileDTO);
 
     void verifyEmail(EmailDTO emailDTO);
+
+    GWUserDTO validateGWUserByEmail(EmailDTO emailDTO);
 }

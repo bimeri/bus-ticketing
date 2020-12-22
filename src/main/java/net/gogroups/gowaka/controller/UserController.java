@@ -62,5 +62,10 @@ public class UserController {
         userService.verifyEmail(emailDTO);
         return ResponseEntity.noContent().build();
     }
+    @PostMapping("/protected/users/validate_user")
+    @PreAuthorize("hasAnyRole('ROLE_GW_ADMIN','ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
+    ResponseEntity<GWUserDTO> validateGWUserByEmail(@RequestBody @Validated EmailDTO emailDTO){
+        return ResponseEntity.ok(userService.validateGWUserByEmail(emailDTO));
+    }
 
 }
