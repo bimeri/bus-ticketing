@@ -200,7 +200,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
 
-        Page<BookedJourney> bookedJourneyPage = bookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(COMPLETED.toString(), currentAuthUser.getId(), paging);
+        Page<BookedJourney> bookedJourneyPage = bookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserIdOrderByCreatedAtDesc(COMPLETED.toString(), currentAuthUser.getId(), paging);
 
         List<BookedJourneyStatusDTO> journeyStatusDTOS = bookedJourneyPage.stream()
                 .map(this::getBookedJourneyStatusDTO)

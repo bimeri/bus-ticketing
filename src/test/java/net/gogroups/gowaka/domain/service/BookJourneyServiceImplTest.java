@@ -23,8 +23,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
@@ -815,7 +813,7 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDto);
-        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(anyString(), anyString(), any()))
+        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserIdOrderByCreatedAtDesc(anyString(), anyString(), any()))
                 .thenReturn(new PageImpl<>(Collections.singletonList(journey.getBookedJourneys().get(0))));
 
         BookedJourneyStatusDTO userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory(1, 10).getItems().get(0);
@@ -849,7 +847,7 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDto);
-        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserId(anyString(), anyString(), any()))
+        when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserIdOrderByCreatedAtDesc(anyString(), anyString(), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         PaginatedResponse<BookedJourneyStatusDTO> userBookedJourneyHistory = bookJourneyService.getUserBookedJourneyHistory(1, 10);

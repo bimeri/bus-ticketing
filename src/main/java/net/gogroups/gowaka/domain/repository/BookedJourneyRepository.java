@@ -18,7 +18,7 @@ public interface BookedJourneyRepository extends JpaRepository<BookedJourney, Lo
 
     List<BookedJourney> findAllByUserUserId(String userId);
 
-    Page<BookedJourney> findAllByPaymentTransaction_TransactionStatusAndUserUserId(String status, String userId, Pageable pageable);
+    Page<BookedJourney> findAllByPaymentTransaction_TransactionStatusAndUserUserIdOrderByCreatedAtDesc(String status, String userId, Pageable pageable);
 
     List<BookedJourney> findAllByJourneyId(Long journeyId);
 
