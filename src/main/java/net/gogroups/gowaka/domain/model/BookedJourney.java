@@ -37,6 +37,10 @@ public class BookedJourney extends BaseEntity{
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
 
+    @ManyToOne
+    @JoinColumn(name = "agency_user_id")
+    private User agencyUser;
+
     public void addPassenger(Passenger passenger){
         this.passengers.add(passenger);
         passenger.setBookedJourney(this);

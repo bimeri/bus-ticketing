@@ -351,7 +351,17 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             transitAndStop = journeyStop.getTransitAndStop();
         }
 
-        BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+        BookedJourney bookedJourney;
+        if (isAgencyBooking) {
+            try {
+                User proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                bookedJourney = getBookedJourney(passengers, proxy, user, journey, amount, transitAndStop);
+            } catch (ApiException e) {
+                bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
+            }
+        } else {
+            bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+        }
         bookedJourney.setIsAgencyBooking(isAgencyBooking);
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
         passengers.forEach(passenger -> passenger.setBookedJourney(savedBookedJourney));
@@ -533,6 +543,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         return bookedJourney;
     }
 
+    private BookedJourney getBookedJourney(
+            List<Passenger> passengers, User user, User agencyUser,
+            Journey journey, Double amount, TransitAndStop transitAndStop) {
+        BookedJourney bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+        bookedJourney.setAgencyUser(agencyUser);
+        return bookedJourney;
+    }
+
     private List<Passenger> getPassenger(BookJourneyRequest bookJourneyRequest, String userId, Journey journey) {
         return bookJourneyRequest.getPassengers().stream()
                 .map(psngr -> {
@@ -556,6 +574,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return currentAuthUserOptional.get();
+    }
+
+    private User getUserByEmail(String email) {
+        Optional<User> optional = userRepository.findFirstByEmail(email);
+        if (!optional.isPresent()) {
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        return optional.get();
     }
 
     private void verifyJourneyStatus(Journey journey) {
