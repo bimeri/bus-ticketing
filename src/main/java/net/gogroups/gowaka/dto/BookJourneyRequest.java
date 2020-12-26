@@ -22,6 +22,7 @@ public class BookJourneyRequest {
 
     private boolean destinationIndicator;
     private Long transitAndStopId;
+    private String directToAccount;
 
     @Valid
     private List<Passenger> passengers = new ArrayList<>();

@@ -711,6 +711,272 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
+    void agencyUserBookJourney_booksNormally_whenDirectToAccountIsEmpty() {
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        User user = new User();
+        user.setUserId("10");
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setDestinationIndicator(false);
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+        bookJourneyRequest.getPassengers().add(passenger);
+
+        bookJourneyRequest.setTransitAndStopId(102L);
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(101L);
+        destination.setLocation(new Location());
+
+        TransitAndStop stopTransitAndStop = new TransitAndStop();
+        stopTransitAndStop.setId(102L);
+        stopTransitAndStop.setLocation(new Location());
+
+        Journey journey = new Journey();
+        journey.setId(111L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        journey.setAmount(5000.00);
+        journey.setDestination(destination);
+        journey.setDriver(new Driver());
+        journey.setDepartureLocation(stopTransitAndStop);
+
+        JourneyStop stopLocation = new JourneyStop();
+        stopLocation.setTransitAndStop(stopTransitAndStop);
+        stopLocation.setAmount(2000.00);
+        journey.setJourneyStops(Collections.singletonList(stopLocation));
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT2");
+        officialAgency.setId(2L);
+        Bus car = new Bus();
+        car.setIsOfficialAgencyIndicator(true);
+        car.setLicensePlateNumber("125SW");
+        car.setOfficialAgency(officialAgency);
+        user.setOfficialAgency(officialAgency);
+        journey.setCar(car);
+
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setId(103L);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(destination);
+        when(mockBookedJourneyRepository.save(any()))
+                .thenReturn(bookedJourney);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setFullName("John Doe");
+        userDTO.setEmail("email@email.com");
+        userDTO.setPhoneNumber("676767676");
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        when(mockPaymentTransactionRepository.save(any()))
+                .thenReturn(paymentTransaction);
+        bookJourneyService.agencyUserBookJourney(journey.getId(), bookJourneyRequest);
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
+
+        assertThat(theBooked.getAgencyUser()).isEqualTo(user);
+        assertThat(theBooked.getUser()).isEqualTo(user);
+    }
+
+    @Test
+    void agencyUserBookJourney_booksAndForwardsBooking_whenDirectToAccountIsValid(){
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        User user = new User();
+        user.setUserId("10");
+
+        User user1 = new User();
+        user1.setUserId("20");
+        user1.setEmail("me.here@example.com");
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setDestinationIndicator(false);
+        bookJourneyRequest.setDirectToAccount(user1.getEmail());
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+        bookJourneyRequest.getPassengers().add(passenger);
+
+        bookJourneyRequest.setTransitAndStopId(102L);
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(101L);
+        destination.setLocation(new Location());
+
+        TransitAndStop stopTransitAndStop = new TransitAndStop();
+        stopTransitAndStop.setId(102L);
+        stopTransitAndStop.setLocation(new Location());
+
+        Journey journey = new Journey();
+        journey.setId(111L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        journey.setAmount(5000.00);
+        journey.setDestination(destination);
+        journey.setDriver(new Driver());
+        journey.setDepartureLocation(stopTransitAndStop);
+
+        JourneyStop stopLocation = new JourneyStop();
+        stopLocation.setTransitAndStop(stopTransitAndStop);
+        stopLocation.setAmount(2000.00);
+        journey.setJourneyStops(Collections.singletonList(stopLocation));
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT2");
+        officialAgency.setId(2L);
+        Bus car = new Bus();
+        car.setIsOfficialAgencyIndicator(true);
+        car.setLicensePlateNumber("125SW");
+        car.setOfficialAgency(officialAgency);
+        user.setOfficialAgency(officialAgency);
+        journey.setCar(car);
+
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.of(user1));
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setId(103L);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(destination);
+        when(mockBookedJourneyRepository.save(any()))
+                .thenReturn(bookedJourney);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setFullName("John Doe");
+        userDTO.setEmail("email@email.com");
+        userDTO.setPhoneNumber("676767676");
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        when(mockPaymentTransactionRepository.save(any()))
+                .thenReturn(paymentTransaction);
+        bookJourneyService.agencyUserBookJourney(journey.getId(), bookJourneyRequest);
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
+
+        assertThat(theBooked.getAgencyUser()).isEqualTo(user);
+        assertThat(theBooked.getUser()).isEqualTo(user1);
+    }
+
+    @Test
+    void agencyUserBookJourney_throwsApiExceptionAndBooksNormally_whenDirectToAccountIsInValid() {
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        User user = new User();
+        user.setUserId("10");
+
+        User user1 = new User();
+        user1.setUserId("20");
+        user1.setEmail("me.here@example.com");
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setDestinationIndicator(false);
+        bookJourneyRequest.setDirectToAccount(user1.getEmail());
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+        bookJourneyRequest.getPassengers().add(passenger);
+
+        bookJourneyRequest.setTransitAndStopId(102L);
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(101L);
+        destination.setLocation(new Location());
+
+        TransitAndStop stopTransitAndStop = new TransitAndStop();
+        stopTransitAndStop.setId(102L);
+        stopTransitAndStop.setLocation(new Location());
+
+        Journey journey = new Journey();
+        journey.setId(111L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        journey.setAmount(5000.00);
+        journey.setDestination(destination);
+        journey.setDriver(new Driver());
+        journey.setDepartureLocation(stopTransitAndStop);
+
+        JourneyStop stopLocation = new JourneyStop();
+        stopLocation.setTransitAndStop(stopTransitAndStop);
+        stopLocation.setAmount(2000.00);
+        journey.setJourneyStops(Collections.singletonList(stopLocation));
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT2");
+        officialAgency.setId(2L);
+        Bus car = new Bus();
+        car.setIsOfficialAgencyIndicator(true);
+        car.setLicensePlateNumber("125SW");
+        car.setOfficialAgency(officialAgency);
+        user.setOfficialAgency(officialAgency);
+        journey.setCar(car);
+
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.empty());
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setId(103L);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(destination);
+        when(mockBookedJourneyRepository.save(any()))
+                .thenReturn(bookedJourney);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setFullName("John Doe");
+        userDTO.setEmail("email@email.com");
+        userDTO.setPhoneNumber("676767676");
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        when(mockPaymentTransactionRepository.save(any()))
+                .thenReturn(paymentTransaction);
+        bookJourneyService.agencyUserBookJourney(journey.getId(), bookJourneyRequest);
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
+
+        assertThat(theBooked.getUser().getUserId()).isEqualTo(user.getUserId());
+    }
+
+    @Test
     void getAllBookedSeats_throwsException_whenJourneyIdNotFound() {
 
         when(mockJourneyRepository.findById(anyLong()))
