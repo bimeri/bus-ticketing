@@ -23,8 +23,9 @@ public class BaseEntity {
 
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        LocalDateTime localDateTime = LocalDateTime.now();
+        this.createdAt = localDateTime;
+        this.updatedAt = localDateTime;
         addUpdatedByUser();
     }
 
