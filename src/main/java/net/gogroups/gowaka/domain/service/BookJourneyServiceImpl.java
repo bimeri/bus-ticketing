@@ -432,6 +432,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         bookedJourneyStatusDTO.setPaymentReason(paymentTransaction.getPaymentReason());
         bookedJourneyStatusDTO.setPaymentStatus(paymentTransaction.getTransactionStatus());
         bookedJourneyStatusDTO.setTransactionId(paymentTransaction.getId());
+        bookedJourneyStatusDTO.setDepartureIndicator(bookedJourney.getJourney().getDepartureIndicator());
+        bookedJourneyStatusDTO.setArrivalIndicator(bookedJourney.getJourney().getArrivalIndicator());
 
         bookedJourneyStatusDTO.setPaymentChannelTransactionNumber(paymentTransaction.getPaymentChannelTransactionNumber());
         bookedJourneyStatusDTO.setPaymentChannel(paymentTransaction.getPaymentChannel());

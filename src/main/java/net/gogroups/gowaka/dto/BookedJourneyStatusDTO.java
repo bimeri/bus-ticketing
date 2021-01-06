@@ -36,6 +36,8 @@ public class BookedJourneyStatusDTO {
     private LocalDateTime departureTime;
     private LocalDateTime estimatedArrivalTime;
     private String destinationLocation;
+    private Boolean departureIndicator;
+    private Boolean arrivalIndicator;
 
     private Double agencyAmount;
     private Double serviceChargeAmount;
