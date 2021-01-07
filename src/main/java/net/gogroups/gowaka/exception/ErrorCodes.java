@@ -26,6 +26,7 @@ public enum ErrorCodes {
     SEAT_STRUCTURE_NOT_FOUND("The seat structure does not exist or may have been deleted"),
     PASSENGER_ALREADY_CHECKED_IN("This passenger is already checked in"),
     SEAT_ALREADY_TAKEN("Seat already taken."),
+    PAYMENT_NOT_COMPLETED("Payment is not completed."),
     RESOURCE_ALREADY_EXIST("Resource already exist."),
     ALREADY_REFUNDED_REQUEST("Request already refunded"),
     INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee");

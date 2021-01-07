@@ -7,6 +7,7 @@ import net.gogroups.gowaka.dto.BookJourneyRequest;
 import net.gogroups.gowaka.dto.CodeDTO;
 import net.gogroups.gowaka.dto.PaymentStatusResponseDTO;
 import net.gogroups.notification.service.NotificationService;
+import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
 import net.gogroups.storage.service.FileStorageService;
@@ -608,5 +609,103 @@ public class BookJourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk());
     }
+
+    @Test
+    public void changeSeat_failure_return412_whenJourneyAlreadyStarted() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(true);
+        journeyRepository.save(journey);
+        String expectedRequest = "[\n" +
+                "{\"currentSeatNumber\": 8, \"newSeatNumber\": 6}\n" +
+                "]";
+        String expectedResponse = "{\"code\":\"JOURNEY_ALREADY_STARTED\",\"message\":" +
+                "\"This Journey is already started.\"," +
+                "\"endpoint\":\"/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number\"}";
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(expectedRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isConflict())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void changeSeat_failure_return412_whenJourneyAlreadyTerminated() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(true);
+        journeyRepository.save(journey);
+        String expectedRequest = "[\n" +
+                "{\"currentSeatNumber\": 8, \"newSeatNumber\": 6}\n" +
+                "]";
+        String expectedResponse = "{\"code\":\"JOURNEY_ALREADY_TERMINATED\",\"message\":" +
+                "\"This Journey is already terminated.\"," +
+                "\"endpoint\":\"/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number\"}";
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(expectedRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isConflict())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void changeSeat_failure_return404_whenPaymentNotCompleted() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        PaymentTransaction pt = bookJourney.getPaymentTransaction();
+        pt.setTransactionStatus(PayAmGoPaymentStatus.DECLINED.toString());
+        paymentTransactionRepository.save(pt);
+        journeyRepository.save(journey);
+        String expectedRequest = "[\n" +
+                "{\"currentSeatNumber\": 8, \"newSeatNumber\": 6}\n" +
+                "]";
+        String expectedResponse = "{\"code\":\"PAYMENT_NOT_COMPLETED\",\"message\":" +
+                "\"Payment is not completed.\",\"endpoint\":\"/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number\"}";
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(expectedRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    @Test
+    public void changeSeat_success_return204_whenJourneyNotStartedNorTerminatedSeatNotTaken() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journeyRepository.save(journey);
+        String expectedRequest = "[\n" +
+                "{\"currentSeatNumber\": 8, \"newSeatNumber\": 6}\n" +
+                "]";
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/" + bookJourney.getId() + "/change_seat_number")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(expectedRequest)
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
 
 }

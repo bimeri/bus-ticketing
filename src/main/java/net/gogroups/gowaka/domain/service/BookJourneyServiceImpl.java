@@ -85,6 +85,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.emailContentBuilder = emailContentBuilder;
     }
 
+
     @Override
     @Transactional
     public PaymentUrlDTO bookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
@@ -318,6 +319,118 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         ).collect(Collectors.toList());
     }
 
+    @Override
+    public void changeSeatNumber(List<ChangeSeatDTO> changeSeatList, Long bookJourneyId) {
+        // get the bookedJourney
+        BookedJourney bookedJourney = getBookedJourneyById(bookJourneyId);
+        Journey journey = bookedJourney.getJourney();
+        if (journey != null) {
+            // if journey already started throw exception
+            if (journey.getDepartureIndicator()) {
+                throw new ApiException(JOURNEY_ALREADY_STARTED.getMessage(),
+                        JOURNEY_ALREADY_STARTED.toString(), HttpStatus.CONFLICT);
+            }
+            // if journey already terminated throw exception
+            if (journey.getArrivalIndicator()) {
+                throw new ApiException(JOURNEY_ALREADY_TERMINATED.getMessage(),
+                        JOURNEY_ALREADY_TERMINATED.toString(), HttpStatus.CONFLICT);
+            }
+            // if journey payment not completed throw exception
+            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+            if (paymentTransaction == null ||
+                    !COMPLETED.toString()
+                            .equals(paymentTransaction.getTransactionStatus())) {
+                throw new ApiException(PAYMENT_NOT_COMPLETED.getMessage(),
+                        PAYMENT_NOT_COMPLETED.toString(), HttpStatus.NOT_FOUND);
+            }
+            // map passenger to seat number
+            Map<String, Passenger> bookedPassengerSeatMap = new HashMap<>();
+            List<Passenger> passengers = bookedJourney.getPassengers();
+            List<Passenger> notifiablePassengers = new ArrayList<>();
+            List<Integer> myBookedSeats = new ArrayList<>();
+            passengers.forEach(p -> {
+                bookedPassengerSeatMap.put(String.valueOf(p.getSeatNumber()), p);
+                myBookedSeats.add(p.getSeatNumber());
+            });
+            List<Integer> journeyBookedSeats = getAllBookedSeats(bookedJourney.getJourney().getId());
+            List<ChangeSeatDTO> failureList = new ArrayList<>();
+            List<ChangeSeatDTO> successList = new ArrayList<>();
+            User user = bookedJourney.getUser();
+            for (ChangeSeatDTO seatDTO: changeSeatList) {
+                // check if old seat is in bookedJourney
+                // if not ignore it
+                Integer currSeat = seatDTO.getCurrentSeatNumber();
+                Integer newSeat = seatDTO.getNewSeatNumber();
+                if (myBookedSeats.contains(currSeat)) {
+                    Passenger curr = bookedPassengerSeatMap.get(String.valueOf(currSeat));
+                    int currIndex = passengers.indexOf(curr);
+                    // check if new seat is in bookedJourney
+                    // if yes, swap
+                    if (myBookedSeats.contains(newSeat)) {// swap
+                        Passenger newP = bookedPassengerSeatMap.get(String.valueOf(newSeat));
+                        int newIndex = passengers.indexOf(newP);
+                        curr.setSeatNumber(newSeat);
+                        newP.setSeatNumber(currSeat);
+                        // change QRCode
+                        curr.setCheckedInCode(generateCode(user.getUserId(), journey, newSeat));
+                        newP.setCheckedInCode(generateCode(user.getUserId(), journey, currSeat));
+                        notifiablePassengers.add(curr);
+                        notifiablePassengers.add(newP);
+                        // change the bookedJourney passengers too
+                        passengers.set(currIndex, curr);
+                        passengers.set(newIndex, newP);
+                        successList.add(seatDTO);
+                    } else { // if not,
+                        // check if a seat is already taken
+                        if (journeyBookedSeats.contains(newSeat)) {// if a seat is already taken add to failure list
+                            failureList.add(seatDTO);
+                        } else {// change seat
+                            curr.setSeatNumber(newSeat);
+                            // change QRCode
+                            curr.setCheckedInCode(generateCode(user.getUserId(), journey, newSeat));
+                            notifiablePassengers.add(curr);
+                            // change the bookedJourney passengers too
+                            passengers.set(currIndex, curr);
+                            successList.add(seatDTO);
+                        }
+
+                    }
+                }
+                else {
+                    // throw exception
+                    throw new ApiException(
+                            RESOURCE_NOT_FOUND.getMessage(),
+                            RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+                }
+            }
+            if (!notifiablePassengers.isEmpty()) {
+                passengerRepository.saveAll(notifiablePassengers);
+                // notify passengers
+                bookedJourney.setPassengers(passengers);
+                notifyPassengers(bookedJourney, getBookedJourneyStatusDTO(bookedJourney), notifiablePassengers);
+            }
+            if (!failureList.isEmpty()) {
+                throw new ApiException(
+                        SEAT_ALREADY_TAKEN.getMessage(),
+                        SEAT_ALREADY_TAKEN.toString(), HttpStatus.CONFLICT);
+            }
+        }
+    }
+
+    private void notifyPassengers(BookedJourney bookedJourney, BookedJourneyStatusDTO dto, List<Passenger> passengers) {
+        passengers.forEach(passenger -> {
+            String filename = passenger.getCheckedInCode() + "." + QRCodeProvider.STORAGE_FILE_FORMAT;
+            try {
+                byte[] qrCodeBytes = getQRCodeBytes(bookedJourney, passenger.getCheckedInCode());
+                fileStorageService.saveFile(filename, qrCodeBytes, QRCodeProvider.STORAGE_FOLDER, FileAccessType.PROTECTED);
+            } catch (IOException e) {
+                log.info("could not generate QR Code");
+                e.printStackTrace();
+            }
+        });
+         sendChangeSeatTicketEmail(dto, passengers);
+    }
+
     private PaymentTransaction getPaymentTransaction(Journey journey, User user, BookJourneyRequest bookJourneyRequest, Boolean isAgencyBooking) {
         List<Integer> bookSeats = bookJourneyRequest.getPassengers().stream()
                 .map(BookJourneyRequest.Passenger::getSeatNumber)
@@ -416,6 +529,24 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         //TODO: should also send SMS
     }
 
+    private void sendChangeSeatTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO, List<Passenger> passengers) {
+
+        String message = emailContentBuilder.buildTicketEmail(bookedJourneyStatusDTO);
+
+        SendEmailDTO emailDTO = new SendEmailDTO();
+        emailDTO.setSubject(EmailFields.UPDATED_TICKET_SUBJECT.getMessage());
+        emailDTO.setMessage(message);
+        Set<EmailAddress> emailAddresses = passengers.stream()
+                .map(passenger -> new EmailAddress(passenger.getEmail(), passenger.getName()))
+                .collect(Collectors.toSet());
+
+        emailDTO.setToAddresses(new ArrayList<>(emailAddresses));
+        // setting cc and bcc to empty lists
+        emailDTO.setCcAddresses(Collections.emptyList());
+        emailDTO.setBccAddresses(Collections.emptyList());
+        notificationService.sendEmail(emailDTO);
+        //TODO: should also send SMS
+    }
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {
 
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
@@ -608,6 +739,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         Optional<Passenger> optional = passengerRepository.findByCheckedInCode(code);
         if (!optional.isPresent()) {
             log.info("CheckedInCode not found code: {}", code);
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optional.get();
+    }
+
+    private BookedJourney getBookedJourneyById(Long bookJourneyId) {
+        Optional<BookedJourney> optional = bookedJourneyRepository.findById(bookJourneyId);
+        if (!optional.isPresent()) {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optional.get();

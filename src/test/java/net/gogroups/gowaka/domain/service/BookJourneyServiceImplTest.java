@@ -12,6 +12,7 @@ import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.ServiceChargeService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
+import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.payamgo.model.PayAmGoRequestDTO;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
@@ -26,9 +27,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -68,12 +67,16 @@ public class BookJourneyServiceImplTest {
     private JourneyService mockJourneyService;
     @Mock
     private ServiceChargeService mockServiceChargeService;
+    @Mock
+    private BookJourneyService mockBookJourneyService;
 
     private BookJourneyService bookJourneyService;
     private ArgumentCaptor<BookedJourney> bookedJourneyArgumentCaptor = ArgumentCaptor.forClass(BookedJourney.class);
     private ArgumentCaptor<PaymentTransaction> paymentTransactionArgumentCaptor = ArgumentCaptor.forClass(PaymentTransaction.class);
     private ArgumentCaptor<Passenger> passengerArgumentCaptor = ArgumentCaptor.forClass(Passenger.class);
-
+    private ArgumentCaptor<Passenger> passengerArgumentCaptor2 = ArgumentCaptor.forClass(Passenger.class);
+    private ArgumentCaptor<List<Passenger>> passengerArgumentCaptorList = ArgumentCaptor.forClass(List.class);
+    private ArgumentCaptor<Long> longArgumentCaptor = ArgumentCaptor.forClass(Long.class);
     private Journey journey;
 
     @BeforeEach
@@ -1518,4 +1521,229 @@ public class BookJourneyServiceImplTest {
         assertThat(dto.get(0).getPassengers().get(0).getPassengerPhoneNumber()).isEqualTo("66887541");
     }
 
+    @Test
+    void changeSeatNumber_whenJourneyAlreadyStarted_thenThrowConflict() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(true);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.changeSeatNumber(new ArrayList<>(), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_STARTED.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_STARTED.getMessage());
+    }
+
+    @Test
+    void changeSeatNumber_whenJourneyNull_doNothing() {
+        BookedJourney bookJourney = new BookedJourney();
+        bookJourney.setId(17L);
+        bookJourney.setJourney(null);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        bookJourneyService.changeSeatNumber(Collections.singletonList(new ChangeSeatDTO()), 17L);
+        verify(mockBookedJourneyRepository).findById(longArgumentCaptor.capture());
+        assertThat(longArgumentCaptor.getValue()).isEqualTo(17L);
+    }
+    @Test
+    void changeSeatNumber_whenJourneyAlreadyTerminated_thenThrowConflict() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(true);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.changeSeatNumber(new ArrayList<>(), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_TERMINATED.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.JOURNEY_ALREADY_TERMINATED.getMessage());
+    }
+
+    @Test
+    void changeSeatNumber_whenPaymentNotCompleted_thenThrowConflict() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        bookJourney.getPaymentTransaction().setTransactionStatus(DECLINED.toString());
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.changeSeatNumber(new ArrayList<>(), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.getMessage());
+    }
+    @Test
+    void changeSeatNumber_whenPaymentIsNull_thenThrowNotFound() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        bookJourney.setPaymentTransaction(null);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.changeSeatNumber(new ArrayList<>(), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.getMessage());
+    }
+
+    @Test
+    void changeSeatNumber_whenSeatAlreadyTaken_thenThrowConflict() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        BookedJourney bj = new BookedJourney();
+        bj.setId(101L);
+        Passenger pg = new Passenger();
+        pg.setSeatNumber(11);
+        pg.setCheckedInCode("1235487");
+        bj.getPassengers().add(pg);
+        bj.setJourney(journey);
+        bj.setPaymentTransaction(bookJourney.getPaymentTransaction());
+        journey.setBookedJourneys(
+                Arrays.asList(bookJourney, bj)
+        );
+        Passenger passenger = new Passenger();
+        passenger.setSeatNumber(10);
+        passenger.setCheckedInCode("1235487");
+        passenger.setPassengerCheckedInIndicator(false);
+        bookJourney.getPassengers().add(
+             passenger
+        );
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        ChangeSeatDTO dto = new ChangeSeatDTO();
+        dto.setCurrentSeatNumber(10);
+        dto.setNewSeatNumber(11);
+        ApiException apiException = assertThrows(ApiException.class, () ->
+                bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.SEAT_ALREADY_TAKEN.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.SEAT_ALREADY_TAKEN.getMessage());
+    }
+
+    @Test
+    void changeSeatNumber_whenOldSeatNotInBookJourney_throwNotFound() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        User user = new User();
+        user.setUserId("12");
+        bookJourney.setUser(user);
+        BookedJourney bj = new BookedJourney();
+        bj.setId(101L);
+        Passenger pg = new Passenger();
+        pg.setSeatNumber(11);
+        pg.setCheckedInCode("1235487");
+        bj.getPassengers().add(pg);
+        bj.setJourney(journey);
+        bj.setPaymentTransaction(bookJourney.getPaymentTransaction());
+        journey.setBookedJourneys(
+                Arrays.asList(bookJourney, bj)
+        );
+        Passenger passenger = new Passenger();
+        passenger.setId(2L);
+        passenger.setSeatNumber(10);
+        passenger.setCheckedInCode("1235487");
+        passenger.setName("Jones");
+        passenger.setPassengerCheckedInIndicator(false);
+        bookJourney.getPassengers().add(
+                passenger
+        );
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        ChangeSeatDTO dto = new ChangeSeatDTO();
+        dto.setCurrentSeatNumber(15);
+        dto.setNewSeatNumber(8);
+        ApiException apiException = assertThrows(ApiException.class, () ->
+                bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L));
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.toString());
+        assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
+    }
+    @Test
+    void changeSeatNumber_whenSeatNotTakenAndSeatsInBookedJourney_thenSwap() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        User user = new User();
+        user.setUserId("12");
+        bookJourney.setUser(user);
+        BookedJourney bj = new BookedJourney();
+        bj.setId(101L);
+        Passenger pg = new Passenger();
+        pg.setSeatNumber(11);
+        pg.setCheckedInCode("1235487");
+        bj.getPassengers().add(pg);
+        bj.setJourney(journey);
+        bj.setPaymentTransaction(bookJourney.getPaymentTransaction());
+        journey.setBookedJourneys(
+                Arrays.asList(bookJourney, bj)
+        );
+        Passenger passenger = new Passenger();
+        passenger.setId(2L);
+        passenger.setSeatNumber(10);
+        passenger.setCheckedInCode("1235487");
+        passenger.setName("Jones");
+        passenger.setPassengerCheckedInIndicator(false);
+        bookJourney.getPassengers().add(
+                passenger
+        );
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        ChangeSeatDTO dto = new ChangeSeatDTO();
+        dto.setCurrentSeatNumber(10);
+        dto.setNewSeatNumber(8);
+        bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L);
+        verify(mockPassengerRepository).saveAll(passengerArgumentCaptorList.capture());
+        assertThat(passengerArgumentCaptorList.getValue().get(0).getSeatNumber()).isEqualTo(8);
+        assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isEqualTo("Jones");
+        assertThat(passengerArgumentCaptorList.getValue().get(1).getSeatNumber()).isEqualTo(10);
+        assertThat(passengerArgumentCaptorList.getValue().get(1).getName()).isEqualTo("John Doe");
+    }
+
+    @Test
+    void changeSeatNumber_whenSeatNotTakenAndSeatsNotInBookedJourney_thenChange() {
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        User user = new User();
+        user.setUserId("12");
+        bookJourney.setUser(user);
+        BookedJourney bj = new BookedJourney();
+        bj.setId(101L);
+        Passenger pg = new Passenger();
+        pg.setSeatNumber(11);
+        pg.setCheckedInCode("1235487");
+        bj.getPassengers().add(pg);
+        bj.setJourney(journey);
+        bj.setPaymentTransaction(bookJourney.getPaymentTransaction());
+        journey.setBookedJourneys(
+                Arrays.asList(bookJourney, bj)
+        );
+        Passenger passenger = new Passenger();
+        passenger.setId(2L);
+        passenger.setSeatNumber(10);
+        passenger.setCheckedInCode("1235487");
+        passenger.setName("Jones");
+        passenger.setPassengerCheckedInIndicator(false);
+        bookJourney.getPassengers().add(
+                passenger
+        );
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockBookedJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(bookJourney));
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        ChangeSeatDTO dto = new ChangeSeatDTO();
+        dto.setCurrentSeatNumber(10);
+        dto.setNewSeatNumber(3);
+        bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L);
+        verify(mockPassengerRepository).saveAll(passengerArgumentCaptorList.capture());
+        assertThat(passengerArgumentCaptorList.getValue().get(0).getSeatNumber()).isEqualTo(3);
+        assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isEqualTo("Jones");
+        assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isNotEqualTo(passenger.getCheckedInCode());
+    }
 }
