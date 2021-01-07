@@ -1,6 +1,5 @@
 package net.gogroups.gowaka.service;
 
-import io.swagger.models.auth.In;
 import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.dto.*;
 
@@ -31,5 +30,7 @@ public interface BookJourneyService {
     String getHtmlReceipt(Long bookedJourneyId);
 
     List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId);
+
+    void changeSeatNumber(List<ChangeSeatDTO> changeSeatList, Long bookJourneyId);
 
 }

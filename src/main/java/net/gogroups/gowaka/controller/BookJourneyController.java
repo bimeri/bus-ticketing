@@ -118,5 +118,12 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.getAllPassengerOnBoardingInfo(journeyId));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_USERS', 'ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/{bookJourneyId}/change_seat_number")
+    public ResponseEntity<?> changeSeats(@RequestBody List<ChangeSeatDTO> changeSeatList, @PathVariable("bookJourneyId") Long bookJourneyId) {
+        bookJourneyService.changeSeatNumber(changeSeatList, bookJourneyId);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
