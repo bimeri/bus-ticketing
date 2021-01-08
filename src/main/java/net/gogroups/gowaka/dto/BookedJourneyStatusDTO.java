@@ -15,6 +15,7 @@ public class BookedJourneyStatusDTO {
 
     private Long id;
     private Long transactionId;
+    private Long journeyId;
 
     private Double amount;
     private String currencyCode;

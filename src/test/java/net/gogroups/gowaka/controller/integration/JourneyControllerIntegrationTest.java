@@ -1773,64 +1773,11 @@ public class JourneyControllerIntegrationTest {
         journey.setCar(bus);
         journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
-        String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
-                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
-                "\"departureIndicator\":false," +
-                "\"arrivalIndicator\":false," +
-                "\"timestamp\":\"" + currentDateTime + "\"," +
-                "\"amount\": 0.0," +
-                "\"driver\":{" +
-                "\"driverName\":\"John Doe\"," +
-                "\"driverLicenseNumber\":\"1234567899\"" +
-                "}," +
-                "\"departureLocation\":{" +
-                "\"id\":" + transitAndStop1.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"bova\"," +
-                "\"address\":\"Buea Road Motor Park\"" +
-                "}," +
-                "\"destination\":{" +
-                "\"id\":" + transitAndStop.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"koke\"," +
-                "\"address\":\"Mile 17 Motto Park\"," +
-                "\"amount\": 0.0" +
-                "}," +
-                "\"transitAndStops\":[" +
-                "{" +
-                "\"id\":" + transitAndStop3.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\": \"South West\"," +
-                "\"city\":\"mautu\"," +
-                "\"address\":\"Ekona Main Park\"," +
-                "\"amount\":500.0" +
-                "}," +
-                "{" +
-                "\"id\":" + transitAndStop2.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"mamu\"," +
-                "\"address\":\"Muyuka Main Park\"," +
-                "\"amount\":1500.0" +
-                "}" +
-                "]," +
-                "\"car\":{" +
-                "\"id\":" + bus.getId() + "," +
-                "\"name\":\"Kumba One Chances\"," +
-                "\"licensePlateNumber\":\"123454387\"," +
-                "\"isOfficialAgencyIndicator\":true," +
-                "\"agencyName\":\"Malingo Major\"," +
-                "\"isCarApproved\":true," +
-                "\"timestamp\":\"" + currentDateTime + "\"" +
-                "}}]";
 
         RequestBuilder requestBuilder = get("/api/public/journey/search/departure/" + transitAndStop1.getId() + "/destination/" + transitAndStop.getId() + "?time=" + currentShortDateTime)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().json(expectedResponse))
                 .andReturn();
     }
 

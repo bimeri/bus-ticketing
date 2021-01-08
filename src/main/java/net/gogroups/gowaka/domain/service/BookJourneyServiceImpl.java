@@ -547,10 +547,12 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         notificationService.sendEmail(emailDTO);
         //TODO: should also send SMS
     }
+
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {
 
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
         bookedJourneyStatusDTO.setId(bookedJourney.getId());
+        bookedJourneyStatusDTO.setJourneyId(bookedJourney.getJourney().getId());
 
         PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
 
@@ -571,17 +573,19 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         RefundPaymentTransaction refundPaymentTransaction = paymentTransaction.getRefundPaymentTransaction();
         bookedJourneyStatusDTO.setHasRefundRequest(true);
-        bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.PENDING);
+        bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.DECLINED);
 
         if (refundPaymentTransaction == null) {
             bookedJourneyStatusDTO.setHasRefundRequest(false);
             bookedJourneyStatusDTO.setRefundStatus(null);
         } else if (!refundPaymentTransaction.getIsRefunded()) {
-            bookedJourneyStatusDTO.setRefundStatus(refundPaymentTransaction.getIsRefundApproved() ? BookedJourneyStatusDTO.RefundStatus.APPROVED : BookedJourneyStatusDTO.RefundStatus.DECLINED);
+            bookedJourneyStatusDTO.setRefundStatus(refundPaymentTransaction.getIsRefundApproved() ? BookedJourneyStatusDTO.RefundStatus.APPROVED : BookedJourneyStatusDTO.RefundStatus.PENDING);
             bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
+            bookedJourneyStatusDTO.setRefundId(refundPaymentTransaction.getId());
         } else if (refundPaymentTransaction.getIsRefunded()) {
             bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.REFUNDED);
             bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
+            bookedJourneyStatusDTO.setRefundId(refundPaymentTransaction.getId());
         }
 
         bookedJourneyStatusDTO.setCarDriverName(bookedJourney.getJourney().getDriver().getDriverName());

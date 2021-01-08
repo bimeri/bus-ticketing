@@ -12,7 +12,6 @@ import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.ServiceChargeService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
-import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.payamgo.model.PayAmGoRequestDTO;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
 import net.gogroups.payamgo.service.PayAmGoService;
