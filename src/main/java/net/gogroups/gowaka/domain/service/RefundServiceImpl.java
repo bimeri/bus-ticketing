@@ -8,7 +8,6 @@ import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.RefundPaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
-import net.gogroups.gowaka.dto.BookedJourneyStatusDTO;
 import net.gogroups.gowaka.dto.RefundDTO;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
 import net.gogroups.gowaka.dto.ResponseRefundDTO;
@@ -25,7 +24,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static net.gogroups.gowaka.exception.ErrorCodes.*;
@@ -106,10 +108,10 @@ public class RefundServiceImpl implements RefundService {
             refundPaymentTransaction.setRefundResponseMessage(responseRefundDTO.getMessage());
 
             // change seat and checkInCode if request approval is true
-            if(refundPaymentTransaction.getIsRefundApproved()) {
+            if (refundPaymentTransaction.getIsRefundApproved()) {
                 BookedJourney bookedJourney = refundPaymentTransaction.getPaymentTransaction().getBookedJourney();
                 List<Passenger> passengerList = new ArrayList<>();
-                for (Passenger passenger: bookedJourney.getPassengers()) {
+                for (Passenger passenger : bookedJourney.getPassengers()) {
                     passenger.setSeatNumber(-1);
                     passenger.setCheckedInCode(CheckInCodeGenerator
                             .generateCode(bookedJourney.getJourney(), -1, "REFUNDED"));
@@ -207,6 +209,13 @@ public class RefundServiceImpl implements RefundService {
         refundDTO.setRefunderName(refundPaymentTransaction.getRefunderName());
         refundDTO.setRefunderEmail(refundPaymentTransaction.getRefunderEmail());
         refundDTO.setRefundedDate(refundPaymentTransaction.getRefundedDate());
+        try {
+            User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
+            refundDTO.setUser(new RefundDTO.User(user.getFullName(), user.getEmail(), user.getPhoneNumber()));
+        } catch (NullPointerException exception) {
+            log.info("a null pointer was thrown while getting user info for refund: {}", refundPaymentTransaction.getId());
+        }
+
         return refundDTO;
     }
 

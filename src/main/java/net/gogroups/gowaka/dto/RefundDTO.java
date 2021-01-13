@@ -34,4 +34,15 @@ public class RefundDTO {
     private String refunderEmail;
     private LocalDateTime refundedDate;
 
+    private User user;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class User{
+
+        private String fullName;
+        private String email;
+        private String phoneNumber;
+    }
 }

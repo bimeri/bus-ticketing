@@ -410,6 +410,7 @@ class RefundServiceImplTest {
 
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(journey);
+        bookedJourney.setUser(user);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setBookedJourney(bookedJourney);
