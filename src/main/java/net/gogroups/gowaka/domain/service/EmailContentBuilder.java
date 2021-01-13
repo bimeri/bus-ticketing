@@ -1,5 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.gowaka.domain.model.RefundPaymentTransaction;
+import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.dto.BookedJourneyStatusDTO;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
@@ -43,6 +45,24 @@ public class EmailContentBuilder {
         context.setVariable("logo", getLogo());
 
         return templateEngine.process("ticket-pdf", context);
+    }
+
+    public String buildRefundStatusEmail(RefundPaymentTransaction paymentTransaction, User user) {
+        Context context = new Context();
+        context.setVariable("approvalName", paymentTransaction.getApprovalName());
+        context.setVariable("cause", paymentTransaction.getRefundResponseMessage());
+        context.setVariable("approved", paymentTransaction.getIsRefundApproved());
+        context.setVariable("refunded", paymentTransaction.getIsRefunded());
+        context.setVariable("refunderName", paymentTransaction.getRefunderName());
+        context.setVariable("refundedDate", paymentTransaction.getRefundedDate());
+        context.setVariable("message", paymentTransaction.getIsRefunded() ?
+                "Your refund request has been refunded." : paymentTransaction.getIsRefundApproved() ?
+                "Your refund request has been approved." : "Your refund request has been declined");
+        context.setVariable("amount", paymentTransaction.getAmount());
+        context.setVariable("currency", "XAF");
+        context.setVariable("fullName", user.getFullName());
+        context.setVariable("logo", getLogo());
+        return templateEngine.process("refund-email", context);
     }
 
 

@@ -164,7 +164,13 @@
                 <configuration>
                     <excludes>
                         <exclude>net/gogroups/gowaka/exception/GlobalExceptionHandler.java</exclude>
-                        <exclude>net/gogroups/gowaka/GowakaApplication.java</exclude>
+                        <exclude>net/gogroups/gowaka/GowakaApplication.*</exclude>
+                        <exclude>net/gogroups/gowaka/domain/model/**</exclude>
+                        <exclude>net/gogroups/gowaka/dto/**</exclude>
+                        <exclude>net/gogroups/gowaka/network/api/cbs/model/**</exclude>
+                        <exclude>net/gogroups/gowaka/exception/**</exclude>
+                        <exclude>net/gogroups/gowaka/network/api/cbs/config/**</exclude>
+                        <exclude>net/gogroups/gowaka/domain/config/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -173,7 +179,6 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    <!-- attached to Maven test phase -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
@@ -181,32 +186,31 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
-<!--                    <execution>-->
-<!--                        <id>jacoco-check</id>-->
-<!--                        <goals>-->
-<!--                            <goal>check</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <rules>-->
-<!--                                <rule>-->
-<!--                                    <element>BUNDLE</element>-->
-<!--                                    <limits>-->
-<!--                                        <limit>-->
-<!--                                            <counter>INSTRUCTION</counter>-->
-<!--                                            <value>COVEREDRATIO</value>-->
-<!--                                            <minimum>0.90</minimum>-->
-<!--                                        </limit>-->
-<!--                                        <limit>-->
-<!--                                            <counter>CLASS</counter>-->
-<!--                                            <value>MISSEDCOUNT</value>-->
-<!--                                            <maximum>0</maximum>-->
-<!--                                            &lt;!&ndash;											Should be zero class&ndash;&gt;-->
-<!--                                        </limit>-->
-<!--                                    </limits>-->
-<!--                                </rule>-->
-<!--                            </rules>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>CLASS</counter>
+                                            <value>MISSEDCOUNT</value>
+                                            <maximum>0</maximum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

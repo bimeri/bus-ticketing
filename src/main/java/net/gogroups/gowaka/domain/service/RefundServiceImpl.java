@@ -1,10 +1,14 @@
 package net.gogroups.gowaka.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.repository.PassengerRepository;
 import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.RefundPaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
+import net.gogroups.gowaka.dto.BookedJourneyStatusDTO;
 import net.gogroups.gowaka.dto.RefundDTO;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
 import net.gogroups.gowaka.dto.ResponseRefundDTO;
@@ -12,14 +16,16 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ResourceAlreadyExistException;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.RefundService;
+import net.gogroups.notification.model.EmailAddress;
+import net.gogroups.notification.model.SendEmailDTO;
+import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static net.gogroups.gowaka.exception.ErrorCodes.*;
@@ -36,12 +42,24 @@ public class RefundServiceImpl implements RefundService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final RefundPaymentTransactionRepository refundPaymentTransactionRepository;
     private final UserRepository userRepository;
+    private final PassengerRepository passengerRepository;
+    private final EmailContentBuilder emailContentBuilder;
+    private final NotificationService notificationService;
+
 
     @Autowired
-    public RefundServiceImpl(PaymentTransactionRepository paymentTransactionRepository, RefundPaymentTransactionRepository refundPaymentTransactionRepository, UserRepository userRepository) {
+    public RefundServiceImpl(PaymentTransactionRepository paymentTransactionRepository,
+                             RefundPaymentTransactionRepository refundPaymentTransactionRepository,
+                             UserRepository userRepository,
+                             PassengerRepository passengerRepository,
+                             EmailContentBuilder emailContentBuilder,
+                             NotificationService notificationService) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.refundPaymentTransactionRepository = refundPaymentTransactionRepository;
         this.userRepository = userRepository;
+        this.passengerRepository = passengerRepository;
+        this.emailContentBuilder = emailContentBuilder;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -86,6 +104,21 @@ public class RefundServiceImpl implements RefundService {
             refundPaymentTransaction.setApprovalEmail(user.getEmail());
             refundPaymentTransaction.setRespondedDate(LocalDateTime.now());
             refundPaymentTransaction.setRefundResponseMessage(responseRefundDTO.getMessage());
+
+            // change seat and checkInCode if request approval is true
+            if(refundPaymentTransaction.getIsRefundApproved()) {
+                BookedJourney bookedJourney = refundPaymentTransaction.getPaymentTransaction().getBookedJourney();
+                List<Passenger> passengerList = new ArrayList<>();
+                for (Passenger passenger: bookedJourney.getPassengers()) {
+                    passenger.setSeatNumber(-1);
+                    passenger.setCheckedInCode(CheckInCodeGenerator
+                            .generateCode(bookedJourney.getJourney(), -1, "REFUNDED"));
+                    passengerList.add(passenger);
+                }
+                passengerRepository.saveAll(passengerList);
+            }
+            // send email
+            sendRefundEmail(refundPaymentTransaction);
             refundPaymentTransactionRepository.save(refundPaymentTransaction);
         });
     }
@@ -117,6 +150,8 @@ public class RefundServiceImpl implements RefundService {
             refundPaymentTransaction.setRefunderName(user.getFullName());
             refundPaymentTransaction.setRefunderEmail(user.getEmail());
             refundPaymentTransaction.setRefundedDate(LocalDateTime.now());
+            // send email
+            sendRefundEmail(refundPaymentTransaction);
             refundPaymentTransactionRepository.save(refundPaymentTransaction);
         });
     }
@@ -173,5 +208,23 @@ public class RefundServiceImpl implements RefundService {
         refundDTO.setRefunderEmail(refundPaymentTransaction.getRefunderEmail());
         refundDTO.setRefundedDate(refundPaymentTransaction.getRefundedDate());
         return refundDTO;
+    }
+
+    private void sendRefundEmail(RefundPaymentTransaction refundPaymentTransaction) {
+        User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
+        if (user != null) {
+            String message = emailContentBuilder.buildRefundStatusEmail(refundPaymentTransaction, user);
+//        log.info("Email message: {}", message);
+            SendEmailDTO emailDTO = new SendEmailDTO();
+            emailDTO.setSubject(EmailFields.REFUND_UPDATE_SUBJECT.getMessage());
+            emailDTO.setMessage(message);
+            EmailAddress emailAddress = new EmailAddress(user.getEmail(), user.getFullName());
+            emailDTO.setToAddresses(Collections.singletonList(emailAddress));
+            // setting cc and bcc to empty lists
+            emailDTO.setCcAddresses(Collections.emptyList());
+            emailDTO.setBccAddresses(Collections.emptyList());
+            notificationService.sendEmail(emailDTO);
+            //TODO: should also send SMS
+        }
     }
 }

@@ -1,9 +1,11 @@
 package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.repository.PassengerRepository;
 import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.RefundPaymentTransactionRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
 import net.gogroups.gowaka.dto.RefundDTO;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
 import net.gogroups.gowaka.dto.ResponseRefundDTO;
@@ -11,6 +13,8 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ResourceAlreadyExistException;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.RefundService;
+import net.gogroups.notification.model.SendEmailDTO;
+import net.gogroups.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,12 +46,24 @@ class RefundServiceImplTest {
     private PaymentTransactionRepository mockPaymentTransactionRepository;
     @Mock
     private UserRepository mockUserRepository;
+    @Mock
+    private PassengerRepository mockPassengerRepository;
+    @Mock
+    private EmailContentBuilder mockEmailContentBuilder;
+
+    @Mock
+    private NotificationService mockNotificationService;
 
     private ArgumentCaptor<RefundPaymentTransaction> refundPaymentTransactionArgumentCaptor = ArgumentCaptor.forClass(RefundPaymentTransaction.class);
 
+    private ArgumentCaptor<List<Passenger>> passengerArgumentCaptorList = ArgumentCaptor.forClass(List.class);
+
     @BeforeEach
     void setUp() {
-        refundService = new RefundServiceImpl(mockPaymentTransactionRepository, mockRefundPaymentTransactionRepository, mockUserRepository);
+        refundService = new RefundServiceImpl(mockPaymentTransactionRepository,
+                mockRefundPaymentTransactionRepository,
+                mockUserRepository, mockPassengerRepository, mockEmailContentBuilder, mockNotificationService);
+
     }
 
     @Test
@@ -344,6 +360,7 @@ class RefundServiceImplTest {
         assertThat(apiException.getMessage()).isEqualTo("Amount must not be more than ticket fee");
     }
 
+
     @Test
     void getUserRefund_throwException_whenRefundNotFound() {
 
@@ -410,6 +427,125 @@ class RefundServiceImplTest {
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefunderEmail()).isEqualTo("email@email.com");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefunderName()).isEqualTo("John Doe");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundedDate()).isNotNull();
+
+    }
+
+
+    @Test
+    void responseRefund_changeSeatsAndSendMail_whenRequestForRefundApproved() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency);
+
+        User user = new User();
+        user.setFullName("John Doe");
+        user.setEmail("email@email.com");
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setUser(user);
+
+        Passenger passenger = new Passenger();
+        passenger.setSeatNumber(25);
+        passenger.setCheckedInCode("SEAT25");
+        passenger.setBookedJourney(bookedJourney);
+        Passenger passenger1 = new Passenger();
+        passenger1.setSeatNumber(30);
+        passenger1.setCheckedInCode("SEAT30");
+        bookedJourney.addPassenger(passenger);
+        bookedJourney.addPassenger(passenger1);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAgencyAmount(1000.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+
+        paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
+
+        when(mockRefundPaymentTransactionRepository.findById(2L))
+                .thenReturn(Optional.of(refundPaymentTransaction));
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        refundService.responseRefund(2L, new ResponseRefundDTO(true, "I have approved", 1000.00), "123");
+
+        verify(mockPassengerRepository).saveAll(passengerArgumentCaptorList.capture());
+        List<Passenger> capturedPassengerList = passengerArgumentCaptorList.getValue();
+        assertThat(capturedPassengerList.get(0).getSeatNumber()).isEqualTo(-1);
+        assertThat(capturedPassengerList.get(0).getCheckedInCode())
+                .isEqualTo(CheckInCodeGenerator.generateCode(journey, -1, "REFUNDED"));
+        assertThat(capturedPassengerList.get(1).getSeatNumber()).isEqualTo(-1);
+        assertThat(capturedPassengerList.get(1).getCheckedInCode())
+                .isEqualTo(CheckInCodeGenerator.generateCode(journey, -1, "REFUNDED"));
+
+        verify(mockEmailContentBuilder).buildRefundStatusEmail(
+                refundPaymentTransaction,
+                refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser());
+
+    }
+
+    @Test
+    void responseRefund_leaveSeatsAsIsAndSendMail_whenRequestForRefundDeclined() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency);
+
+        User user = new User();
+        user.setFullName("John Doe");
+        user.setEmail("email@email.com");
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setUser(user);
+
+        Passenger passenger = new Passenger();
+        passenger.setSeatNumber(25);
+        passenger.setCheckedInCode("SEAT25");
+        passenger.setBookedJourney(bookedJourney);
+        Passenger passenger1 = new Passenger();
+        passenger1.setSeatNumber(30);
+        passenger1.setCheckedInCode("SEAT30");
+        bookedJourney.addPassenger(passenger);
+        bookedJourney.addPassenger(passenger1);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAgencyAmount(1000.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+
+        paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
+
+        when(mockRefundPaymentTransactionRepository.findById(2L))
+                .thenReturn(Optional.of(refundPaymentTransaction));
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        refundService.responseRefund(2L, new ResponseRefundDTO(false, "I have declined", 1000.00), "123");
+
+        verify(mockRefundPaymentTransactionRepository).save(refundPaymentTransactionArgumentCaptor.capture());
+        List<Passenger> capturedPassengerList = refundPaymentTransactionArgumentCaptor.getValue()
+                .getPaymentTransaction().getBookedJourney().getPassengers();
+        assertThat(capturedPassengerList.get(0).getSeatNumber()).isEqualTo(passenger.getSeatNumber());
+        assertThat(capturedPassengerList.get(0).getCheckedInCode()).isEqualTo(passenger.getCheckedInCode());
+        assertThat(capturedPassengerList.get(1).getSeatNumber()).isEqualTo(passenger1.getSeatNumber());
+        assertThat(capturedPassengerList.get(1).getCheckedInCode()).isEqualTo(passenger1.getCheckedInCode());
+        verify(mockEmailContentBuilder).buildRefundStatusEmail(
+                refundPaymentTransaction,
+                refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser());
 
     }
 
