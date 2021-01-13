@@ -5,6 +5,7 @@ import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
 import net.gogroups.gowaka.dto.ResponseRefundDTO;
+import net.gogroups.notification.service.NotificationService;
 import net.gogroups.security.utils.ApiSecurityTestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -22,6 +24,8 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +54,8 @@ public class RefundControllerIntegrationTest {
     private PaymentTransactionRepository paymentTransactionRepository;
     @Autowired
     private UserRepository userRepository;
+    @MockBean
+    private NotificationService mockNotificationService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -172,6 +178,7 @@ public class RefundControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent());
+        verify(mockNotificationService).sendEmail(any());
     }
 
     @Test
@@ -214,6 +221,7 @@ public class RefundControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent());
+        verify(mockNotificationService).sendEmail(any());
     }
 
 }

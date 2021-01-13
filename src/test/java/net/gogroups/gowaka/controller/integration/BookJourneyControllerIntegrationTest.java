@@ -281,7 +281,7 @@ public class BookJourneyControllerIntegrationTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
+    /*@Test
     public void downloadReceipt_success_return200_whenRequestParameterIsValid() throws Exception {
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
@@ -294,7 +294,7 @@ public class BookJourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andReturn();
-    }
+    }*/
 
     @Test
     public void handlePaymentResponses_success_return204_whenPaymentResponseRecieved() throws Exception {

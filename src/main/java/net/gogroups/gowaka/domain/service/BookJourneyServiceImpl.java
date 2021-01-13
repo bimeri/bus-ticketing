@@ -6,6 +6,7 @@ import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
+import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
 import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
@@ -805,13 +806,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     private String generateCode(String userId, Journey journey, Integer seat) {
-
-        String code = "SR";
-        Car car = journey.getCar();
-        if (car.getIsOfficialAgencyIndicator()) {
-            code = ((Bus) car).getOfficialAgency().getCode();
-        }
-//        VT234-234LT-9-161
-        return code + journey.getId().toString() + "-" + car.getLicensePlateNumber() + "-" + seat + "-" + userId;
+        return CheckInCodeGenerator.generateCode(userId, journey, seat);
     }
 }
