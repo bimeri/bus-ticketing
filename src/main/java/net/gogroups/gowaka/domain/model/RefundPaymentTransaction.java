@@ -26,8 +26,7 @@ public class RefundPaymentTransaction extends BaseEntity {
     private String refundResponseMessage;
     private LocalDateTime respondedDate;
 
-    private Boolean isRefundApproved = false;
-    private Boolean isRefunded = false;
+    private String refundStatus;
 
     private String approvalName;
     private String approvalEmail;

@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.dto;
 
 import lombok.Data;
+import net.gogroups.gowaka.constant.RefundStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -47,12 +48,5 @@ public class BookedJourneyStatusDTO {
     private Long refundId;
     private RefundStatus refundStatus;
     private Double refundAmount;
-
-    public enum RefundStatus {
-        PENDING,
-        APPROVED,
-        DECLINED,
-        REFUNDED
-    }
 
 }

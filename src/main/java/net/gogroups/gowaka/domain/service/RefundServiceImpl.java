@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
+import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.PassengerRepository;
@@ -84,8 +85,7 @@ public class RefundServiceImpl implements RefundService {
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setPaymentTransaction(paymentTransactionOptional.get());
-        refundPaymentTransaction.setIsRefunded(false);
-        refundPaymentTransaction.setIsRefundApproved(false);
+        refundPaymentTransaction.setRefundStatus(RefundStatus.PENDING.name());
         refundPaymentTransaction.setRefundRequestMessage(requestRefundDTO.getMessage());
         refundPaymentTransaction.setRequestedDate(LocalDateTime.now());
 
@@ -100,7 +100,7 @@ public class RefundServiceImpl implements RefundService {
             if (responseRefundDTO.getAmount() > refundPaymentTransaction.getPaymentTransaction().getAgencyAmount()) {
                 throw new ApiException(INVALID_AMOUNT_LIMIT.getMessage(), INVALID_AMOUNT_LIMIT.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
             }
-            refundPaymentTransaction.setIsRefundApproved(responseRefundDTO.getIsRefundApproved());
+            refundPaymentTransaction.setRefundStatus(responseRefundDTO.getIsRefundApproved() ? RefundStatus.APPROVED.name() : RefundStatus.DECLINED.name());
             refundPaymentTransaction.setAmount(responseRefundDTO.getAmount());
             refundPaymentTransaction.setApprovalName(user.getFullName());
             refundPaymentTransaction.setApprovalEmail(user.getEmail());
@@ -108,7 +108,7 @@ public class RefundServiceImpl implements RefundService {
             refundPaymentTransaction.setRefundResponseMessage(responseRefundDTO.getMessage());
 
             // change seat and checkInCode if request approval is true
-            if (refundPaymentTransaction.getIsRefundApproved()) {
+            if (RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()) == RefundStatus.APPROVED) {
                 BookedJourney bookedJourney = refundPaymentTransaction.getPaymentTransaction().getBookedJourney();
                 List<Passenger> passengerList = new ArrayList<>();
                 for (Passenger passenger : bookedJourney.getPassengers()) {
@@ -148,7 +148,11 @@ public class RefundServiceImpl implements RefundService {
     public void refunded(Long refundId, String userId) {
 
         handleApprovalRefundFlow(refundId, userId, (refundPaymentTransaction, user) -> {
-            refundPaymentTransaction.setIsRefunded(true);
+            if (RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()) != RefundStatus.APPROVED) {
+                log.info("refund request has not been approved: refundId: {}", refundId);
+                throw new ApiException(REFUND_REQUEST_NOT_APPROVED.getMessage(), REFUND_REQUEST_NOT_APPROVED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+            refundPaymentTransaction.setRefundStatus(RefundStatus.REFUNDED.name());
             refundPaymentTransaction.setRefunderName(user.getFullName());
             refundPaymentTransaction.setRefunderEmail(user.getEmail());
             refundPaymentTransaction.setRefundedDate(LocalDateTime.now());
@@ -180,7 +184,7 @@ public class RefundServiceImpl implements RefundService {
         if (car instanceof Bus) {
             OfficialAgency officialAgency = ((Bus) car).getOfficialAgency();
             if (user.getOfficialAgency() != null && user.getOfficialAgency().getId().equals(officialAgency.getId())) {
-                if (refundPaymentTransaction.getIsRefunded()) {
+                if (RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()) == RefundStatus.REFUNDED) {
                     throw new ApiException(ALREADY_REFUNDED_REQUEST.getMessage(), ALREADY_REFUNDED_REQUEST.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
                 }
                 approvalRefundFlowHandler.handle(refundPaymentTransaction, user);
@@ -195,6 +199,7 @@ public class RefundServiceImpl implements RefundService {
     }
 
     private RefundDTO getRefundDTO(RefundPaymentTransaction refundPaymentTransaction) {
+
         RefundDTO refundDTO = new RefundDTO();
         refundDTO.setId(refundPaymentTransaction.getId());
         refundDTO.setAmount(refundPaymentTransaction.getAmount());
@@ -202,13 +207,14 @@ public class RefundServiceImpl implements RefundService {
         refundDTO.setRequestedDate(refundPaymentTransaction.getRequestedDate());
         refundDTO.setRefundResponseMessage(refundPaymentTransaction.getRefundResponseMessage());
         refundDTO.setRespondedDate(refundPaymentTransaction.getRespondedDate());
-        refundDTO.setIsRefundApproved(refundPaymentTransaction.getIsRefundApproved());
-        refundDTO.setIsRefunded(refundPaymentTransaction.getIsRefunded());
         refundDTO.setApprovalName(refundPaymentTransaction.getApprovalName());
         refundDTO.setApprovalEmail(refundPaymentTransaction.getApprovalEmail());
         refundDTO.setRefunderName(refundPaymentTransaction.getRefunderName());
         refundDTO.setRefunderEmail(refundPaymentTransaction.getRefunderEmail());
         refundDTO.setRefundedDate(refundPaymentTransaction.getRefundedDate());
+
+        refundDTO.setStatus(RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()));
+
         try {
             User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
             refundDTO.setUser(new RefundDTO.User(user.getFullName(), user.getEmail(), user.getPhoneNumber()));

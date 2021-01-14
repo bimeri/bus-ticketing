@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.PassengerRepository;
 import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
@@ -13,7 +14,6 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ResourceAlreadyExistException;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.RefundService;
-import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,8 +78,7 @@ class RefundServiceImplTest {
         verify(mockRefundPaymentTransactionRepository).save(refundPaymentTransactionArgumentCaptor.capture());
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundRequestMessage()).isEqualTo("please refund");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRequestedDate()).isNotNull();
-        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getIsRefunded()).isFalse();
-        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getIsRefundApproved()).isFalse();
+        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundStatus()).isEqualTo("PENDING");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getPaymentTransaction()).isEqualTo(paymentTransaction);
 
     }
@@ -266,7 +265,7 @@ class RefundServiceImplTest {
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
-        refundPaymentTransaction.setIsRefunded(true);
+        refundPaymentTransaction.setRefundStatus(RefundStatus.REFUNDED.name());
         when(mockRefundPaymentTransactionRepository.findById(2L))
                 .thenReturn(Optional.of(refundPaymentTransaction));
         when(mockUserRepository.findById("123"))
@@ -302,6 +301,7 @@ class RefundServiceImplTest {
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("PENDING");
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
@@ -312,7 +312,7 @@ class RefundServiceImplTest {
                 .thenReturn(Optional.of(user));
         refundService.responseRefund(2L, new ResponseRefundDTO(true, "I have approved", 1000.00), "123");
         verify(mockRefundPaymentTransactionRepository).save(refundPaymentTransactionArgumentCaptor.capture());
-        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getIsRefundApproved()).isTrue();
+        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundStatus()).isEqualTo("APPROVED");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(1000.00);
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRespondedDate()).isNotNull();
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getApprovalEmail()).isEqualTo("email@email.com");
@@ -346,6 +346,7 @@ class RefundServiceImplTest {
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("PENDING");
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
@@ -375,6 +376,7 @@ class RefundServiceImplTest {
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
+        refundPaymentTransaction.setRefundStatus("APPROVED");
         when(mockRefundPaymentTransactionRepository.findByIdAndPaymentTransaction_BookedJourney_User_UserId(1L, "123"))
                 .thenReturn(Optional.of(refundPaymentTransaction));
         RefundDTO userRefund = refundService.getUserRefund(1L, "123");
@@ -386,6 +388,7 @@ class RefundServiceImplTest {
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
+        refundPaymentTransaction.setRefundStatus("PENDING");
         when(mockRefundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_IdAndPaymentTransaction_BookedJourney_User_UserId(1L, "123"))
                 .thenReturn(Collections.singletonList(refundPaymentTransaction));
         List<RefundDTO> userRefunds = refundService.getAllJourneyRefunds(1L, "123");
@@ -416,6 +419,7 @@ class RefundServiceImplTest {
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("APPROVED");
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
 
         when(mockRefundPaymentTransactionRepository.findById(2L))
@@ -424,10 +428,49 @@ class RefundServiceImplTest {
                 .thenReturn(Optional.of(user));
         refundService.refunded(2L, "123");
         verify(mockRefundPaymentTransactionRepository).save(refundPaymentTransactionArgumentCaptor.capture());
-        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getIsRefunded()).isTrue();
+        assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundStatus()).isEqualTo("REFUNDED");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefunderEmail()).isEqualTo("email@email.com");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefunderName()).isEqualTo("John Doe");
         assertThat(refundPaymentTransactionArgumentCaptor.getValue().getRefundedDate()).isNotNull();
+
+    }
+
+
+    @Test
+    void refunded_refund_throws_Exception_whenRequestHasNotBeenApproved() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency);
+
+        User user = new User();
+        user.setFullName("John Doe");
+        user.setEmail("email@email.com");
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        journey.setCar(bus);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setUser(user);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setBookedJourney(bookedJourney);
+
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("PENDING");
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+
+        when(mockRefundPaymentTransactionRepository.findById(2L))
+                .thenReturn(Optional.of(refundPaymentTransaction));
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        ApiException apiException = assertThrows(ApiException.class, () -> refundService.refunded(2L, "123"));
+        assertThat(apiException.getMessage()).isEqualTo("Refund request not approved.");
+        assertThat(apiException.getErrorCode()).isEqualTo("REFUND_REQUEST_NOT_APPROVED");
+        assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
 
     }
 
@@ -467,6 +510,7 @@ class RefundServiceImplTest {
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("APPROVED");
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);
@@ -527,6 +571,7 @@ class RefundServiceImplTest {
         paymentTransaction.setBookedJourney(bookedJourney);
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("PENDING");
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(refundPaymentTransaction);

@@ -29,7 +29,8 @@ public enum ErrorCodes {
     PAYMENT_NOT_COMPLETED("Payment is not completed."),
     RESOURCE_ALREADY_EXIST("Resource already exist."),
     ALREADY_REFUNDED_REQUEST("Request already refunded"),
-    INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee");
+    INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee"),
+    REFUND_REQUEST_NOT_APPROVED("Refund request not approved.");
 
     private String message;
 

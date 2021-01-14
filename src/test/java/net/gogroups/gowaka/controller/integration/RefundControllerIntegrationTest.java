@@ -141,6 +141,7 @@ public class RefundControllerIntegrationTest {
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         refundPaymentTransaction.setRequestedDate(LocalDateTime.now());
         refundPaymentTransaction.setRefundRequestMessage("Please refund");
+        refundPaymentTransaction.setRefundStatus("PENDING");
         RefundPaymentTransaction savedRefundPaymentTransaction = refundPaymentTransactionRepository.save(refundPaymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(savedRefundPaymentTransaction);
@@ -162,6 +163,7 @@ public class RefundControllerIntegrationTest {
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         refundPaymentTransaction.setRequestedDate(LocalDateTime.now());
         refundPaymentTransaction.setRefundRequestMessage("Please refund");
+        refundPaymentTransaction.setRefundStatus("PENDING");
         RefundPaymentTransaction savedRefundPaymentTransaction = refundPaymentTransactionRepository.save(refundPaymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(savedRefundPaymentTransaction);
@@ -187,6 +189,7 @@ public class RefundControllerIntegrationTest {
 
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+        refundPaymentTransaction.setRefundStatus("PENDING");
         refundPaymentTransaction.setRequestedDate(LocalDateTime.now());
         refundPaymentTransaction.setRefundRequestMessage("Please refund");
         RefundPaymentTransaction savedRefundPaymentTransaction = refundPaymentTransactionRepository.save(refundPaymentTransaction);
@@ -210,6 +213,7 @@ public class RefundControllerIntegrationTest {
         refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         refundPaymentTransaction.setRequestedDate(LocalDateTime.now());
         refundPaymentTransaction.setRefundRequestMessage("Please refund");
+        refundPaymentTransaction.setRefundStatus("APPROVED");
         RefundPaymentTransaction savedRefundPaymentTransaction = refundPaymentTransactionRepository.save(refundPaymentTransaction);
 
         paymentTransaction.setRefundPaymentTransaction(savedRefundPaymentTransaction);

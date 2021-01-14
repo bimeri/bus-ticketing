@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.domain.model.RefundPaymentTransaction;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.dto.BookedJourneyStatusDTO;
@@ -48,15 +49,19 @@ public class EmailContentBuilder {
     }
 
     public String buildRefundStatusEmail(RefundPaymentTransaction paymentTransaction, User user) {
+
+        boolean approved = RefundStatus.valueOf(paymentTransaction.getRefundStatus()) == RefundStatus.APPROVED;
+        boolean refunded = RefundStatus.valueOf(paymentTransaction.getRefundStatus()) == RefundStatus.REFUNDED;
+
         Context context = new Context();
         context.setVariable("approvalName", paymentTransaction.getApprovalName());
         context.setVariable("cause", paymentTransaction.getRefundResponseMessage());
-        context.setVariable("approved", paymentTransaction.getIsRefundApproved());
-        context.setVariable("refunded", paymentTransaction.getIsRefunded());
+        context.setVariable("approved", approved);
+        context.setVariable("refunded", refunded);
         context.setVariable("refunderName", paymentTransaction.getRefunderName());
         context.setVariable("refundedDate", paymentTransaction.getRefundedDate());
-        context.setVariable("message", paymentTransaction.getIsRefunded() ?
-                "Your refund request has been refunded." : paymentTransaction.getIsRefundApproved() ?
+        context.setVariable("message", refunded ?
+                "Your refund request has been refunded." : approved ?
                 "Your refund request has been approved." : "Your refund request has been declined");
         context.setVariable("amount", paymentTransaction.getAmount());
         context.setVariable("currency", "XAF");

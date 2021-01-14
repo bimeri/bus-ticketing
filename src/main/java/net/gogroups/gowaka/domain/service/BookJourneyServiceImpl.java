@@ -2,6 +2,7 @@ package net.gogroups.gowaka.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.dto.PaginatedResponse;
+import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.config.PaymentUrlResponseProps;
 import net.gogroups.gowaka.domain.model.*;
@@ -357,7 +358,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             List<ChangeSeatDTO> failureList = new ArrayList<>();
             List<ChangeSeatDTO> successList = new ArrayList<>();
             User user = bookedJourney.getUser();
-            for (ChangeSeatDTO seatDTO: changeSeatList) {
+            for (ChangeSeatDTO seatDTO : changeSeatList) {
                 // check if old seat is in bookedJourney
                 // if not ignore it
                 Integer currSeat = seatDTO.getCurrentSeatNumber();
@@ -396,8 +397,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         }
 
                     }
-                }
-                else {
+                } else {
                     // throw exception
                     throw new ApiException(
                             RESOURCE_NOT_FOUND.getMessage(),
@@ -429,7 +429,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 e.printStackTrace();
             }
         });
-         sendChangeSeatTicketEmail(dto, passengers);
+        sendChangeSeatTicketEmail(dto, passengers);
     }
 
     private PaymentTransaction getPaymentTransaction(Journey journey, User user, BookJourneyRequest bookJourneyRequest, Boolean isAgencyBooking) {
@@ -574,17 +574,13 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         RefundPaymentTransaction refundPaymentTransaction = paymentTransaction.getRefundPaymentTransaction();
         bookedJourneyStatusDTO.setHasRefundRequest(true);
-        bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.DECLINED);
+        bookedJourneyStatusDTO.setRefundStatus(RefundStatus.DECLINED);
 
         if (refundPaymentTransaction == null) {
             bookedJourneyStatusDTO.setHasRefundRequest(false);
             bookedJourneyStatusDTO.setRefundStatus(null);
-        } else if (!refundPaymentTransaction.getIsRefunded()) {
-            bookedJourneyStatusDTO.setRefundStatus(refundPaymentTransaction.getIsRefundApproved() ? BookedJourneyStatusDTO.RefundStatus.APPROVED : BookedJourneyStatusDTO.RefundStatus.PENDING);
-            bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
-            bookedJourneyStatusDTO.setRefundId(refundPaymentTransaction.getId());
-        } else if (refundPaymentTransaction.getIsRefunded()) {
-            bookedJourneyStatusDTO.setRefundStatus(BookedJourneyStatusDTO.RefundStatus.REFUNDED);
+        } else {
+            bookedJourneyStatusDTO.setRefundStatus(RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()));
             bookedJourneyStatusDTO.setRefundAmount(refundPaymentTransaction.getAmount());
             bookedJourneyStatusDTO.setRefundId(refundPaymentTransaction.getId());
         }

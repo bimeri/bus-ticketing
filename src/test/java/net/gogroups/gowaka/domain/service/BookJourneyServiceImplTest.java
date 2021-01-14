@@ -1081,6 +1081,10 @@ public class BookJourneyServiceImplTest {
         userDto.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDto);
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("PENDING");
+        refundPaymentTransaction.setId(2222L);
+        journey.getBookedJourneys().get(0).getPaymentTransaction().setRefundPaymentTransaction(refundPaymentTransaction);
         when(mockBookedJourneyRepository.findAllByPaymentTransaction_TransactionStatusAndUserUserIdOrderByCreatedAtDesc(anyString(), anyString(), any()))
                 .thenReturn(new PageImpl<>(Collections.singletonList(journey.getBookedJourneys().get(0))));
 
