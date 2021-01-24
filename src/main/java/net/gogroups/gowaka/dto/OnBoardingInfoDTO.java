@@ -25,6 +25,13 @@ public class OnBoardingInfoDTO {
     private LocalDateTime paymentDate;
     private String paidBy;
 
+    private Boolean hasRefund = Boolean.FALSE;
+    private String refundStatus = "NO REFUND";
+    private Double approvedRefundedAmount = 0.0;
+    private String refundApprovedByName;
+    private String refundApprovedByEmail;
+    private LocalDateTime refundApprovedDate;
+
     private List<PassengerDTO> passengers = new ArrayList<>();
 
     public OnBoardingInfoDTO(BookedJourney bookedJourney) {
@@ -39,6 +46,16 @@ public class OnBoardingInfoDTO {
                 this.paymentMethod = paymentTransaction.getPaymentChannel();
                 this.paymentDate = paymentTransaction.getPaymentDate();
                 this.paidBy = paymentTransaction.getAppUserFirstName() + " " + paymentTransaction.getAppUserLastName();
+
+                RefundPaymentTransaction refundPaymentTransaction = paymentTransaction.getRefundPaymentTransaction();
+                if (refundPaymentTransaction != null) {
+                    this.hasRefund = Boolean.TRUE;
+                    this.approvedRefundedAmount = refundPaymentTransaction.getAmount();
+                    this.refundStatus = refundPaymentTransaction.getRefundStatus();
+                    this.refundApprovedByName = refundPaymentTransaction.getApprovalName();
+                    this.refundApprovedByEmail = refundPaymentTransaction.getApprovalEmail();
+                    this.refundApprovedDate = refundPaymentTransaction.getRespondedDate();
+                }
             }
             // journey
             if (journey != null) {
