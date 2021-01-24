@@ -12,6 +12,7 @@ import java.util.List;
 @Setter
 public class OnBoardingInfoDTO {
 
+    private Long id;
     private Double amount;
     private String currencyCode;
     private String carDriverName;
@@ -40,6 +41,7 @@ public class OnBoardingInfoDTO {
             Journey journey = bookedJourney.getJourney();
             // amount
             this.amount = bookedJourney.getAmount();
+            this.id = bookedJourney.getId();
             // currency
             if (paymentTransaction != null) {
                 this.currencyCode = paymentTransaction.getCurrencyCode();
