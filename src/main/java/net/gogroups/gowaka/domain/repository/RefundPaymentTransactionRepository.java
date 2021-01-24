@@ -14,6 +14,6 @@ import java.util.Optional;
 @Repository
 public interface RefundPaymentTransactionRepository extends JpaRepository<RefundPaymentTransaction, Long> {
 
-    Optional<RefundPaymentTransaction> findByIdAndPaymentTransaction_BookedJourney_User_UserId(Long id, String userId);
-    List<RefundPaymentTransaction> findByPaymentTransaction_BookedJourney_Journey_IdAndPaymentTransaction_BookedJourney_User_UserId(Long journeyId, String userId);
+    Optional<RefundPaymentTransaction> findByIdAndPaymentTransaction_BookedJourney_User_UserId(Long id, String userId);List<RefundPaymentTransaction> findByPaymentTransaction_BookedJourney_Journey_IdAndPaymentTransaction_BookedJourney_User_UserId(Long journeyId, String userId);
+    List<RefundPaymentTransaction> findByPaymentTransaction_BookedJourney_Journey_Id(Long journeyId);
 }
