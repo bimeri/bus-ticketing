@@ -17,3 +17,5 @@
 * Dec 22nd, 2020
     * BookedJourney entity
         1. add agencyUser to BookedJourney entity (join column is 'agency_user_id') 
+* Jan 24th, 2021
+    * add 'AppAlertNotice' entity table
