@@ -46,4 +46,12 @@ public class RefundDTO {
         private String email;
         private String phoneNumber;
     }
+
+    public static class bookedJourney{
+        private int id;
+        private String departure;
+        private String destination;
+        private int agencyCharge;
+        private String departureTime;
+    }
 }

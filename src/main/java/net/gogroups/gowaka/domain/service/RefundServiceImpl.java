@@ -114,7 +114,7 @@ public class RefundServiceImpl implements RefundService {
                 for (Passenger passenger : bookedJourney.getPassengers()) {
                     passenger.setSeatNumber(-1);
                     passenger.setCheckedInCode(CheckInCodeGenerator
-                            .generateCode(bookedJourney.getJourney(), -1, "REFUNDED"));
+                            .generateCode(bookedJourney.getJourney(), -1, "CHECK_IN"));
                     passengerList.add(passenger);
                 }
                 passengerRepository.saveAll(passengerList);
