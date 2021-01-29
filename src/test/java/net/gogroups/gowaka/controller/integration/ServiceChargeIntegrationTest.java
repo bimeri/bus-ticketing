@@ -47,7 +47,7 @@ public class ServiceChargeIntegrationTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        serviceChargeServiceRepository.save(new ServiceCharge("sc-id", 5.0));
+        serviceChargeServiceRepository.save(new ServiceCharge("sc-id", 5.0, 100.0));
         jwtToken = ApiSecurityTestUtils.createToken("12", "gwuser@gg.com", "GW User", secretKey, new String[]{"GW_ADMIN", "USERS"});
     }
 
@@ -68,7 +68,7 @@ public class ServiceChargeIntegrationTest {
         RequestBuilder requestBuilder = put("/api/protected/service_charges")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
-                .content(new ObjectMapper().writeValueAsString(new ServiceChargeDTO("sc-id", 10.0)))
+                .content(new ObjectMapper().writeValueAsString(new ServiceChargeDTO("sc-id", 10.0, 100.0)))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent());

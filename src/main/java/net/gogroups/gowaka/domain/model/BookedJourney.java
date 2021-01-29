@@ -37,6 +37,8 @@ public class BookedJourney extends BaseEntity{
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
 
+    private Boolean smsNotification = Boolean.FALSE;
+
     @ManyToOne
     @JoinColumn(name = "agency_user_id")
     private User agencyUser;

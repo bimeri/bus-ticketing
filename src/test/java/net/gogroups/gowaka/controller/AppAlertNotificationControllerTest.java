@@ -35,7 +35,8 @@ class AppAlertNotificationControllerTest {
                 .thenReturn(Collections.singletonList(new AppNoticeDTO()));
         ResponseEntity<List<AppNoticeDTO>> response = appAlertNotificationController.getAppNotices();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    } @Test
+    }
+    @Test
     void evictNotificationCache_return_string() {
 
         ResponseEntity<String> response = appAlertNotificationController.evictNotificationCache();

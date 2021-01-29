@@ -13,7 +13,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ServiceChargeDTO {
 
-    private String id;
+    private String id; //PLATFORM_SERVICE_CHARGE,SMS_NOTIF,
     private Double percentageCharge;
+    private Double flatCharge;
 
 }

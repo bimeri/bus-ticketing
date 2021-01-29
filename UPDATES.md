@@ -19,3 +19,7 @@
         1. add agencyUser to BookedJourney entity (join column is 'agency_user_id') 
 * Jan 24th, 2021
     * add 'AppAlertNotice' entity table
+___________________________________________
+* Jan 29th 2021
+    * add flatCharge field in ServiceCharge Entity table
+    * changed IDs to `PLATFORM_SERVICE_CHARGE,SMS_NOTIF`

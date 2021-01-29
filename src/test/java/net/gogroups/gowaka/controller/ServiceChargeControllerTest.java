@@ -2,6 +2,7 @@ package net.gogroups.gowaka.controller;
 
 import net.gogroups.gowaka.dto.ServiceChargeDTO;
 import net.gogroups.gowaka.service.ServiceChargeService;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,5 +57,13 @@ public class ServiceChargeControllerTest {
         ResponseEntity<?> response = serviceChargeController.updateServiceCharge(serviceChargeDTO);
         verify(mockServiceChargeService).updateServiceCharge(serviceChargeDTO);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    void evictServiceChargeCache_return_string() {
+
+        ResponseEntity<String> response = serviceChargeController.evictServiceChargeCache();
+        AssertionsForClassTypes.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        AssertionsForClassTypes.assertThat(response.getBody()).isEqualTo("Cache evicted");
     }
 }

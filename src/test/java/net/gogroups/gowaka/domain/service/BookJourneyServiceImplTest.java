@@ -346,7 +346,7 @@ public class BookJourneyServiceImplTest {
     }
 
     @Test
-    void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsTrue() {
+    void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsTrue_subSMSFalse() {
 
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
@@ -358,6 +358,7 @@ public class BookJourneyServiceImplTest {
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(true);
         bookJourneyRequest.setTransitAndStopId(33L);
+        bookJourneyRequest.setSubscribeToSMSNotification(false);
 
         BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
         passenger.setSeatNumber(9);
@@ -395,7 +396,10 @@ public class BookJourneyServiceImplTest {
         when(mockUserRepository.findById(anyString()))
                 .thenReturn(Optional.of(user));
         when(mockServiceChargeService.getServiceCharges())
-                .thenReturn(Collections.singletonList(new ServiceChargeDTO("sc-id", 10.0)));
+                .thenReturn(Arrays.asList(
+                        new ServiceChargeDTO("PLATFORM_SERVICE_CHARGE", 10.0, 0.0),
+                        new ServiceChargeDTO("SMS_NOTIF", 0.0, 100.0)
+                ));
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setId(101L);
         when(mockBookedJourneyRepository.save(any()))
@@ -435,6 +439,118 @@ public class BookJourneyServiceImplTest {
 
         assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
         assertThat(paymentTransactionValue.getAmount()).isEqualTo(5500.0);
+        assertThat(paymentTransactionValue.getAppTransactionNumber()).isNotEmpty();
+        assertThat(paymentTransactionValue.getAppUserEmail()).isEqualTo("email@email.com");
+        assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("John");
+        assertThat(paymentTransactionValue.getAppUserLastName()).isEqualTo("Doe");
+        assertThat(paymentTransactionValue.getAppUserPhoneNumber()).isEqualTo("676767676");
+        assertThat(paymentTransactionValue.getCancelRedirectUrl()).isEqualTo("http://localhost/cancel");
+        assertThat(paymentTransactionValue.getCurrencyCode()).isEqualTo("XAF");
+        assertThat(paymentTransactionValue.getLanguage()).isEqualTo("en");
+        assertThat(paymentTransactionValue.getPaymentReason()).isEqualTo("Bus ticket for 123SW");
+        assertThat(paymentTransactionValue.getPaymentResponseUrl()).isEqualTo("http://localhost/response/101");
+        assertThat(paymentTransactionValue.getReturnRedirectUrl()).isEqualTo("http://localhost/redirect/101");
+        assertThat(paymentTransactionValue.getTransactionStatus()).isEqualTo("INITIATED");
+
+        assertThat(paymentTransactionAfterResponseValue.getTransactionStatus()).isEqualTo("WAITING");
+        assertThat(paymentTransactionAfterResponseValue.getProcessingNumber()).isEqualTo("process002");
+
+    }
+
+    @Test
+    void bookJourney_initiatePayment_whenRequestDestinationIndicatorIsTrue_subSMSTrue() {
+
+        UserDTO userDto = new UserDTO();
+        userDto.setId("10");
+        userDto.setFullName("John Doe");
+        userDto.setEmail("email@email.com");
+        userDto.setPhoneNumber("676767676");
+        User user = new User();
+        user.setUserId("10");
+        BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+        bookJourneyRequest.setDestinationIndicator(true);
+        bookJourneyRequest.setTransitAndStopId(33L);
+        bookJourneyRequest.setSubscribeToSMSNotification(true);
+
+        BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
+        passenger.setSeatNumber(9);
+        passenger.setEmail("email@email.com");
+        passenger.setPassengerName("Jesus Christ");
+        passenger.setPassengerIdNumber("1234567890");
+        passenger.setPhoneNumber("676767676");
+
+        bookJourneyRequest.getPassengers().add(passenger);
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(99L);
+        destination.setLocation(new Location());
+
+        Journey journey = new Journey();
+        journey.setId(11L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        journey.setAmount(5000.00);
+        journey.setDestination(destination);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT");
+
+        Bus car = new Bus();
+        car.setLicensePlateNumber("123SW");
+        car.setIsOfficialAgencyIndicator(true);
+        car.setOfficialAgency(officialAgency);
+        journey.setCar(car);
+
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+        when(mockServiceChargeService.getServiceCharges())
+                .thenReturn(Arrays.asList(
+                        new ServiceChargeDTO("PLATFORM_SERVICE_CHARGE", 10.0, 0.0),
+                        new ServiceChargeDTO("SMS_NOTIF", 0.0, 100.0)
+                ));
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setId(101L);
+        when(mockBookedJourneyRepository.save(any()))
+                .thenReturn(bookedJourney);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
+        when(mockPaymentTransactionRepository.save(any()))
+                .thenReturn(paymentTransaction);
+
+        PayAmGoRequestResponseDTO paymentResponse = new PayAmGoRequestResponseDTO();
+        paymentResponse.setPaymentUrl("https://payamgo.com/paymentlink");
+        paymentResponse.setProcessingNumber("process002");
+        paymentResponse.setAppTransactionNumber("appTxn001");
+        when(mockPayAmGoService.initiatePayment(any(PayAmGoRequestDTO.class)))
+                .thenReturn(paymentResponse);
+
+        PaymentUrlDTO paymentUrlDTO = bookJourneyService.bookJourney(11L, bookJourneyRequest);
+        verify(mockUserService, times(2)).getCurrentAuthUser();
+        verify(mockUserRepository).findById("10");
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
+        verify(mockPayAmGoService).initiatePayment(any());
+
+        BookedJourney bookedJourneyValue = bookedJourneyArgumentCaptor.getValue();
+        PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getAllValues().get(0);
+        PaymentTransaction paymentTransactionAfterResponseValue = paymentTransactionArgumentCaptor.getAllValues().get(1);
+
+        assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
+        assertThat(bookedJourneyValue.getAmount()).isEqualTo(5000.0);
+
+        assertThat(bookedJourneyValue.getPassengers().get(0).getEmail()).isEqualTo("email@email.com");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getName()).isEqualTo("Jesus Christ");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getPhoneNumber()).isEqualTo("676767676");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT11-123SW-9-10");
+        assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);
+
+        assertThat(bookedJourneyValue.getDestination().getId()).isEqualTo(99L);
+        assertThat(paymentTransactionValue.getAmount()).isEqualTo(5600.0);
         assertThat(paymentTransactionValue.getAppTransactionNumber()).isNotEmpty();
         assertThat(paymentTransactionValue.getAppUserEmail()).isEqualTo("email@email.com");
         assertThat(paymentTransactionValue.getAppUserFirstName()).isEqualTo("John");
@@ -720,6 +836,7 @@ public class BookJourneyServiceImplTest {
         user.setUserId("10");
         BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
         bookJourneyRequest.setDestinationIndicator(false);
+        bookJourneyRequest.setSubscribeToSMSNotification(true);
 
         BookJourneyRequest.Passenger passenger = new BookJourneyRequest.Passenger();
         passenger.setSeatNumber(9);
@@ -783,6 +900,11 @@ public class BookJourneyServiceImplTest {
         userDTO.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDTO);
+        when(mockServiceChargeService.getServiceCharges())
+                .thenReturn(Arrays.asList(
+                        new ServiceChargeDTO("PLATFORM_SERVICE_CHARGE", 10.0, 0.0),
+                        new ServiceChargeDTO("SMS_NOTIF", 0.0, 100.0)
+                ));
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
@@ -790,15 +912,19 @@ public class BookJourneyServiceImplTest {
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
         bookJourneyService.agencyUserBookJourney(journey.getId(), bookJourneyRequest);
+        verify(mockServiceChargeService).getServiceCharges();
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
         BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
 
         assertThat(theBooked.getAgencyUser()).isEqualTo(user);
         assertThat(theBooked.getUser()).isEqualTo(user);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getServiceChargeAmount()).isEqualTo(100.0);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(2100.0);
     }
 
     @Test
-    void agencyUserBookJourney_booksAndForwardsBooking_whenDirectToAccountIsValid(){
+    void agencyUserBookJourney_booksAndForwardsBooking_whenDirectToAccountIsValid() {
         UserDTO userDto = new UserDTO();
         userDto.setId("10");
         User user = new User();
@@ -1188,7 +1314,7 @@ public class BookJourneyServiceImplTest {
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.empty());
 
-        ApiException apiException = assertThrows(ApiException.class, () ->  bookJourneyService.handlePaymentResponse(2L, new PaymentStatusResponseDTO()));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.handlePaymentResponse(2L, new PaymentStatusResponseDTO()));
         assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
@@ -1547,6 +1673,7 @@ public class BookJourneyServiceImplTest {
         verify(mockBookedJourneyRepository).findById(longArgumentCaptor.capture());
         assertThat(longArgumentCaptor.getValue()).isEqualTo(17L);
     }
+
     @Test
     void changeSeatNumber_whenJourneyAlreadyTerminated_thenThrowConflict() {
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);
@@ -1573,6 +1700,7 @@ public class BookJourneyServiceImplTest {
         assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.toString());
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.PAYMENT_NOT_COMPLETED.getMessage());
     }
+
     @Test
     void changeSeatNumber_whenPaymentIsNull_thenThrowNotFound() {
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);
@@ -1606,7 +1734,7 @@ public class BookJourneyServiceImplTest {
         passenger.setCheckedInCode("1235487");
         passenger.setPassengerCheckedInIndicator(false);
         bookJourney.getPassengers().add(
-             passenger
+                passenger
         );
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);

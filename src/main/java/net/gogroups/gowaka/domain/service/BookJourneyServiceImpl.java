@@ -55,6 +55,10 @@ import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 @Slf4j
 public class BookJourneyServiceImpl implements BookJourneyService {
 
+    private static final String SMS_NOTIF = "SMS_NOTIF";
+    private static final String PLATFORM_SERVICE_CHARGE = "PLATFORM_SERVICE_CHARGE";
+    private static final String CASHIER = "CASHIER";
+
     private BookedJourneyRepository bookedJourneyRepository;
     private JourneyRepository journeyRepository;
     private UserRepository userRepository;
@@ -96,9 +100,16 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         User user = getUser();
         PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, false);
 
+        Double chargeAmount = 0.0;
         List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
-        if (serviceCharges.size() > 0) {
-            Double chargeAmount = paymentTransaction.getAmount() * (serviceCharges.get(0).getPercentageCharge() / 100);
+        if (!serviceCharges.isEmpty()) {
+            for (ServiceChargeDTO sCharge : serviceCharges) {
+                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+                    chargeAmount += sCharge.getFlatCharge();
+                } else if (sCharge.getId().equals(PLATFORM_SERVICE_CHARGE)) {
+                    chargeAmount += paymentTransaction.getAmount() * (sCharge.getPercentageCharge() / 100);
+                }
+            }
             Double amountWithoutCharge = paymentTransaction.getAmount();
             paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
             paymentTransaction.setAgencyAmount(amountWithoutCharge);
@@ -130,10 +141,26 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, true);
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
         paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
-        paymentTransaction.setPaymentChannel("CASHIER");
+        paymentTransaction.setPaymentChannel(CASHIER);
         paymentTransaction.setPaymentDate(LocalDateTime.now());
         paymentTransaction.setAgencyAmount(paymentTransaction.getAmount());
-        paymentTransaction.setServiceChargeAmount(0.0);
+
+        Double chargeAmount = 0.0;
+        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
+        if (!serviceCharges.isEmpty()) {
+            for (ServiceChargeDTO sCharge : serviceCharges) {
+                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+                    chargeAmount += sCharge.getFlatCharge();
+                    break;
+                }
+            }
+            Double amountWithoutCharge = paymentTransaction.getAmount();
+            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+            paymentTransaction.setAgencyAmount(amountWithoutCharge);
+            paymentTransaction.setServiceChargeAmount(chargeAmount);
+        }
+
+        paymentTransaction.setServiceChargeAmount(chargeAmount);
         PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
         savedTxn.getBookedJourney().setPaymentTransaction(savedTxn);
 
@@ -477,6 +504,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
         }
         bookedJourney.setIsAgencyBooking(isAgencyBooking);
+        bookedJourney.setSmsNotification(bookJourneyRequest.getSubscribeToSMSNotification());
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
         passengers.forEach(passenger -> passenger.setBookedJourney(savedBookedJourney));
         passengerRepository.saveAll(passengers);
@@ -554,7 +582,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
         bookedJourneyStatusDTO.setId(bookedJourney.getId());
         bookedJourneyStatusDTO.setJourneyId(bookedJourney.getJourney().getId());
-
+        bookedJourneyStatusDTO.setSubscribeToSMSNotification(bookedJourney.getSmsNotification());
         PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
 
         bookedJourneyStatusDTO.setAmount(paymentTransaction.getAmount());
