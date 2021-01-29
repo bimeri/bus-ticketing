@@ -843,8 +843,17 @@ public class BookJourneyServiceImplTest {
         passenger.setEmail("email@email.com");
         passenger.setPassengerName("Jesus Christ");
         passenger.setPassengerIdNumber("1234567890");
-        passenger.setPhoneNumber("676767676");
+        passenger.setPhoneNumber("237676767676");
+
+        BookJourneyRequest.Passenger passenger2 = new BookJourneyRequest.Passenger();
+        passenger2.setSeatNumber(10);
+        passenger2.setEmail("email@email.com");
+        passenger2.setPassengerName("Jesus Christ");
+        passenger2.setPassengerIdNumber("1234567890");
+        passenger2.setPhoneNumber("237999999999");
+
         bookJourneyRequest.getPassengers().add(passenger);
+        bookJourneyRequest.getPassengers().add(passenger2);
 
         bookJourneyRequest.setTransitAndStopId(102L);
 
@@ -919,8 +928,8 @@ public class BookJourneyServiceImplTest {
 
         assertThat(theBooked.getAgencyUser()).isEqualTo(user);
         assertThat(theBooked.getUser()).isEqualTo(user);
-        assertThat(paymentTransactionArgumentCaptor.getValue().getServiceChargeAmount()).isEqualTo(100.0);
-        assertThat(paymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(2100.0);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getServiceChargeAmount()).isEqualTo(200.0);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(2200.0);
     }
 
     @Test
@@ -1793,6 +1802,7 @@ public class BookJourneyServiceImplTest {
         assertThat(apiException.getErrorCode()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.toString());
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
     }
+
     @Test
     void changeSeatNumber_whenSeatNotTakenAndSeatsInBookedJourney_thenSwap() {
         BookedJourney bookJourney = journey.getBookedJourneys().get(0);

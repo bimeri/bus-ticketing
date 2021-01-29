@@ -105,7 +105,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (!serviceCharges.isEmpty()) {
             for (ServiceChargeDTO sCharge : serviceCharges) {
                 if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
-                    chargeAmount += sCharge.getFlatCharge();
+                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
                 } else if (sCharge.getId().equals(PLATFORM_SERVICE_CHARGE)) {
                     chargeAmount += paymentTransaction.getAmount() * (sCharge.getPercentageCharge() / 100);
                 }
@@ -150,7 +150,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (!serviceCharges.isEmpty()) {
             for (ServiceChargeDTO sCharge : serviceCharges) {
                 if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
-                    chargeAmount += sCharge.getFlatCharge();
+                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
                     break;
                 }
             }
@@ -443,6 +443,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         SEAT_ALREADY_TAKEN.toString(), HttpStatus.CONFLICT);
             }
         }
+    }
+
+    private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {
+        Set<String> phoneNumbers = new HashSet<>();
+        for (BookJourneyRequest.Passenger passenger : bookJourneyRequest.getPassengers()) {
+            phoneNumbers.add(passenger.getPhoneNumber().trim());
+        }
+        return sCharge.getFlatCharge() * phoneNumbers.size();
     }
 
     private void notifyPassengers(BookedJourney bookedJourney, BookedJourneyStatusDTO dto, List<Passenger> passengers) {
