@@ -146,19 +146,20 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         paymentTransaction.setAgencyAmount(paymentTransaction.getAmount());
 
         Double chargeAmount = 0.0;
-        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
-        if (!serviceCharges.isEmpty()) {
-            for (ServiceChargeDTO sCharge : serviceCharges) {
-                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
-                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
-                    break;
-                }
-            }
-            Double amountWithoutCharge = paymentTransaction.getAmount();
-            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
-            paymentTransaction.setAgencyAmount(amountWithoutCharge);
-            paymentTransaction.setServiceChargeAmount(chargeAmount);
-        }
+//        TODO: Allow agency user to add sms notification service to user
+//        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
+//        if (!serviceCharges.isEmpty()) {
+//            for (ServiceChargeDTO sCharge : serviceCharges) {
+//                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+//                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
+//                    break;
+//                }
+//            }
+//            Double amountWithoutCharge = paymentTransaction.getAmount();
+//            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+//            paymentTransaction.setAgencyAmount(amountWithoutCharge);
+//            paymentTransaction.setServiceChargeAmount(chargeAmount);
+//        }
 
         paymentTransaction.setServiceChargeAmount(chargeAmount);
         PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
