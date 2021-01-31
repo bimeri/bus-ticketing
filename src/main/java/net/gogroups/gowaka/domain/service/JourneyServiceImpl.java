@@ -208,9 +208,14 @@ public class JourneyServiceImpl implements JourneyService {
                 SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
                 surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + " from " + journey.getDepartureLocation().getLocation().getAddress());
                 cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
-                sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
             } catch (Exception e) {
                 log.error("Error sending request to CFS ");
+                e.printStackTrace();
+            }
+            try {
+                sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
+            } catch (Exception e){
+                log.error("Error sending request End journey notification sms for JourneyId: {}", journey.getId());
                 e.printStackTrace();
             }
         }
