@@ -909,11 +909,11 @@ public class BookJourneyServiceImplTest {
         userDTO.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDTO);
-        when(mockServiceChargeService.getServiceCharges())
-                .thenReturn(Arrays.asList(
-                        new ServiceChargeDTO("PLATFORM_SERVICE_CHARGE", 10.0, 0.0),
-                        new ServiceChargeDTO("SMS_NOTIF", 0.0, 100.0)
-                ));
+//        when(mockServiceChargeService.getServiceCharges())
+//                .thenReturn(Arrays.asList(
+//                        new ServiceChargeDTO("PLATFORM_SERVICE_CHARGE", 10.0, 0.0),
+//                        new ServiceChargeDTO("SMS_NOTIF", 0.0, 100.0)
+//                ));
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
@@ -921,15 +921,15 @@ public class BookJourneyServiceImplTest {
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
         bookJourneyService.agencyUserBookJourney(journey.getId(), bookJourneyRequest);
-        verify(mockServiceChargeService).getServiceCharges();
+//        verify(mockServiceChargeService).getServiceCharges();
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
         BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
 
         assertThat(theBooked.getAgencyUser()).isEqualTo(user);
         assertThat(theBooked.getUser()).isEqualTo(user);
-        assertThat(paymentTransactionArgumentCaptor.getValue().getServiceChargeAmount()).isEqualTo(200.0);
-        assertThat(paymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(2200.0);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getServiceChargeAmount()).isEqualTo(0.0);
+        assertThat(paymentTransactionArgumentCaptor.getValue().getAmount()).isEqualTo(2000.0);
     }
 
     @Test

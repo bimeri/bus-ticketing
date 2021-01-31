@@ -189,7 +189,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
                 //TODO: should look for the next available seat and set
                 List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
-                    passenger.setSeatNumber(-1);
+                    passenger.setSeatNumber(0);
                     return passenger;
                 }).collect(Collectors.toList());
                 // update seatNumber if more than waiting limit,
@@ -564,7 +564,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
-        //TODO: should also send SMS
     }
 
     private void sendChangeSeatTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO, List<Passenger> passengers) {
@@ -583,7 +582,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
-        //TODO: should also send SMS
     }
 
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {

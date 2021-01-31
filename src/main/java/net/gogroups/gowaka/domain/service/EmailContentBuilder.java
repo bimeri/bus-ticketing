@@ -71,6 +71,15 @@ public class EmailContentBuilder {
     }
 
 
+    public String buildJourneyStatusEmail(String message) {
+
+        Context context = new Context();
+        context.setVariable("message", message);
+        context.setVariable("logo", getLogo());
+        return templateEngine.process("journey-update-email", context);
+    }
+
+
     private String getLogo() {
         return fileStorageService.getFilePath("logo.png", "/", FileAccessType.PUBLIC);
     }

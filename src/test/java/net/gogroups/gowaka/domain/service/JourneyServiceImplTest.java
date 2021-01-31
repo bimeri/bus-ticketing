@@ -7,12 +7,15 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
-import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
+import net.gogroups.notification.model.SendEmailDTO;
+import net.gogroups.notification.model.SendSmsDTO;
+import net.gogroups.notification.service.NotificationService;
 import net.gogroups.storage.service.FileStorageService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -53,7 +56,8 @@ public class JourneyServiceImplTest {
     @Mock
     private BookedJourneyRepository mockBookedJourneyRepository;
 
-    private JourneyService journeyService;
+    @InjectMocks
+    private JourneyServiceImpl journeyService;
 
     @Mock
     private OfficialAgency mockOfficialAgency;
@@ -69,20 +73,12 @@ public class JourneyServiceImplTest {
     @Mock
     private FileStorageService mockFileStorageService;
 
-    @BeforeEach
-    void setup() {
-        journeyService = JourneyServiceImpl.builder()
-                .userService(mockUserService)
-                .userRepository(mockUserRepository)
-                .transitAndStopRepository(mockTransitAndStopRepository)
-                .journeyRepository(mockJourneyRepository)
-                .journeyStopRepository(mockJourneyStopRepository)
-                .bookedJourneyRepository(mockBookedJourneyRepository)
-                .ggCfsSurveyTemplateJsonRepository(mockGgCfsSurveyTemplateJsonRepository)
-                .cfsClientService(mockCfsClientService)
-                .fileStorageService(mockFileStorageService)
-                .build();
-    }
+    @Mock
+    private NotificationService mockNotificationService;
+
+    @Mock
+    private EmailContentBuilder mockEmailContentBuilder;
+
 
     @Test
     void add_journey_should_throw_car_resource_not_found_api_exception() {
@@ -731,7 +727,6 @@ public class JourneyServiceImplTest {
                 "  ]\n" +
                 "}\n");
 
-
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setId(111L);
 
@@ -751,12 +746,45 @@ public class JourneyServiceImplTest {
         TransitAndStop departureLocation = new TransitAndStop();
         Location location = new Location();
         location.setAddress("Buea motto park");
+        location.setCity("Buea");
         departureLocation.setLocation(location);
+
+        TransitAndStop destinationLocation = new TransitAndStop();
+        destinationLocation.setLocation(location);
+
         Journey journey = new Journey();
         journey.setId(1L);
         journey.setDepartureIndicator(true);
         journey.setCar(bus);
         journey.setDepartureLocation(departureLocation);
+        journey.setDepartureLocation(departureLocation);
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setDestination(departureLocation);
+        bookedJourney.setSmsNotification(Boolean.TRUE);
+        Passenger passenger = new Passenger();
+        passenger.setEmail("passenger@gmail.com");
+        passenger.setPhoneNumber("237678787878");
+        bookedJourney.setPassengers(Collections.singletonList(passenger));
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus("COMPLETED");
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+
+        BookedJourney bookedJourney2 = new BookedJourney();
+        bookedJourney2.setDestination(departureLocation);
+        bookedJourney2.setSmsNotification(Boolean.TRUE);
+        Passenger passenger2 = new Passenger();
+        passenger2.setEmail("passenger2@gmail.com");
+        passenger2.setPhoneNumber("237670909090");
+        bookedJourney2.setPassengers(Collections.singletonList(passenger2));
+        PaymentTransaction paymentTransaction2 = new PaymentTransaction();
+        paymentTransaction2.setTransactionStatus("COMPLETED");
+        RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
+        refundPaymentTransaction.setRefundStatus("REFUNDED");
+        paymentTransaction2.setRefundPaymentTransaction(refundPaymentTransaction);
+        bookedJourney2.setPaymentTransaction(paymentTransaction2);
+
+        journey.setBookedJourneys(Arrays.asList(bookedJourney, bookedJourney2));
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
@@ -764,12 +792,33 @@ public class JourneyServiceImplTest {
                 .thenReturn(Optional.of(ggCfsSurveyTemplateJson));
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockEmailContentBuilder.buildJourneyStatusEmail(any()))
+                .thenReturn("some update message");
+
         JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO = new JourneyArrivalIndicatorDTO();
         journeyArrivalIndicatorDTO.setArrivalIndicator(true);
         journeyService.updateJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO);
+
         verify(mockJourneyRepository).save(any());
         verify(mockGgCfsSurveyTemplateJsonRepository).findById("1");
         verify(mockCfsClientService).createAndAddCustomerToSurvey(any(), any());
+        verify(mockEmailContentBuilder).buildJourneyStatusEmail(any());
+
+        ArgumentCaptor<SendEmailDTO> sendEmailDTOArgumentCaptor = ArgumentCaptor.forClass(SendEmailDTO.class);
+        ArgumentCaptor<SendSmsDTO> sendSmsDTOArgumentCaptor = ArgumentCaptor.forClass(SendSmsDTO.class);
+
+        verify(mockNotificationService).sendSMS(sendSmsDTOArgumentCaptor.capture());
+        verify(mockNotificationService).sendEmail(sendEmailDTOArgumentCaptor.capture());
+
+        assertThat(sendSmsDTOArgumentCaptor.getValue().getMessage(), is("Your trip to Buea on GoWaka just ended"));
+        assertThat(sendSmsDTOArgumentCaptor.getValue().getPhoneNumber(), is("237678787878"));
+        assertThat(sendSmsDTOArgumentCaptor.getValue().getSenderLabel(), is("GoWaka"));
+
+        assertThat(sendEmailDTOArgumentCaptor.getValue().getMessage(), is("some update message"));
+        assertThat(sendEmailDTOArgumentCaptor.getValue().getToAddresses().get(0).getEmail(), is("no-reply@mygowaka.com"));
+        assertThat(sendEmailDTOArgumentCaptor.getValue().getToAddresses().get(0).getName(), is("no-reply@mygowaka.com"));
+        assertThat(sendEmailDTOArgumentCaptor.getValue().getBccAddresses().get(0).getName(), is("passenger@gmail.com"));
+        assertThat(sendEmailDTOArgumentCaptor.getValue().getBccAddresses().get(0).getEmail(), is("passenger@gmail.com"));
     }
 
     @Test

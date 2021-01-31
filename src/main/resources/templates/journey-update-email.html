@@ -258,7 +258,7 @@
                 <tr>
                     <td class="email-masthead">
                         <a href="#" class="f-fallback email-masthead_name">
-                            GoWaka Refunds
+                            Your GoWaka trip update
                         </a>
                     </td>
                 </tr>
@@ -271,63 +271,19 @@
                             <tr>
                                 <td class="content-cell">
                                     <div class="f-fallback">
-                                        <div style="text-align: left">
-                                            <table >
-                                                <tbody>
-                                                <tr>
-                                                    <th>Hi</th>
-                                                    <td><span th:text="${fullName}">FullName</span>,</td>
-                                                </tr>
-                                                <tr>
-                                                    <th></th>
-                                                    <td th:text="${message}">Your refund request has been approved</td>
-                                                </tr>
-                                                <tr th:if="${!approved}">
-                                                    <th></th>
-                                                    <td th:text="${cause}">You wore a yellow dress</td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Refund Status</th>
-                                                    <td th:if="${!approved && !refunded}">DECLINED</td>
-                                                    <td th:if="${refunded}">REFUNDED</td>
-                                                    <td th:if="${approved && !refunded}">APPROVED</td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                            <div th:if="${approved || refunded}">
-                                                <hr style="border-width: 9px; border-color: forestgreen"/>
-                                                <br/>
-                                                <h2>Additional Information</h2>
-                                                <table >
-                                                    <tbody>
-                                                        <tr th:if="${approved}">
-                                                            <th>Approved By</th>
-                                                            <td><span th:text="${approvalName}">FullName</span></td>
-                                                        </tr>
-                                                        <tr th:if="${refunded}">
-                                                            <th>Refunded By</th>
-                                                            <td><span th:text="${refunderName}">FullName</span></td>
-                                                        </tr>
-                                                        <tr th:if="${refunded}">
-                                                            <th>Refunded Date</th>
-                                                            <td th:text="${#temporals.format(refundedDate, 'dd/MM/yyyy HH:mm')}"></td>
-                                                        </tr>
-                                                        <tr th:if="${amount > 0}">
-                                                            <th>Amount</th>
-                                                            <td><span th:text="${#numbers.formatDecimal(amount,3,'WHITESPACE',2, 'POINT')}">1000</span><span th:text="${currency}">XAF</span></td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
+                                        <div style="font-size: 30px; font-weight: bolder">
+                                            <div style="text-align: left">Hi,</div>
+                                            <div style="text-align: left;">
+                                                <div th:text="${message}">Your GoWaka trip just started.</div>
                                             </div>
                                         </div>
-
                                         <hr style="border-width: 9px; border-color: forestgreen"/>
                                         <br/>
                                         Thanks,
                                         <br/>The GoWaka Team<br/>
                                     </div>
                                 </td>
-                            </tr>
+                            </tr
                         </table>
                     </td>
                 </tr>

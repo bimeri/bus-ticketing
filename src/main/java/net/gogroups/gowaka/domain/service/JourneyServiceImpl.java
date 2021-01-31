@@ -1,12 +1,15 @@
 package net.gogroups.gowaka.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.cfs.model.CustomerDTO;
 import net.gogroups.cfs.model.SurveyDTO;
 import net.gogroups.cfs.service.CfsClientService;
 import net.gogroups.dto.PaginatedResponse;
+import net.gogroups.gowaka.constant.RefundStatus;
+import net.gogroups.gowaka.constant.notification.EmailFields;
+import net.gogroups.gowaka.constant.notification.SmsFields;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.DTFFromDateStr;
@@ -16,9 +19,14 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
+import net.gogroups.notification.model.EmailAddress;
+import net.gogroups.notification.model.SendEmailDTO;
+import net.gogroups.notification.model.SendSmsDTO;
+import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,10 +36,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -39,32 +44,27 @@ import java.util.stream.Collectors;
  * @date 17 Oct 2019
  */
 @Service
-@Builder
 @Slf4j
+@RequiredArgsConstructor
 public class JourneyServiceImpl implements JourneyService {
-    private UserService userService;
-    private UserRepository userRepository;
-    private TransitAndStopRepository transitAndStopRepository;
-    private JourneyRepository journeyRepository;
-    private JourneyStopRepository journeyStopRepository;
-    private BookedJourneyRepository bookedJourneyRepository;
-    private GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository;
-    private CfsClientService cfsClientService;
-    private FileStorageService fileStorageService;
 
-    private final ZoneId zoneId = ZoneId.of("GMT");
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final TransitAndStopRepository transitAndStopRepository;
+    private final JourneyRepository journeyRepository;
+    private final JourneyStopRepository journeyStopRepository;
+    private final BookedJourneyRepository bookedJourneyRepository;
+    private final GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository;
+    private final CfsClientService cfsClientService;
+    private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
+    private final EmailContentBuilder emailContentBuilder;
 
-    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository, GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository, CfsClientService cfsClientService, FileStorageService fileStorageService) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.transitAndStopRepository = transitAndStopRepository;
-        this.journeyRepository = journeyRepository;
-        this.journeyStopRepository = journeyStopRepository;
-        this.bookedJourneyRepository = bookedJourneyRepository;
-        this.ggCfsSurveyTemplateJsonRepository = ggCfsSurveyTemplateJsonRepository;
-        this.cfsClientService = cfsClientService;
-        this.fileStorageService = fileStorageService;
-    }
+    private static final ZoneId zoneId = ZoneId.of("GMT");
+
+    @Value("${notification.email-from-address)")
+    private String fromEmail = "no-reply@mygowaka.com";
+
 
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
@@ -177,7 +177,16 @@ public class JourneyServiceImpl implements JourneyService {
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
             journeyRepository.save(journey);
         }
+        if (journeyDepartureIndicator.getDepartureIndicator()) {
+            try {
+                sendSMSAndEmailNotificationToSubscribers(journey, "just stared");
+            }catch (Exception e){
+                log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
+                e.printStackTrace();
+            }
+        }
     }
+
 
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
@@ -199,6 +208,7 @@ public class JourneyServiceImpl implements JourneyService {
                 SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
                 surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + " from " + journey.getDepartureLocation().getLocation().getAddress());
                 cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
+                sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
             } catch (Exception e) {
                 log.error("Error sending request to CFS ");
                 e.printStackTrace();
@@ -788,5 +798,54 @@ public class JourneyServiceImpl implements JourneyService {
                 bookedJourney -> bookedJourney != null && bookedJourney.getJourney() != null && bookedJourney.getJourney().equals(journey)
                 /*&& bookedJourney.getDestination() != null && bookedJourney.getDestination().equals(transitAndStop)*/
         );
+    }
+
+    private void sendSMSAndEmailNotificationToSubscribers(Journey journey, String appendMessage) {
+
+        Set<String> passengersEmails = new HashSet<>();
+        journey.getBookedJourneys().stream()
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equalsIgnoreCase(PayAmGoPaymentStatus.COMPLETED.name()))
+                .filter(bookedJourney -> {
+                    RefundPaymentTransaction refundPaymentTransaction = bookedJourney.getPaymentTransaction().getRefundPaymentTransaction();
+                    if (refundPaymentTransaction == null) {
+                        return true;
+                    } else {
+                        return refundPaymentTransaction.getRefundStatus().equalsIgnoreCase(RefundStatus.PENDING.name());
+                    }
+                }).forEach(bookedJourney -> {
+            Set<String> passengersPhoneNumbers = new HashSet<>();
+            bookedJourney.getPassengers().forEach(passenger -> {
+                if (bookedJourney.getSmsNotification()) {
+                    passengersPhoneNumbers.add(passenger.getPhoneNumber());
+                }
+                if (passenger.getEmail() != null) {
+                    passengersEmails.add(passenger.getEmail());
+                }
+            });
+
+            String message = "Your trip to " + bookedJourney.getDestination().getLocation().getCity() + " on GoWaka " + appendMessage;
+            passengersPhoneNumbers.forEach(phone -> {
+                SendSmsDTO sendSmsDTO = new SendSmsDTO();
+                sendSmsDTO.setMessage(message);
+                sendSmsDTO.setPhoneNumber(phone);
+                sendSmsDTO.setSenderLabel(SmsFields.SMS_LABEL.getMessage());
+                sendSmsDTO.setProcessingNumber(UUID.randomUUID().toString());
+                notificationService.sendSMS(sendSmsDTO);
+            });
+        });
+
+        String message = emailContentBuilder.buildJourneyStatusEmail("Your GoWaka trip departing from " + journey.getDepartureLocation().getLocation().getCity() + " " + appendMessage);
+
+        SendEmailDTO emailDTO = new SendEmailDTO();
+        emailDTO.setSubject(EmailFields.JOURNEY_UPDATES.getMessage());
+        emailDTO.setMessage(message);
+        Set<EmailAddress> emailAddresses = passengersEmails.stream()
+                .map(email -> new EmailAddress(email, email))
+                .collect(Collectors.toSet());
+
+        emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(fromEmail, fromEmail)));
+        emailDTO.setCcAddresses(Collections.emptyList());
+        emailDTO.setBccAddresses(new ArrayList<>(emailAddresses));
+        notificationService.sendEmail(emailDTO);
     }
 }

@@ -47,8 +47,9 @@ public class BookJourneyRequest {
         @Size(max = 15, message = "passenger's phone number can not be more than 15 characters")
         private String phoneNumber;
 
-        @NotBlank(message = "passenger email required.")
+//        @NotBlank(message = "passenger email required.")
         @Email(message = "valid email required.")
+        @Size(max = 100, message = "passenger's email can not be more than 100 characters")
         private String email;
 
     }
