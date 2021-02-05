@@ -36,8 +36,9 @@ class AppNoticeServiceImplTest {
     @Test
     void getAllAppNotice_retrunAListOfNotifications() {
         when(mockAppAlertNoticeRepository.findByStatus(true))
-                .thenReturn(Collections.singletonList(new AppAlertNotice(12L, "hello world", "en", true)));
+                .thenReturn(Collections.singletonList(new AppAlertNotice(12L, "Title", "hello world", "en", true)));
         List<AppNoticeDTO> allAppNotice = appNoticeService.getAllAppNotice();
+        assertThat(allAppNotice.get(0).getTitle()).isEqualTo("Title");
         assertThat(allAppNotice.get(0).getLanguage()).isEqualTo("en");
         assertThat(allAppNotice.get(0).getMessage()).isEqualTo("hello world");
     }

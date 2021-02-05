@@ -35,7 +35,7 @@ public class HomeControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        appAlertNoticeRepository.save(new AppAlertNotice(12L, "hello world", "en", true));
+        appAlertNoticeRepository.save(new AppAlertNotice(12L, "hello title", "hello world", "en", true));
     }
 
     @Test
@@ -45,6 +45,7 @@ public class HomeControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.[0].title").value("hello title"))
                 .andExpect(jsonPath("$.[0].language").value("en"))
                 .andExpect(jsonPath("$.[0].message").value("hello world"));
 

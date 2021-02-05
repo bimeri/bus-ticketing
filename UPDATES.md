@@ -23,3 +23,6 @@ ___________________________________________
 * Jan 29th 2021
     * add flatCharge field in ServiceCharge Entity table
     * changed IDs to `PLATFORM_SERVICE_CHARGE,SMS_NOTIF`
+-------------------------------------------
+* Feb 5th 2021
+    * add title to alert notification table

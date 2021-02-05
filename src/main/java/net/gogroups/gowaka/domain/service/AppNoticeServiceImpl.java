@@ -27,7 +27,7 @@ public class AppNoticeServiceImpl implements AppNoticeService {
     public List<AppNoticeDTO> getAllAppNotice() {
         log.info("getting new alerts into cache...");
         return appAlertNoticeRepository.findByStatus(Boolean.TRUE).stream()
-                .map(appAlertNotice -> new AppNoticeDTO(appAlertNotice.getMessage(), appAlertNotice.getLanguage()))
+                .map(appAlertNotice -> new AppNoticeDTO(appAlertNotice.getTitle(), appAlertNotice.getMessage(), appAlertNotice.getLanguage()))
                 .collect(Collectors.toList());
     }
 

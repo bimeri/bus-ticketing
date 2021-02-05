@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AppNoticeDTO {
 
+    private String title;
     private String message;
     private String language;
 }
