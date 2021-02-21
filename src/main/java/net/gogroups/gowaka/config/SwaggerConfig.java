@@ -16,6 +16,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 /**
@@ -33,7 +34,7 @@ public class SwaggerConfig {
     @Bean
     public Docket api() {
         HashSet<String> consumesAndProduces =
-                new HashSet<>(Arrays.asList("application/json"));
+                new HashSet<>(Collections.singletonList("application/json"));
 
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(metadata())
@@ -41,7 +42,7 @@ public class SwaggerConfig {
                 .produces(consumesAndProduces)
                 .pathMapping("/")
                 .globalOperationParameters(
-                        Arrays.asList(new ParameterBuilder()
+                        Collections.singletonList(new ParameterBuilder()
                                 .name("Authorization")
                                 .defaultValue("Bearer ")
                                 .description("Security token")

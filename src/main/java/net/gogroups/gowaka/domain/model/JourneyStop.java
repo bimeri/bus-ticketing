@@ -17,6 +17,7 @@ import java.util.Objects;
 @Getter
 @Setter
 public class JourneyStop implements Serializable {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -28,6 +29,7 @@ public class JourneyStop implements Serializable {
     @JoinColumn(name = "transit_stop_id")
     private TransitAndStop transitAndStop;
 
+    @Column(name = "amount")
     private double amount;
 
     public JourneyStop() {

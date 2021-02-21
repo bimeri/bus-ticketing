@@ -8,6 +8,7 @@ import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.CarService;
 import net.gogroups.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static net.gogroups.gowaka.exception.ErrorCodes.RESOURCE_NOT_FOUND;
 
 /**
  * @author Nnouka Stephen
@@ -25,20 +29,17 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CarServiceImpl implements CarService {
+
     private CarRepository carRepository;
     private UserService userService;
     private UserRepository userRepository;
     private SeatStructureRepository seatStructureRepository;
 
     @Autowired
-    public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository) {
+    public CarServiceImpl(CarRepository carRepository, UserService userService, UserRepository userRepository, SeatStructureRepository seatStructureRepository) {
         this.carRepository = carRepository;
         this.userService = userService;
         this.userRepository = userRepository;
-    }
-
-    @Autowired
-    public void setSeatStructureRepository(SeatStructureRepository seatStructureRepository) {
         this.seatStructureRepository = seatStructureRepository;
     }
 
@@ -54,7 +55,7 @@ public class CarServiceImpl implements CarService {
                 licensePlateNumber == null ? null : licensePlateNumber.trim()
         );
         bus.setNumberOfSeats(busDTO.getNumberOfSeats());
-        bus.setTimestamp(LocalDateTime.now());
+        bus.setCreatedAt(LocalDateTime.now());
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
         bus.setOfficialAgency(officialAgency);
@@ -85,7 +86,7 @@ public class CarServiceImpl implements CarService {
                 licensePlateNumber == null ? null : licensePlateNumber.trim());
         sharedRide.setIsCarApproved(false);
         sharedRide.setIsOfficialAgencyIndicator(false);
-        sharedRide.setTimestamp(LocalDateTime.now());
+        sharedRide.setCreatedAt(LocalDateTime.now());
         sharedRide.setPersonalAgency(personalAgency);
         SharedRide savedRide = carRepository.save(sharedRide);
         return getSharedRideResponseDTO(savedRide);
@@ -96,6 +97,17 @@ public class CarServiceImpl implements CarService {
         return getBuses(getOfficialAgency(verifyCurrentAuthUser())).stream().map(
                 this::getBusResponseDTO
         ).collect(Collectors.toList());
+    }
+
+    @Override
+    public BusResponseDTO getOfficialAgencyBuses(Long carId) {
+        Optional<Bus> busOptional = getBuses(getOfficialAgency(verifyCurrentAuthUser())).stream()
+                .filter(bus -> bus.getId().equals(carId))
+                .findFirst();
+        if (!busOptional.isPresent()) {
+            throw new ResourceNotFoundException(RESOURCE_NOT_FOUND.getMessage());
+        }
+        return getBusResponseDTO(busOptional.get());
     }
 
     @Override
@@ -115,7 +127,8 @@ public class CarServiceImpl implements CarService {
     @Override
     public List<CarDTO> getAllUnapprovedCars() {
         List<Car> unApprovedCars = carRepository.findByIsCarApproved(false);
-        List<CarDTO> carDTOs = unApprovedCars.stream()
+
+        return unApprovedCars.stream()
                 .map(car -> {
                     CarDTO carDTO = new CarDTO();
                     carDTO.setId(car.getId());
@@ -123,11 +136,9 @@ public class CarServiceImpl implements CarService {
                     carDTO.setIsCarApproved(car.getIsCarApproved());
                     carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator());
                     carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-                    carDTO.setTimestamp(car.getTimestamp());
+                    carDTO.setTimestamp(car.getCreatedAt());
                     return carDTO;
                 }).collect(Collectors.toList());
-
-        return carDTOs;
     }
 
     @Override
@@ -137,6 +148,8 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void updateAgencyCarInfo(Long carId, BusDTO busDTO) {
+
+        List<SeatStructure> allByNumberOfSeats = seatStructureRepository.findAllByNumberOfSeats(busDTO.getNumberOfSeats());
         // which car to update?
         Car car = getCarById(carId);
         // check if car has journey booked
@@ -146,7 +159,11 @@ public class CarServiceImpl implements CarService {
         // update car successfully
         if (busDTO.getName() != null) car.setName(busDTO.getName());
         car.setLicensePlateNumber(busDTO.getLicensePlateNumber());
-        if (car instanceof Bus) ((Bus) car).setNumberOfSeats(busDTO.getNumberOfSeats());
+        if (car instanceof Bus) {
+            Bus bus = (Bus) car;
+            bus.setNumberOfSeats(busDTO.getNumberOfSeats());
+            if (!allByNumberOfSeats.isEmpty()) bus.setSeatStructure(allByNumberOfSeats.get(0));
+        }
         carRepository.save(car);
     }
 
@@ -164,7 +181,12 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
-        List<SeatStructure> seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+        List<SeatStructure> seatStructures;
+        if (numberOfSeats.equals(0)) {
+            seatStructures = seatStructureRepository.findAll();
+        } else {
+            seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+        }
         return seatStructures.stream()
                 .map(SeatStructureDTO::new)
                 .collect(Collectors.toList());
@@ -180,7 +202,7 @@ public class CarServiceImpl implements CarService {
         // get user entity
         Optional<User> optionalUser = userRepository.findById(authUser.getId());
         if (!optionalUser.isPresent()) {
-            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            throw new ApiException("User not found", RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalUser.get();
     }
@@ -194,7 +216,7 @@ public class CarServiceImpl implements CarService {
     private PersonalAgency getPersonalAgency(User user) {
         PersonalAgency personalAgency = user.getPersonalAgency();
         if (personalAgency == null) {
-            throw new ApiException("No Personal Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            throw new ApiException("No Personal Agency found for this user", RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return personalAgency;
     }
@@ -208,7 +230,7 @@ public class CarServiceImpl implements CarService {
     private OfficialAgency getOfficialAgency(User user) {
         OfficialAgency officialAgency = user.getOfficialAgency();
         if (officialAgency == null) {
-            throw new ApiException("No Official Agency found for this user", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            throw new ApiException("No Official Agency found for this user", RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return officialAgency;
     }
@@ -222,7 +244,7 @@ public class CarServiceImpl implements CarService {
     private List<Bus> getBuses(OfficialAgency officialAgency) {
         List<Bus> buses = officialAgency.getBuses();
         if (buses.isEmpty()) {
-            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
+            throw new ApiException("Agency is Empty", RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
         }
         return buses;
     }
@@ -236,7 +258,7 @@ public class CarServiceImpl implements CarService {
     private List<SharedRide> getSharedRides(PersonalAgency personalAgency) {
         List<SharedRide> sharedRides = personalAgency.getSharedRides();
         if (sharedRides.isEmpty()) {
-            throw new ApiException("Agency is Empty", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
+            throw new ApiException("Agency is Empty", RESOURCE_NOT_FOUND.toString(), HttpStatus.NO_CONTENT);
         }
         return sharedRides;
     }
@@ -260,7 +282,7 @@ public class CarServiceImpl implements CarService {
     private Car getCarById(Long id) {
         Optional<Car> optionalCar = carRepository.findById(id);
         if (!optionalCar.isPresent()) {
-            throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new ApiException("Car not found.", RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
     }
@@ -268,7 +290,7 @@ public class CarServiceImpl implements CarService {
     private Car getCarByLicensePlateNumber(String licensePlateNumber) {
         Optional<Car> optionalCar = carRepository.findByLicensePlateNumberIgnoreCase(licensePlateNumber);
         if (!optionalCar.isPresent()) {
-            throw new ApiException("Car not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new ApiException("Car not found.", RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
         return optionalCar.get();
     }
@@ -328,9 +350,9 @@ public class CarServiceImpl implements CarService {
         carDTO.setId(car.getId());
         carDTO.setName(car.getName());
         carDTO.setLicensePlateNumber(car.getLicensePlateNumber());
-        carDTO.setIsCarApproved(car.getIsCarApproved() == null ? false : car.getIsCarApproved());
-        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() == null ? false : car.getIsOfficialAgencyIndicator());
-        carDTO.setTimestamp(car.getTimestamp());
+        carDTO.setIsCarApproved(car.getIsCarApproved() != null && car.getIsCarApproved());
+        carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator());
+        carDTO.setTimestamp(car.getCreatedAt());
         return carDTO;
     }
 

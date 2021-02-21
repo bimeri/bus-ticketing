@@ -21,4 +21,8 @@ public interface UserService {
     TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO);
 
     void updateProfile(UpdateProfileDTO updateProfileDTO);
+
+    void verifyEmail(EmailDTO emailDTO);
+
+    GWUserDTO validateGWUserByEmail(EmailDTO emailDTO);
 }

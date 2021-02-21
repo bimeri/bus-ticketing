@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @Entity
 @EqualsAndHashCode
-public class Journey {
+public class Journey extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,21 +28,28 @@ public class Journey {
     @ManyToOne
     @JoinColumn(name = "departure_stop_id")
     private TransitAndStop departureLocation;
+
     @Embedded
     private Driver driver;
 
+    @Column(name = "departure_time")
     private LocalDateTime departureTime;
+
+    @Column(name = "estimated_arrival_time")
     private LocalDateTime estimatedArrivalTime;
 
+    @Column(name = "departure_indicator")
     private Boolean departureIndicator;
+
+    @Column(name = "arrival_indicator")
     private Boolean arrivalIndicator;
-    private LocalDateTime timestamp;
 
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BookedJourney> bookedJourneys;
 
     @OneToMany(mappedBy = "journey", cascade = {CascadeType.ALL})
     private List<JourneyStop> journeyStops;
+
     @ManyToOne
     private Car car;
 

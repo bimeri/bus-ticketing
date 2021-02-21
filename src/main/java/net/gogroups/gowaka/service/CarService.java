@@ -18,6 +18,8 @@ public interface CarService {
 
     List<BusResponseDTO> getAllOfficialAgencyBuses();
 
+    BusResponseDTO getOfficialAgencyBuses(Long carId);
+
     List<SharedRideResponseDTO> getAllSharedRides();
 
     List<CarDTO> getAllUnapprovedCars();

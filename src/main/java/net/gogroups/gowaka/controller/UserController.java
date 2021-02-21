@@ -5,12 +5,11 @@ import net.gogroups.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
 
 /**
  * Author: Edward Tanko <br/>
@@ -53,9 +52,20 @@ public class UserController {
 
     @PreAuthorize("hasAnyRole('ROLE_USERS')")
     @PostMapping("/protected/users/profile")
-    ResponseEntity<?> updateProfile(@RequestBody @Valid UpdateProfileDTO updateProfileDTO){
+    ResponseEntity<?> updateProfile(@RequestBody @Validated UpdateProfileDTO updateProfileDTO){
         userService.updateProfile(updateProfileDTO);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/public/users/verify_email")
+    ResponseEntity<?> verifyEmail(@RequestBody @Validated EmailDTO emailDTO){
+        userService.verifyEmail(emailDTO);
+        return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/protected/users/validate_user")
+    @PreAuthorize("hasAnyRole('ROLE_GW_ADMIN','ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
+    ResponseEntity<GWUserDTO> validateGWUserByEmail(@RequestBody @Validated EmailDTO emailDTO){
+        return ResponseEntity.ok(userService.validateGWUserByEmail(emailDTO));
     }
 
 }

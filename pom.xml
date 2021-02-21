@@ -5,10 +5,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.1.7.RELEASE</version>
+<!--        <version>2.4.0</version> fails in AuthenticationManager been creation in API security-->
+        <version>2.3.4.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>net.gowaka</groupId>
+    <groupId>net.go-groups</groupId>
     <artifactId>gowaka</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>gowaka</name>
@@ -16,19 +17,18 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <spring-cloud.version>Greenwich.RELEASE</spring-cloud.version>
+        <swagger.version>2.9.2</swagger.version>
+        <httpcomponents-version>4.4.1</httpcomponents-version>
+        <zxing.version>3.3.0</zxing.version>
+        <xhtmlrenderer.version>9.1.4</xhtmlrenderer.version>
+        <jtidy.version>r938</jtidy.version>
+        <jacoco.version>0.8.2</jacoco.version>
+        <gg-api-security-client.version>0.0.1-SNAPSHOT</gg-api-security-client.version>
+        <gg-notification-client.version>0.0.1-SNAPSHOT</gg-notification-client.version>
+        <gg-file-storage.version>0.0.1-SNAPSHOT</gg-file-storage.version>
+        <payamgo-client.version>0.0.1-SNAPSHOT</payamgo-client.version>
+        <gg-cfs-client.version>0.0.1-SNAPSHOT</gg-cfs-client.version>
     </properties>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -43,7 +43,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -67,51 +70,22 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger-ui -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
-            <version>2.9.2</version>
+            <version>${swagger.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/io.springfox/springfox-swagger2 -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
-            <version>2.9.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.16.16</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-jwt -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-jwt</artifactId>
-            <version>1.0.9.RELEASE</version>
-        </dependency>
-
-        <dependency>
-            <!-- JSON Web Token Support -->
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.7.0</version>
+            <version>${swagger.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -125,12 +99,8 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.4.1</version>
+            <version>${httpcomponents-version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.cloud</groupId>-->
-<!--            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
@@ -138,60 +108,117 @@
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
-            <version>3.3.0</version>
+            <version>${zxing.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>javase</artifactId>
-            <version>3.3.0</version>
+            <version>${zxing.version}</version>
         </dependency>
-        <!-- flying saucer pdf -->
         <dependency>
             <groupId>org.xhtmlrenderer</groupId>
             <artifactId>flying-saucer-pdf</artifactId>
-            <version>9.1.4</version>
+            <version>${xhtmlrenderer.version}</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jtidy</groupId>
             <artifactId>jtidy</artifactId>
-            <version>r938</version>
+            <version>${jtidy.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-notification-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-notification-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-api-security-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-api-security-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>payamgo-client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${payamgo-client.version}</version>
         </dependency>
         <dependency>
             <groupId>net.go-groups</groupId>
             <artifactId>gg-file-storage</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${gg-file-storage.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>net.go-groups</groupId>
+            <artifactId>gg-cfs-client</artifactId>
+            <version>${gg-cfs-client.version}</version>
+        </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>maven-public</id>
-            <url>http://ggs2.space:9001/repository/maven-public/</url>
-        </repository>
-    </repositories>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>net/gogroups/gowaka/exception/GlobalExceptionHandler.java</exclude>
+                        <exclude>net/gogroups/gowaka/GowakaApplication.*</exclude>
+                        <exclude>net/gogroups/gowaka/domain/model/**</exclude>
+                        <exclude>net/gogroups/gowaka/dto/**</exclude>
+                        <exclude>net/gogroups/gowaka/network/api/cbs/model/**</exclude>
+                        <exclude>net/gogroups/gowaka/exception/**</exclude>
+                        <exclude>net/gogroups/gowaka/network/api/cbs/config/**</exclude>
+                        <exclude>net/gogroups/gowaka/domain/config/**</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>CLASS</counter>
+                                            <value>MISSEDCOUNT</value>
+                                            <maximum>0</maximum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
+    <repositories>
+        <repository>
+            <id>maven-public</id>
+            <url>http://ggs2.space:9001/repository/maven-public/</url>
+        </repository>
+    </repositories>
 </project>

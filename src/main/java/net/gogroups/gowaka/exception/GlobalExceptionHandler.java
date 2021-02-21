@@ -49,6 +49,14 @@ public class GlobalExceptionHandler {
         errorResponse.setEndpoint(request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
+    @ExceptionHandler(value = {ResourceAlreadyExistException.class}) // 422
+    public ResponseEntity<ErrorResponse> handleResourceAlreadyExistException(ResourceAlreadyExistException ex, HttpServletRequest request){
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setCode(RESOURCE_ALREADY_EXIST.toString());
+        errorResponse.setMessage(ex.getMessage());
+        errorResponse.setEndpoint(request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
     @ExceptionHandler(value = {AccessDeniedException.class}) //401
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request){
         ErrorResponse errorResponse = new ErrorResponse();
@@ -84,7 +92,7 @@ public class GlobalExceptionHandler {
         StringBuilder message = new StringBuilder("MethodArgumentNotValidException:");
 
         for(FieldError fieldError: fieldErrorList){
-            validationErrorResponse.getErrors().put(fieldError.getField(), fieldError.getDefaultMessage());
+            validationErrorResponse.addError(new ValidationErrorResponse.ErrorItem(fieldError.getField(), fieldError.getDefaultMessage()));
             message.append(" #").append(fieldError.getField());
         }
         message.append(" @errors.");

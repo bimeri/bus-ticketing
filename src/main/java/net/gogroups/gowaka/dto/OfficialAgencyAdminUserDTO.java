@@ -11,5 +11,6 @@ public class OfficialAgencyAdminUserDTO {
 
     private String id;
     private String fullName;
+    private String email;
 
 }

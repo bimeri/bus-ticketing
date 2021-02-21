@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
-public class PaymentTransaction {
+public class PaymentTransaction extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,11 +35,15 @@ public class PaymentTransaction {
     private String transactionStatus;
     private LocalDateTime paymentDate;
 
+    private Double agencyAmount;
+    private Double serviceChargeAmount;
+
     @OneToOne()
     @JoinColumn(name = "booked_journey_id", referencedColumnName = "id")
     private BookedJourney bookedJourney;
 
-    private LocalDateTime createAt = LocalDateTime.now();
+    @OneToOne(mappedBy = "paymentTransaction")
+    private RefundPaymentTransaction refundPaymentTransaction;
 
 
 }

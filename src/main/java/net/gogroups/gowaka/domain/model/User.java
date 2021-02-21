@@ -13,18 +13,23 @@ import java.util.List;
  */
 @Data
 @Entity
-public class User {
+public class User extends BaseEntity{
+
     @Id
     private String userId;
+    private String fullName;
+    private String email;
     private String phoneNumber;
     private String idCardNumber;
-    private LocalDateTime timestamp;
 
     @OneToMany(mappedBy = "user")
     List<BookedJourney> bookedJourneys;
 
     @ManyToOne
     private OfficialAgency officialAgency;
+
+    private Boolean  isAgencyAdminIndicator = false;
+
     @OneToOne
     private PersonalAgency personalAgency;
 

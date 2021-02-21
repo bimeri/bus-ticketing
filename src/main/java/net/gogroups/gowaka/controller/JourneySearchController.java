@@ -37,4 +37,9 @@ public class JourneySearchController {
         return ResponseEntity.ok(journeyService.searchJourney());
     }
 
+    @GetMapping("/public/journey/search")
+    public ResponseEntity<List<JourneyResponseDTO>> getAllAvailableJourney() {
+        return ResponseEntity.ok(journeyService.searchAllAvailableJourney());
+    }
+
 }

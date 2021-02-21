@@ -5,32 +5,33 @@ import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
+import net.gogroups.gowaka.exception.ApiException;
+import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.security.accessconfig.AppGrantedAuthority;
 import net.gogroups.security.accessconfig.JwtTokenProvider;
 import net.gogroups.security.accessconfig.UserDetailsImpl;
-import net.gogroups.security.model.ApiSecurityAccessToken;
-import net.gogroups.security.model.ApiSecurityChangePassword;
-import net.gogroups.security.model.ApiSecurityForgotPassword;
-import net.gogroups.security.model.ApiSecurityUser;
+import net.gogroups.security.model.*;
 import net.gogroups.security.service.ApiSecurityService;
-import net.gogroups.gowaka.exception.ResourceNotFoundException;
-import net.gogroups.gowaka.service.UserService;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.*;
  * Author: Edward Tanko <br/>
  * Date: 9/13/19 8:57 PM <br/>
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
 
     @Mock
@@ -55,18 +56,15 @@ public class UserServiceImplTest {
     @Mock
     private NotificationService mockNotificationService;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-
     ArgumentCaptor<ApiSecurityUser> apiSecurityUserArgumentCaptor;
     ArgumentCaptor<String> stringArgumentCaptor;
     ArgumentCaptor<User> userArgumentCaptor;
     ArgumentCaptor<ApiSecurityChangePassword> apiSecurityChangePasswordArgumentCaptor;
     ArgumentCaptor<ApiSecurityForgotPassword> apiSecurityForgotPasswordArgumentCaptor;
+    ArgumentCaptor<ApiSecurityVerifyEmail> apiSecurityVerifyEmailArgumentCaptor;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
 
         this.clientUserCredConfig = new ClientUserCredConfig();
         this.clientUserCredConfig.setClientId("client-id");
@@ -83,7 +81,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void createUser_calls_UserRepository_ApiSecurityService_with_proper_Values() {
+    void createUser_calls_UserRepository_ApiSecurityService_with_proper_Values() {
 
         CreateUserRequest createUserRequest = new CreateUserRequest();
         createUserRequest.setEmail("example@example.com");
@@ -92,6 +90,7 @@ public class UserServiceImplTest {
 
         ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
         apiSecurityUser.setId("12");
+        apiSecurityUser.setToken(new ApiSecurityAccessToken());
 
         ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
         accessToken.setToken("jwt-token");
@@ -129,7 +128,7 @@ public class UserServiceImplTest {
 
 
     @Test
-    public void loginUser_calls_ApiSecurityService() {
+    void loginUser_calls_ApiSecurityService() {
 
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
         emailPasswordDTO.setEmail("example@example.com");
@@ -166,12 +165,12 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
         assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null)");
+        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null, token=null)");
 
     }
 
     @Test
-    public void getNewToken_calls_ApiSecurityService() {
+    void getNewToken_calls_ApiSecurityService() {
 
         RefreshTokenDTO refreshTokenDTO = new RefreshTokenDTO();
         refreshTokenDTO.setRefreshToken("refresh-token-1");
@@ -202,7 +201,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void changeUserPassword_calls_ApiSecurityService() {
+    void changeUserPassword_calls_ApiSecurityService() {
         ChangePasswordDTO changePasswordDTO = new ChangePasswordDTO();
         changePasswordDTO.setEmail("example@example.com");
         changePasswordDTO.setOldPassword("secret");
@@ -222,7 +221,7 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void forgotUserPassword_calls_ApiSecurityService() {
+    void forgotUserPassword_calls_ApiSecurityService() {
         EmailDTO emailDTO = new EmailDTO();
         emailDTO.setEmail("example@example.com");
 
@@ -238,14 +237,14 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void getCurrentAuthUser_getUserInfo_from_securityContextHolder() {
+    void getCurrentAuthUser_getUserInfo_from_securityContextHolder() {
 
         UserDetailsImpl userDetails = new UserDetailsImpl();
         userDetails.setId("12");
         userDetails.setFullName("Jesus Christ");
         userDetails.setUsername("example@example.com");
         userDetails.setPassword("secret");
-        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+        userDetails.setAuthorities(Collections.singletonList(new AppGrantedAuthority("users")));
 
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
 
@@ -253,42 +252,42 @@ public class UserServiceImplTest {
         assertThat(currentAuthUser.getId()).isEqualTo("12");
         assertThat(currentAuthUser.getEmail()).isEqualTo("example@example.com");
         assertThat(currentAuthUser.getFullName()).isEqualTo("Jesus Christ");
-        assertThat(currentAuthUser.getRoles()).isEqualTo(Arrays.asList("users"));
+        assertThat(currentAuthUser.getRoles()).isEqualTo(Collections.singletonList("users"));
 
     }
 
     @Test
-    public void updateProfile_throwException_whenAuthUserNotFound() {
+    void updateProfile_throwException_whenAuthUserNotFound() {
 
         UserDetailsImpl userDetails = new UserDetailsImpl();
         userDetails.setId("12");
         userDetails.setFullName("Jesus Christ");
         userDetails.setUsername("example@example.com");
         userDetails.setPassword("secret");
-        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+        userDetails.setAuthorities(Collections.singletonList(new AppGrantedAuthority("users")));
 
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
 
         when(mockUserRepository.findById(any()))
                 .thenReturn(Optional.empty());
 
-        expectedException.expect(ResourceNotFoundException.class);
-        expectedException.expectMessage("User not found.");
-
         UpdateProfileDTO updateProfileDTO = new UpdateProfileDTO();
-        userService.updateProfile(updateProfileDTO);
+
+        ResourceNotFoundException resourceNotFoundException = assertThrows(ResourceNotFoundException.class, () -> userService.updateProfile(updateProfileDTO));
         verify(mockUserRepository).findById("12");
+        assertThat(resourceNotFoundException.getMessage()).isEqualTo("User not found.");
+
     }
 
     @Test
-    public void updateProfile_updateIDCardAndPhoneNumberButNotFullName_whenAuthUserFound() {
+    void updateProfile_updateIDCardAndPhoneNumberButNotFullName_whenAuthUserFound() {
 
         UserDetailsImpl userDetails = new UserDetailsImpl();
         userDetails.setId("12");
         userDetails.setFullName("Jesus Christ");
         userDetails.setUsername("example@example.com");
         userDetails.setPassword("secret");
-        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+        userDetails.setAuthorities(Collections.singletonList(new AppGrantedAuthority("users")));
 
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
 
@@ -303,7 +302,7 @@ public class UserServiceImplTest {
         userService.updateProfile(updateProfileDTO);
         verify(mockUserRepository).findById("12");
         verify(mockUserRepository).save(userArgumentCaptor.capture());
-        verifyZeroInteractions(mockApiSecurityService);
+        verifyNoInteractions(mockApiSecurityService);
 
         User userValue = userArgumentCaptor.getValue();
         assertThat(userValue.getIdCardNumber()).isEqualTo("123456789");
@@ -311,14 +310,14 @@ public class UserServiceImplTest {
     }
 
     @Test
-    public void updateProfile_updateIDCardAndPhoneNumberAndFullName_whenAuthUserFound() {
+    void updateProfile_updateIDCardAndPhoneNumberAndFullName_whenAuthUserFound() {
 
         UserDetailsImpl userDetails = new UserDetailsImpl();
         userDetails.setId("12");
         userDetails.setFullName("Jesus Christ");
         userDetails.setUsername("example@example.com");
         userDetails.setPassword("secret");
-        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("users")));
+        userDetails.setAuthorities(Collections.singletonList(new AppGrantedAuthority("users")));
 
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()));
 
@@ -343,6 +342,49 @@ public class UserServiceImplTest {
         User userValue = userArgumentCaptor.getValue();
         assertThat(userValue.getIdCardNumber()).isEqualTo("123456789");
         assertThat(userValue.getPhoneNumber()).isEqualTo("67676767676");
+    }
+
+    @Test
+    void verifyEmail_calls_ApiSecurityService() {
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("example@example.com");
+
+        apiSecurityVerifyEmailArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityVerifyEmail.class);
+        userService.verifyEmail(emailDTO);
+
+        verify(mockApiSecurityService).verifyEmail(apiSecurityVerifyEmailArgumentCaptor.capture());
+
+        ApiSecurityVerifyEmail value = apiSecurityVerifyEmailArgumentCaptor.getValue();
+        assertThat(value.getApplicationName()).isEqualTo(clientUserCredConfig.getAppName());
+        assertThat(value.getUsername()).isEqualTo("example@example.com");
+    }
+
+    @Test
+    public void validateGWUserByEmail_whenEmailInvalid_shouldThrowResourceNotFoundException(){
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.empty());
+        EmailDTO dto = new EmailDTO();
+        dto.setEmail("example@example.com");
+        ApiException apiException = assertThrows(ApiException.class,
+                () -> userService.validateGWUserByEmail(dto));
+        MatcherAssert.assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
+        MatcherAssert.assertThat(apiException.getMessage(), is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage()));
+    }
+
+    @Test
+    public void validateGWUserByEmail_whenEmailValid_shouldReturnGWUserDTO() {
+        User you = new User();
+        you.setEmail("you@example.com");
+        you.setFullName("you");
+        EmailDTO dto = new EmailDTO();
+        dto.setEmail(you.getEmail());
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.of(you));
+        GWUserDTO userDTO = userService.validateGWUserByEmail(dto);
+        verify(mockUserRepository).findFirstByEmail(stringArgumentCaptor.capture());
+        String emailChecked = stringArgumentCaptor.getValue();
+        assertThat(emailChecked).isEqualTo(dto.getEmail());
+        assertThat(userDTO.getEmail()).isEqualTo(you.getEmail());
+        assertThat(userDTO.getFullName()).isEqualTo(you.getFullName());
     }
 
 }

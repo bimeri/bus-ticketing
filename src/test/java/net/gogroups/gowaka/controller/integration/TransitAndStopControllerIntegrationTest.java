@@ -6,13 +6,11 @@ import net.gogroups.gowaka.domain.model.TransitAndStop;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.dto.LocationResponseDTO;
 import net.gogroups.gowaka.dto.LocationDTO;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import net.gogroups.gowaka.dto.LocationResponseDTO;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,8 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -34,8 +31,7 @@ import java.util.Collections;
 
 import static net.gogroups.gowaka.TestUtils.createToken;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * @author Nnouka Stephen
@@ -43,10 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringJUnit4ClassRunner.class)
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@WebAppConfiguration
 @ActiveProfiles("test")
+@ExtendWith(SpringExtension.class)
 public class TransitAndStopControllerIntegrationTest {
 
     @Value("${security.jwt.token.privateKey}")
@@ -65,9 +59,6 @@ public class TransitAndStopControllerIntegrationTest {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private User user;
 
     private MockRestServiceServer mockServer;
@@ -82,13 +73,13 @@ public class TransitAndStopControllerIntegrationTest {
             "}";
     private String jwtToken;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         mockServer = MockRestServiceServer.createServer(restTemplate);
         User newUser = new User();
         newUser.setUserId("12");
-        newUser.setTimestamp(LocalDateTime.now());
+        newUser.setCreatedAt(LocalDateTime.now());
 
         this.user = userRepository.save(newUser);
 
@@ -115,14 +106,7 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Test
     public void transit_should_return_400_bad_request() throws Exception {
-        String badResponse = "{\n" +
-                "  \"code\": \"VALIDATION_ERROR\",\n" +
-                "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
-                "  \"endpoint\": \"/api/protected/location\",\n" +
-                "  \"errors\": {\n" +
-                "    \"country\": \"country is required\"\n" +
-                "  }\n" +
-                "}";
+
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
@@ -134,8 +118,9 @@ public class TransitAndStopControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(badResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("country"))
+                .andExpect(jsonPath("$.errors.[0].message").value("country is required"));
     }
 
     @Test
@@ -165,14 +150,6 @@ public class TransitAndStopControllerIntegrationTest {
 
     @Test
     public void transit_update_should_return_400_bad_request() throws Exception {
-        String badResponse = "{\n" +
-                "  \"code\": \"VALIDATION_ERROR\",\n" +
-                "  \"message\": \"MethodArgumentNotValidException: #country @errors.\",\n" +
-                "  \"endpoint\": \"/api/protected/location/1\",\n" +
-                "  \"errors\": {\n" +
-                "    \"country\": \"country is required\"\n" +
-                "  }\n" +
-                "}";
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
@@ -184,8 +161,9 @@ public class TransitAndStopControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(badResponse))
-                .andReturn();
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.[0].field").value("country"))
+                .andExpect(jsonPath("$.errors.[0].message").value("country is required"));
     }
 
     @Test

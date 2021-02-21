@@ -14,6 +14,7 @@ import java.util.List;
 @Entity
 public class Bus extends Car{
 
+    @Column(name = "num_of_seats")
     private Integer numberOfSeats;
 
     @ManyToOne

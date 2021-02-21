@@ -4,6 +4,8 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -11,28 +13,39 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
-public class BookedJourney {
+public class BookedJourney extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     private User user;
-    @Embedded
-    private Passenger passenger;
+
+    @OneToMany(mappedBy = "bookedJourney", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<Passenger> passengers = new ArrayList<>();
+
     @ManyToOne
     private Journey journey;
+
     @ManyToOne
     private TransitAndStop destination;
 
+    @Column(name = "amount")
     private Double amount;
-    private Boolean passengerCheckedInIndicator;
-
-    private String checkedInCode;
+    private Boolean isAgencyBooking;
 
     @OneToOne(mappedBy = "bookedJourney")
     private PaymentTransaction paymentTransaction;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Boolean smsNotification = Boolean.FALSE;
+
+    @ManyToOne
+    @JoinColumn(name = "agency_user_id")
+    private User agencyUser;
+
+    public void addPassenger(Passenger passenger){
+        this.passengers.add(passenger);
+        passenger.setBookedJourney(this);
+    }
 
 }

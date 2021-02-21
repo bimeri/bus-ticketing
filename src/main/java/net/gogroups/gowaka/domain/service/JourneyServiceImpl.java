@@ -1,6 +1,16 @@
 package net.gogroups.gowaka.domain.service;
 
-import lombok.Builder;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.models.auth.In;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.gogroups.cfs.model.CustomerDTO;
+import net.gogroups.cfs.model.SurveyDTO;
+import net.gogroups.cfs.service.CfsClientService;
+import net.gogroups.dto.PaginatedResponse;
+import net.gogroups.gowaka.constant.RefundStatus;
+import net.gogroups.gowaka.constant.notification.EmailFields;
+import net.gogroups.gowaka.constant.notification.SmsFields;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.DTFFromDateStr;
@@ -10,19 +20,24 @@ import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.gogroups.notification.model.EmailAddress;
+import net.gogroups.notification.model.SendEmailDTO;
+import net.gogroups.notification.model.SendSmsDTO;
+import net.gogroups.notification.service.NotificationService;
+import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
+import net.gogroups.storage.constants.FileAccessType;
+import net.gogroups.storage.service.FileStorageService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -30,27 +45,27 @@ import java.util.stream.Collectors;
  * @date 17 Oct 2019
  */
 @Service
-@Builder
+@Slf4j
+@RequiredArgsConstructor
 public class JourneyServiceImpl implements JourneyService {
-    private UserService userService;
-    private UserRepository userRepository;
-    private TransitAndStopRepository transitAndStopRepository;
-    private JourneyRepository journeyRepository;
-    private JourneyStopRepository journeyStopRepository;
-    private BookedJourneyRepository bookedJourneyRepository;
-    private final ZoneId zoneId = ZoneId.of("GMT");
-    private final Logger logger = LoggerFactory.getLogger(JourneyServiceImpl.class);
 
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final TransitAndStopRepository transitAndStopRepository;
+    private final JourneyRepository journeyRepository;
+    private final JourneyStopRepository journeyStopRepository;
+    private final BookedJourneyRepository bookedJourneyRepository;
+    private final GgCfsSurveyTemplateJsonRepository ggCfsSurveyTemplateJsonRepository;
+    private final CfsClientService cfsClientService;
+    private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
+    private final EmailContentBuilder emailContentBuilder;
 
-    @Autowired
-    public JourneyServiceImpl(UserService userService, UserRepository userRepository, TransitAndStopRepository transitAndStopRepository, JourneyRepository journeyRepository, JourneyStopRepository journeyStopRepository, BookedJourneyRepository bookedJourneyRepository) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.transitAndStopRepository = transitAndStopRepository;
-        this.journeyRepository = journeyRepository;
-        this.journeyStopRepository = journeyStopRepository;
-        this.bookedJourneyRepository = bookedJourneyRepository;
-    }
+    private static final ZoneId zoneId = ZoneId.of("GMT");
+
+    @Value("${notification.email-from-address)")
+    private String fromEmail = "no-reply@mygowaka.com";
+
 
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
@@ -68,7 +83,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public List<JourneyResponseDTO> getAllOfficialAgencyJourneys() {
         OfficialAgency officialAgency = getOfficialAgency(verifyCurrentAuthUser());
-        return journeyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc().stream()
+        return journeyRepository.findAllByOrderByCreatedAtDescArrivalIndicatorAsc().stream()
                 .filter(journey -> {
                     Car car = journey.getCar();
                     if (car == null) return false;
@@ -81,6 +96,30 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
+    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit) {
+
+        Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
+
+        List<Long> busIds = verifyCurrentAuthUser().getOfficialAgency().getBuses().stream()
+                .map(Car::getId)
+                .collect(Collectors.toList());
+        Page<Journey> journeyPage = journeyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(busIds, paging);
+
+        List<JourneyResponseDTO> journeys = journeyPage.stream()
+                .map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+
+        return PaginatedResponse.<JourneyResponseDTO>builder()
+                .items(journeys)
+                .count(journeys.size())
+                .total((int) journeyPage.getTotalElements())
+                .totalPages(journeyPage.getTotalPages())
+                .limit(limit)
+                .offset((int) paging.getOffset())
+                .pageNumber(pageNumber)
+                .build();
+    }
+
+    @Override
     public JourneyResponseDTO getJourneyById(Long journeyId) {
         Journey journey = getJourney(journeyId);
         List<Bus> buses = getOfficialAgency(verifyCurrentAuthUser())
@@ -89,6 +128,12 @@ public class JourneyServiceImpl implements JourneyService {
         if (buses.isEmpty()) {
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
+        return mapToJourneyResponseDTO(journey);
+    }
+
+    @Override
+    public JourneyResponseDTO getAJourneyById(Long journeyId) {
+        Journey journey = getJourney(journeyId);
         return mapToJourneyResponseDTO(journey);
     }
 
@@ -133,7 +178,16 @@ public class JourneyServiceImpl implements JourneyService {
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
             journeyRepository.save(journey);
         }
+        if (journeyDepartureIndicator.getDepartureIndicator()) {
+            try {
+                sendSMSAndEmailNotificationToSubscribers(journey, "just stared");
+            }catch (Exception e){
+                log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
+                e.printStackTrace();
+            }
+        }
     }
+
 
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
@@ -142,6 +196,29 @@ public class JourneyServiceImpl implements JourneyService {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             journeyRepository.save(journey);
+        }
+        if (journeyArrivalIndicatorDTO.getArrivalIndicator()) {
+            try {
+                List<CustomerDTO> customers = new ArrayList<>();
+                journey.getBookedJourneys().stream()
+                        .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(PayAmGoPaymentStatus.COMPLETED.toString()))
+                        .map(BookedJourney::getPassengers)
+                        .forEach(passengers -> passengers.forEach(passenger -> customers.add(new CustomerDTO(passenger.getEmail(), passenger.getName()))));
+
+                GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = ggCfsSurveyTemplateJsonRepository.findById("1").get();
+                SurveyDTO surveyDTO = new ObjectMapper().readValue(ggCfsSurveyTemplateJson.getSurveyTemplateJson(), SurveyDTO.class);
+                surveyDTO.setName("GoWaka Journey - " + journey.getCar().getName() + " from " + journey.getDepartureLocation().getLocation().getAddress());
+                cfsClientService.createAndAddCustomerToSurvey(surveyDTO, customers);
+            } catch (Exception e) {
+                log.error("Error sending request to CFS ");
+                e.printStackTrace();
+            }
+            try {
+                sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
+            } catch (Exception e){
+                log.error("Error sending request End journey notification sms for JourneyId: {}", journey.getId());
+                e.printStackTrace();
+            }
         }
     }
 
@@ -153,10 +230,10 @@ public class JourneyServiceImpl implements JourneyService {
         TransitAndStop transitAndStop = getTransitAndStop(stopId);
         if (isStopNotBooked(journey, transitAndStop)) {
             List<JourneyStop> journeyStops = journey.getJourneyStops();
-            logger.info("removing all previous journeyStops");
+            log.info("removing all previous journeyStops");
             if (journey.getId() != null)
                 journeyStopRepository.deleteAllByJourneyId(journey.getId());
-            logger.info("setting new journeyStops");
+            log.info("setting new journeyStops");
             journey.setJourneyStops(journeyStops.stream().filter(
                     j -> j.getTransitAndStop() != null && !j.getTransitAndStop().equals(transitAndStop)
             ).collect(Collectors.toList()));
@@ -196,7 +273,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public List<JourneyResponseDTO> getAllPersonalAgencyJourneys() {
         PersonalAgency personalAgency = getPersonalAgency(verifyCurrentAuthUser());
-        return journeyRepository.findAllByOrderByTimestampDescArrivalIndicatorAsc()
+        return journeyRepository.findAllByOrderByCreatedAtDescArrivalIndicatorAsc()
                 .stream().filter(
                         journey -> {
                             Car car = journey.getCar();
@@ -218,19 +295,19 @@ public class JourneyServiceImpl implements JourneyService {
             checkJourneyCarInPersonalAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
             journey = journeyRepository.save(journey);
-            logger.info("Departure Indicator Updated to: {}", journey.getDepartureIndicator());
+            log.info("Departure Indicator Updated to: {}", journey.getDepartureIndicator());
         }
     }
 
     @Override
     public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
         Journey journey = getJourney(journeyId);
-        logger.info("Arrival Indicator: {}", journey.getArrivalIndicator());
+        log.info("Arrival Indicator: {}", journey.getArrivalIndicator());
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicator.getArrivalIndicator());
             journey = journeyRepository.save(journey);
-            logger.info("Arrival Indicator Updated to: {}", journey.getArrivalIndicator());
+            log.info("Arrival Indicator Updated to: {}", journey.getArrivalIndicator());
         }
     }
 
@@ -298,6 +375,13 @@ public class JourneyServiceImpl implements JourneyService {
             journeys.addAll(getJourneyResponseDTOS(departureLocationId, destinationLocationId, today));
         }
         return journeys;
+    }
+
+    @Override
+    public List<JourneyResponseDTO> searchAllAvailableJourney() {
+        return journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc().stream()
+                .map(this::mapToJourneyResponseDTO)
+                .collect(Collectors.toList());
     }
 
     private List<JourneyResponseDTO> getJourneyResponseDTOS(Long departureLocationId, Long destinationLocationId, LocalDateTime dateTime) {
@@ -405,7 +489,10 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car) {
+        // Note previous car in journey context
+        Car prevCar = journey.getCar();
         journey.setCar(car);
+
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null : journeyDTO.getDestination().getTransitAndStopId()
                 , "Destination");
@@ -420,15 +507,15 @@ public class JourneyServiceImpl implements JourneyService {
             journeyStop1.setJourney(journey);
             journeyStops.add(journeyStop1);
         }
-        logger.info("removing all previous journeyStops");
+        log.info("removing all previous journeyStops");
         if (journey.getId() != null)
             journeyStopRepository.deleteAllByJourneyId(journey.getId());
-        logger.info("setting new journeyStops");
+        log.info("setting new journeyStops");
         journey.setJourneyStops(journeyStops);
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        journey.setTimestamp(TimeProvider.now());
+        journey.setCreatedAt(TimeProvider.now());
 
         Driver driver = new Driver();
         if (journeyDTO.getDriver() != null) {
@@ -443,6 +530,25 @@ public class JourneyServiceImpl implements JourneyService {
                 journeyDTO.getDepartureTime().toInstant().atZone(zoneId).toLocalDateTime());
 
         journey = journeyRepository.save(journey);
+
+        // check if this car's seat structure is different from previous car seat structure
+        // then send notification where necessary
+        // note that null condition is already taken care of by instanceof
+        if (prevCar instanceof Bus && car instanceof Bus) {
+            Integer prevSeatsNum = ((Bus) prevCar).getNumberOfSeats();
+            Integer currSeatsNum = ((Bus) car).getNumberOfSeats();
+            if (!prevSeatsNum.equals(currSeatsNum)) {
+                try {
+                    sendSMSAndEmailNotificationToSubscribers(journey,
+                            "changed seat structure: from "
+                                    + prevSeatsNum + " to " + currSeatsNum + " seats" );
+                }catch (Exception e){
+                    log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
+                    e.printStackTrace();
+                }
+            }
+        }
+
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
@@ -460,8 +566,8 @@ public class JourneyServiceImpl implements JourneyService {
                         )
                 ).collect(Collectors.toList())
         );
-        journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
-                Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
+        journeyResponseDTO.setTimestamp(journey.getCreatedAt() == null ? null :
+                Date.from(journey.getCreatedAt().atZone(zoneId).toInstant()));
 
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
@@ -534,14 +640,18 @@ public class JourneyServiceImpl implements JourneyService {
             if (car instanceof Bus) {
                 Bus bus = (Bus) car;
                 OfficialAgency officialAgency = bus.getOfficialAgency();
-                if (officialAgency != null) carDTO.setAgencyName(officialAgency.getAgencyName());
+                if (officialAgency != null) {
+                    carDTO.setAgencyName(officialAgency.getAgencyName());
+                    carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
+                    carDTO.setPolicy(officialAgency.getPolicy());
+                }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {
                 PersonalAgency personalAgency = ((SharedRide) car).getPersonalAgency();
                 if (personalAgency != null) carDTO.setAgencyName(personalAgency.getName());
             }
-            carDTO.setTimestamp(car.getTimestamp() == null ? null :
-                    Date.from(car.getTimestamp().atZone(zoneId).toInstant()));
+            carDTO.setTimestamp(car.getCreatedAt() == null ? null :
+                    Date.from(car.getCreatedAt().atZone(zoneId).toInstant()));
         }
         return carDTO;
     }
@@ -582,14 +692,15 @@ public class JourneyServiceImpl implements JourneyService {
             journeyResponseDTO.setEstimatedArrivalTime(journey.getEstimatedArrivalTime() == null ? null :
                     Date.from(journey.getEstimatedArrivalTime().atZone(zoneId).toInstant()));
 
-            journeyResponseDTO.setTimestamp(journey.getTimestamp() == null ? null :
-                    Date.from(journey.getTimestamp().atZone(zoneId).toInstant()));
+            journeyResponseDTO.setTimestamp(journey.getCreatedAt() == null ? null :
+                    Date.from(journey.getCreatedAt().atZone(zoneId).toInstant()));
         } catch (Exception e) {
-            logger.warn("An exception occurred during get: {}", e.getMessage());
+            log.warn("An exception occurred during get: {}", e.getMessage());
         }
         journeyResponseDTO.setDriver(getDriverDTO(journey.getDriver()));
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
+        journeyResponseDTO.setDepartureTimeDue(LocalDateTime.now().isAfter(journey.getDepartureTime()));
         return journeyResponseDTO;
     }
 
@@ -715,5 +826,54 @@ public class JourneyServiceImpl implements JourneyService {
                 bookedJourney -> bookedJourney != null && bookedJourney.getJourney() != null && bookedJourney.getJourney().equals(journey)
                 /*&& bookedJourney.getDestination() != null && bookedJourney.getDestination().equals(transitAndStop)*/
         );
+    }
+
+    private void sendSMSAndEmailNotificationToSubscribers(Journey journey, String appendMessage) {
+
+        Set<String> passengersEmails = new HashSet<>();
+        journey.getBookedJourneys().stream()
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equalsIgnoreCase(PayAmGoPaymentStatus.COMPLETED.name()))
+                .filter(bookedJourney -> {
+                    RefundPaymentTransaction refundPaymentTransaction = bookedJourney.getPaymentTransaction().getRefundPaymentTransaction();
+                    if (refundPaymentTransaction == null) {
+                        return true;
+                    } else {
+                        return refundPaymentTransaction.getRefundStatus().equalsIgnoreCase(RefundStatus.PENDING.name());
+                    }
+                }).forEach(bookedJourney -> {
+            Set<String> passengersPhoneNumbers = new HashSet<>();
+            bookedJourney.getPassengers().forEach(passenger -> {
+                if (bookedJourney.getSmsNotification()) {
+                    passengersPhoneNumbers.add(passenger.getPhoneNumber());
+                }
+                if (passenger.getEmail() != null) {
+                    passengersEmails.add(passenger.getEmail());
+                }
+            });
+
+            String message = "Your trip to " + bookedJourney.getDestination().getLocation().getCity() + " on GoWaka " + appendMessage;
+            passengersPhoneNumbers.forEach(phone -> {
+                SendSmsDTO sendSmsDTO = new SendSmsDTO();
+                sendSmsDTO.setMessage(message);
+                sendSmsDTO.setPhoneNumber(phone);
+                sendSmsDTO.setSenderLabel(SmsFields.SMS_LABEL.getMessage());
+                sendSmsDTO.setProcessingNumber(UUID.randomUUID().toString());
+                notificationService.sendSMS(sendSmsDTO);
+            });
+        });
+
+        String message = emailContentBuilder.buildJourneyStatusEmail("Your GoWaka trip departing from " + journey.getDepartureLocation().getLocation().getCity() + " " + appendMessage);
+
+        SendEmailDTO emailDTO = new SendEmailDTO();
+        emailDTO.setSubject(EmailFields.JOURNEY_UPDATES.getMessage());
+        emailDTO.setMessage(message);
+        Set<EmailAddress> emailAddresses = passengersEmails.stream()
+                .map(email -> new EmailAddress(email, email))
+                .collect(Collectors.toSet());
+
+        emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(fromEmail, fromEmail)));
+        emailDTO.setCcAddresses(Collections.emptyList());
+        emailDTO.setBccAddresses(new ArrayList<>(emailAddresses));
+        notificationService.sendEmail(emailDTO);
     }
 }

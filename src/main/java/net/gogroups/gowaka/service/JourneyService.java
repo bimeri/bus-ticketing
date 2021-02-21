@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.service;
 
+import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.domain.model.Journey;
 import net.gogroups.gowaka.dto.*;
 
@@ -17,7 +18,11 @@ public interface JourneyService {
 
     List<JourneyResponseDTO> getAllOfficialAgencyJourneys();
 
+    PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit);
+
     JourneyResponseDTO getJourneyById(Long journeyId);
+
+    JourneyResponseDTO getAJourneyById(Long journeyId);
 
     void addStop(Long journeyId, AddStopDTO addStopDTO);
 
@@ -48,7 +53,9 @@ public interface JourneyService {
     List<JourneyResponseDTO> searchJourney(Long departureLocationId, Long destinationLocationId, String time);
 
     List<JourneyResponseDTO> searchJourney();
+    List<JourneyResponseDTO> searchAllAvailableJourney();
 
     // service level methods
+
     void checkJourneyCarInOfficialAgency(Journey journey);
 }

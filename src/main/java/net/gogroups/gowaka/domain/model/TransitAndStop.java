@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @Entity
 @EqualsAndHashCode
-public class TransitAndStop {
+public class TransitAndStop extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

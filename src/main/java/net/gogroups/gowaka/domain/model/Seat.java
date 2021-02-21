@@ -10,7 +10,7 @@ import javax.persistence.*;
  */
 @Data
 @Entity
-public class Seat {
+public class Seat extends BaseEntity{
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

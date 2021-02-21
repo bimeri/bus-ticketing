@@ -1,8 +1,11 @@
 package net.gogroups.gowaka.dto;
 
 import lombok.Data;
+import net.gogroups.gowaka.constant.RefundStatus;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Author: Edward Tanko <br/>
@@ -12,31 +15,39 @@ import java.time.LocalDateTime;
 public class BookedJourneyStatusDTO {
 
     private Long id;
+    private Long transactionId;
+    private Long journeyId;
+
     private Double amount;
     private String currencyCode;
     private String paymentStatus;
-    private String checkedInCode;
-    private String qRCheckedInImage;
-    private String qRCheckedInImageUrl;
     private String paymentReason;
     private String paymentChannel;
     private String paymentChannelTransactionNumber;
     private LocalDateTime paymentDate;
-    private boolean checkedIn;
 
-    private String passengerName;
-    private String passengerIdNumber;
-    private Integer passengerSeatNumber;
-    private String passengerEmail;
-    private String passengerPhoneNumber;
+    private List<PassengerDTO> passengers = new ArrayList<>();
 
     private String carName;
     private String carLicenseNumber;
     private String carDriverName;
+    private String agencyName;
+    private String agencyLogo;
 
     private String departureLocation;
     private LocalDateTime departureTime;
     private LocalDateTime estimatedArrivalTime;
     private String destinationLocation;
+    private Boolean departureIndicator;
+    private Boolean arrivalIndicator;
+    private Boolean subscribeToSMSNotification;
+
+    private Double agencyAmount;
+    private Double serviceChargeAmount;
+
+    private Boolean hasRefundRequest;
+    private Long refundId;
+    private RefundStatus refundStatus;
+    private Double refundAmount;
 
 }

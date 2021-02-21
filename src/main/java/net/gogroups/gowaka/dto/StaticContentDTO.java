@@ -1,4 +1,4 @@
-package net.gogroups.gowaka.network.api.cbs.model;
+package net.gogroups.gowaka.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -6,14 +6,11 @@ import lombok.NoArgsConstructor;
 
 /**
  * Author: Edward Tanko <br/>
- * Date: 6/21/20 4:55 PM <br/>
+ * Date: 2/18/21 7:15 PM <br/>
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CBSEmailPassword {
-
-    private String email;
-    private String password;
-
+public class StaticContentDTO {
+    private String content;
 }

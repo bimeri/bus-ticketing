@@ -4,15 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.dto.CreateUserRequest;
 import net.gogroups.gowaka.dto.EmailDTO;
 import net.gogroups.gowaka.dto.EmailPasswordDTO;
 import net.gogroups.gowaka.dto.UpdateProfileDTO;
 import net.gogroups.security.model.ApiSecurityAccessToken;
-import net.gogroups.gowaka.dto.CreateUserRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -41,10 +41,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Date: 9/14/19 10:31 AM <br/>
  */
 @SpringBootTest
-@RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@ExtendWith(SpringExtension.class)
 public class UserControllerIntegrationTest {
 
     @Autowired
@@ -83,7 +83,12 @@ public class UserControllerIntegrationTest {
             "  \"username\": \"eddytnk\",\n" +
             "  \"fullName\": \"Edward Tanko\",\n" +
             "  \"email\": \"tanko.edward@go-groups.net\",\n" +
-            "  \"roles\": \"users\"\n" +
+            "  \"roles\": \"users\",\n" +
+            "  \"token\": {\n" +
+            "  \"token\": \"token\",\n" +
+            "  \"refreshToken\": \"refresh-token\",\n" +
+            "  \"expiredIn\": \"100000\"" +
+            "  }\n" +
             "}";
 
     private String failureUserTokenResponse = "{\n" +
@@ -108,25 +113,24 @@ public class UserControllerIntegrationTest {
 
     private MockRestServiceServer mockServer;
 
-    @Before
-    public void setUp() throws JsonProcessingException {
+    @BeforeEach
+    void setUp() throws JsonProcessingException {
         mockServer = MockRestServiceServer.createServer(restTemplate);
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         mockServer.reset();
     }
 
     private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
-//                .andExpect(header("content-type", "application/json;charset=UTF-8"))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    public void createUser_success_returns_200() throws Exception {
+    void createUser_success_returns_200() throws Exception {
 
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
@@ -137,7 +141,7 @@ public class UserControllerIntegrationTest {
         startMockServerWith("http://localhost:8082/api/public/login",
                 HttpStatus.OK, successNotificationTokenResponse);
         mockServer.expect(requestTo("http://localhost:8082/api/protected/sendEmail"))
-                .andExpect(header("content-type", "application/json;charset=UTF-8"))
+                .andExpect(header("content-type", "application/json"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
 
@@ -160,7 +164,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void createUser_failure_returns_422() throws Exception {
+    void createUser_failure_returns_422() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/clients/authorized",
                 HttpStatus.OK, successClientTokenResponse);
@@ -187,7 +191,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void loginUser_success_returns_200() throws Exception {
+    void loginUser_success_returns_200() throws Exception {
 
         User user = new User();
         user.setUserId("12");
@@ -219,7 +223,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void loginUser_failed_returns_401() throws Exception {
+    void loginUser_failed_returns_401() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/authorized",
                 HttpStatus.UNAUTHORIZED, failureUserTokenResponse);
@@ -243,7 +247,7 @@ public class UserControllerIntegrationTest {
 
 
     @Test
-    public void changeUserPassword_success_returns_204() throws Exception {
+    void changeUserPassword_success_returns_204() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/password",
                 HttpStatus.NO_CONTENT, "");
@@ -263,7 +267,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void changeUserPassword_failure_returns_422() throws Exception {
+    void changeUserPassword_failure_returns_422() throws Exception {
 
         startMockServerWith("http://localhost:8082/api/public/v1/users/password",
                 HttpStatus.UNPROCESSABLE_ENTITY, failureChangePasswordResponse);
@@ -286,7 +290,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void forgotUserPassword_success_return_204() throws Exception {
+    void forgotUserPassword_success_return_204() throws Exception {
         startMockServerWith("http://localhost:8082/api/public/v1/users/otp",
                 HttpStatus.NO_CONTENT, "");
 
@@ -303,7 +307,7 @@ public class UserControllerIntegrationTest {
     }
 
     @Test
-    public void updateProfile_success_return_204() throws Exception {
+    void updateProfile_success_return_204() throws Exception {
 
         User user = new User();
         user.setUserId("12");
@@ -328,6 +332,59 @@ public class UserControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent());
 
+    }
+
+    @Test
+    void verifyEmail_success_return_204() throws Exception {
+        startMockServerWith("http://localhost:8082/api/public/v1/users/verify_email_link",
+                HttpStatus.NO_CONTENT, "");
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("info@go-groups.net");
+
+        RequestBuilder requestBuilder = post("/api/public/users/verify_email")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent())
+                .andReturn();
+    }
+
+    @Test
+    void validateGWUserByEmail_failure_returns_404() throws Exception {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("info@go-groups.net");
+
+        RequestBuilder requestBuilder = post("/api/protected/users/verify_user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+    @Test
+    void validateGWUserByEmail_success_returns_200() throws Exception {
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("you.there@example.com");
+        User user = new User();
+        user.setUserId("3");
+        user.setFullName("you there");
+        user.setEmail(emailDTO.getEmail());
+        userRepository.save(user);
+
+        String expectedResponse = "{\"email\":\"you.there@example.com\",\"fullName\":\"you there\"}";
+        RequestBuilder requestBuilder = post("/api/protected/users/validate_user")
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
     }
 
 }

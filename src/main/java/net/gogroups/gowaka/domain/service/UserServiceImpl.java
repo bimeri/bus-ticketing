@@ -2,6 +2,8 @@ package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
+import net.gogroups.gowaka.exception.ApiException;
+import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
@@ -15,6 +17,7 @@ import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -77,14 +80,21 @@ public class UserServiceImpl implements UserService {
 
         User user = new User();
         user.setUserId(savedApiSecurityUser.getId());
-        user.setTimestamp(LocalDateTime.now());
+        user.setEmail(savedApiSecurityUser.getEmail());
+        user.setFullName(savedApiSecurityUser.getFullName());
         userRepository.save(user);
+
+        TokenDTO tokenDTO = new TokenDTO();
+        tokenDTO.setAccessToken(savedApiSecurityUser.getToken().getToken());
+        tokenDTO.setExpiredIn(savedApiSecurityUser.getToken().getExpiredIn());
+        tokenDTO.setRefreshToken(savedApiSecurityUser.getToken().getRefreshToken());
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getUserId());
         userDTO.setFullName(createUserRequest.getFullName());
         userDTO.setEmail(createUserRequest.getEmail());
         userDTO.setRoles(Collections.singletonList(roles));
+        userDTO.setToken(tokenDTO);
 
         sendWelcomeEmail(createUserRequest);
 
@@ -158,13 +168,29 @@ public class UserServiceImpl implements UserService {
             throw new ResourceNotFoundException("User not found.");
         }
         User user = userOptional.get();
-        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
-        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
-        userRepository.save(user);
         if (!currentAuthUser.getFullName().equals(updateProfileDTO.getFullName())) {
             ApiSecurityAccessToken apiSecurityAccessToken = getApiSecurityAccessToken();
             apiSecurityService.updateUserInfo(user.getUserId(), "FULL_NAME", updateProfileDTO.getFullName(), apiSecurityAccessToken.getToken());
+            user.setFullName(updateProfileDTO.getFullName());
         }
+        user.setIdCardNumber(updateProfileDTO.getIdCardNumber());
+        user.setPhoneNumber(updateProfileDTO.getPhoneNumber());
+        userRepository.save(user);
+    }
+
+    @Override
+    public void verifyEmail(EmailDTO emailDTO) {
+
+        ApiSecurityVerifyEmail apiSecurityVerifyEmail = new ApiSecurityVerifyEmail();
+        apiSecurityVerifyEmail.setUsername(emailDTO.getEmail());
+        apiSecurityVerifyEmail.setApplicationName(clientUserCredConfig.getAppName());
+        apiSecurityService.verifyEmail(apiSecurityVerifyEmail);
+    }
+
+    @Override
+    public GWUserDTO validateGWUserByEmail(EmailDTO emailDTO) {
+        User user = getUserByEmail(emailDTO.getEmail());
+        return new GWUserDTO(user.getEmail(), user.getFullName());
     }
 
     @Override
@@ -226,6 +252,18 @@ public class UserServiceImpl implements UserService {
         tokenDTO.setRefreshToken(userToken.getRefreshToken());
         tokenDTO.setExpiredIn(userToken.getExpiredIn());
         return tokenDTO;
+    }
+
+    private User getUserByEmail(String email) {
+        Optional<User> optional = userRepository.findFirstByEmail(email);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
+        throw new ApiException(
+                ErrorCodes.RESOURCE_NOT_FOUND.getMessage(),
+                ErrorCodes.RESOURCE_NOT_FOUND.toString(),
+                HttpStatus.NOT_FOUND
+        );
     }
 
 }

@@ -20,4 +20,5 @@ public class UserDTO {
     // there are additional fields on Gowka Database
     private String phoneNumber;
     private String idCardNumber;
+    private TokenDTO token;
 }

@@ -4,27 +4,53 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 /**
  * Author: Edward Tanko <br/>
  * Date: 9/3/19 4:41 PM <br/>
  */
 @Data
-@Embeddable
-@NoArgsConstructor
+@Entity
 @AllArgsConstructor
-public class Passenger {
+@NoArgsConstructor
+public class Passenger extends BaseEntity{
 
-    private String passengerName;
-    private String passengerIdNumber;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "id_number")
+    private String idNumber;
+
+    @Column(name = "seat_number")
     private Integer seatNumber;
-    private String passengerEmail;
-    private String passengerPhoneNumber;
 
-    public Passenger(String passengerName, String passengerIdNumber, Integer seatNumber) {
-        this.passengerName = passengerName;
-        this.passengerIdNumber = passengerIdNumber;
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "checked_in_code")
+    private String checkedInCode;
+
+    @Column(name = "checked_in_ind")
+    private Boolean passengerCheckedInIndicator;
+
+    @ManyToOne
+    private BookedJourney bookedJourney;
+
+    public Passenger(String name, String idNumber, Integer seatNumber, String email, String phoneNumber, String checkedInCode, Boolean passengerCheckedInIndicator) {
+        this.name = name;
+        this.idNumber = idNumber;
         this.seatNumber = seatNumber;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.checkedInCode = checkedInCode;
+        this.passengerCheckedInIndicator = passengerCheckedInIndicator;
     }
 }

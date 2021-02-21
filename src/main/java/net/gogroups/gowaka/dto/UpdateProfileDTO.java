@@ -3,6 +3,7 @@ package net.gogroups.gowaka.dto;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 /**
  * Author: Edward Tanko <br/>
@@ -11,11 +12,16 @@ import javax.validation.constraints.NotBlank;
 @Data
 public class UpdateProfileDTO {
 
-    @NotBlank
+    @NotBlank(message = "full name is required.")
+    @Size(max = 50, message = "full name can not be more than 50 characters")
     private String fullName;
-    @NotBlank
+
+    @NotBlank(message = "phone number is required.")
+    @Size(max = 15, message = "phone number can not be more than 15 characters")
     private String phoneNumber;
-    @NotBlank
+
+    @NotBlank(message = "id card number is required.")
+    @Size(max = 50, message = "id card number can not be more than 15 characters")
     private String idCardNumber;
 
 }

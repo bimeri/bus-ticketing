@@ -1,27 +1,35 @@
 package net.gogroups.gowaka.domain.service;
 
 import io.jsonwebtoken.lang.Collections;
+import net.gogroups.gowaka.constant.UserRoles;
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
+import net.gogroups.gowaka.domain.model.Bus;
+import net.gogroups.gowaka.domain.model.Car;
 import net.gogroups.gowaka.domain.model.OfficialAgency;
 import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.repository.JourneyRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.*;
+import net.gogroups.gowaka.exception.ApiException;
+import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.OfficialAgencyService;
+import net.gogroups.gowaka.service.UserService;
 import net.gogroups.security.model.ApiSecurityAccessToken;
 import net.gogroups.security.model.ApiSecurityClientUser;
 import net.gogroups.security.model.ApiSecurityUser;
 import net.gogroups.security.service.ApiSecurityService;
-import net.gogroups.gowaka.constant.UserRoles;
-import net.gogroups.gowaka.exception.ApiException;
-import net.gogroups.gowaka.exception.ErrorCodes;
-import net.gogroups.gowaka.service.OfficialAgencyService;
-import net.gogroups.gowaka.service.UserService;
+import net.gogroups.storage.constants.FileAccessType;
+import net.gogroups.storage.service.FileStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,30 +44,29 @@ import static net.gogroups.gowaka.constant.UserRoles.*;
 @Service
 public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private static final String LOGO_DIRECTORY = "agency_logos";
 
     private OfficialAgencyRepository officialAgencyRepository;
     private UserRepository userRepository;
     private UserService userService;
     private ApiSecurityService apiSecurityService;
     private ClientUserCredConfig clientUserCredConfig;
+    private FileStorageService fileStorageService;
+    private JourneyRepository journeyRepository;
 
-    @Autowired
-    public OfficialAgencyServiceImpl(OfficialAgencyRepository officialAgencyRepository, UserRepository userRepository, UserService userService, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig) {
+    public OfficialAgencyServiceImpl(OfficialAgencyRepository officialAgencyRepository, UserRepository userRepository, UserService userService, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, FileStorageService fileStorageService, JourneyRepository journeyRepository) {
         this.officialAgencyRepository = officialAgencyRepository;
         this.userRepository = userRepository;
         this.userService = userService;
         this.apiSecurityService = apiSecurityService;
         this.clientUserCredConfig = clientUserCredConfig;
+        this.fileStorageService = fileStorageService;
+        this.journeyRepository = journeyRepository;
     }
 
     @Override
     public OfficialAgencyDTO createOfficialAgency(CreateOfficialAgencyDTO createOfficialAgencyDTO) {
-
-        //make a call to get/verify the AgencyAdmin user
-        // make a call to add AGENCY_ADMIN to user's role
-        // add user to agency and save agency
-        // create DTO and return
 
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
 
@@ -86,12 +93,14 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         List<User> agencyUsers = officialAgency.getUsers();
         agencyUsers.add(user);
         officialAgency.setIsDisabled(false);
+        officialAgency.setPolicy(createOfficialAgencyDTO.getPolicy());
+        officialAgency.setCode(createOfficialAgencyDTO.getCode());
 
         OfficialAgency saveOfficialAgency = officialAgencyRepository.save(officialAgency);
 
         user.setOfficialAgency(officialAgency);
+        user.setIsAgencyAdminIndicator(true);
         userRepository.save(user);
-
 
         OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
         OfficialAgencyAdminUserDTO agencyAdminDTO = new OfficialAgencyAdminUserDTO();
@@ -101,9 +110,67 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyDTO.setAgencyName(saveOfficialAgency.getAgencyName());
         officialAgencyDTO.setAgencyRegistrationNumber(saveOfficialAgency.getAgencyRegistrationNumber());
         officialAgencyDTO.setAgencyAdmin(agencyAdminDTO);
+        officialAgencyDTO.setPolicy(saveOfficialAgency.getPolicy());
+        officialAgencyDTO.setCode(saveOfficialAgency.getCode());
 
         return officialAgencyDTO;
 
+    }
+
+    @Override
+    public void uploadAgencyLogo(Long agencyId, MultipartFile logoFile) {
+
+        Optional<OfficialAgency> officialAgencyOptional = officialAgencyRepository.findById(agencyId);
+        if (!officialAgencyOptional.isPresent()) {
+            throw new ResourceNotFoundException("Agency not found.");
+        }
+        OfficialAgency officialAgency = officialAgencyOptional.get();
+
+        String filename = StringUtils.cleanPath(logoFile.getOriginalFilename());
+
+        byte[] fileByteArray = null;
+        try {
+            fileByteArray = logoFile.getBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String storageFolder = LOGO_DIRECTORY + "/" + agencyId;
+        fileStorageService.saveFile(filename, fileByteArray, storageFolder, FileAccessType.PROTECTED);
+
+        officialAgency.setLogo(storageFolder + "/" + filename);
+        officialAgencyRepository.save(officialAgency);
+    }
+
+    @Override
+    public void updateOfficialAgency(Long agencyId, OfficialAgencyDTO officialAgencyDTO) {
+
+
+        Optional<OfficialAgency> officialAgencyOptional = officialAgencyRepository.findById(agencyId);
+        if (!officialAgencyOptional.isPresent()) {
+            throw new ResourceNotFoundException("Agency not found.");
+        }
+        OfficialAgency officialAgency = officialAgencyOptional.get();
+        officialAgency.setAgencyName(officialAgencyDTO.getAgencyName());
+        officialAgency.setPolicy(officialAgencyDTO.getPolicy());
+        officialAgency.setCode(officialAgencyDTO.getCode());
+        officialAgency.setAgencyRegistrationNumber(officialAgencyDTO.getAgencyRegistrationNumber());
+
+        officialAgencyRepository.save(officialAgency);
+    }
+
+
+    @Override
+    public List<OfficialAgencyDTO> getAllAgencies() {
+
+        return officialAgencyRepository.findAll().stream()
+                .map(this::getOfficialAgencyDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public OfficialAgencyDTO getUserAgency() {
+        User user = getCurrentAuthUser();
+        return getOfficialAgencyDTO(user.getOfficialAgency());
     }
 
     @Override
@@ -132,8 +199,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
         List<String> roles = officialAgencyUserRoleRequestDTO.getRoles().stream()
                 .filter(role -> systemRoles.contains(UserRoles.valueOf(role)))
-                .filter(role->!role.equalsIgnoreCase(AGENCY_ADMIN.toString()))
-                .filter(role->!role.equalsIgnoreCase(GW_ADMIN.toString()))
+                .filter(role -> !role.equalsIgnoreCase(AGENCY_ADMIN.toString()))
+                .filter(role -> !role.equalsIgnoreCase(GW_ADMIN.toString()))
                 .collect(Collectors.toList());
         String userRole = USERS.toString();
         for (String role : roles) {
@@ -193,7 +260,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
         UserDTO authUserDTO = userService.getCurrentAuthUser();
         Optional<User> authUserOptional = userRepository.findById(authUserDTO.getId());
-        if(!authUserOptional.isPresent()) {
+        if (!authUserOptional.isPresent()) {
             throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
@@ -201,13 +268,13 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUsername(emailDTO.getEmail(), apiSecurityAccessToken.getToken());
 
         Optional<User> userOptional = userRepository.findById(apiSecurityUser.getId());
-        if(!userOptional.isPresent()) {
+        if (!userOptional.isPresent()) {
             throw new ApiException("User not found.", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         User authUser = authUserOptional.get();
         User user = userOptional.get();
-        if(user.getOfficialAgency()!=null){
+        if (user.getOfficialAgency() != null) {
             throw new ApiException("User already a member of an agency.", ErrorCodes.USER_ALREADY_IN_AN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
@@ -242,7 +309,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
             throw new ApiException("User must be a member to your agency.", ErrorCodes.USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        if(user.getUserId().equals(authUser.getUserId())){
+        if (user.getUserId().equals(authUser.getUserId())) {
             throw new ApiException("Operation not allowed.", ErrorCodes.VALIDATION_ERROR.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
@@ -261,4 +328,57 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         return apiSecurityService.getClientToken(apiSecurityClientUser);
     }
 
+    private OfficialAgencyDTO getOfficialAgencyDTO(OfficialAgency agency) {
+
+        long numberOfCompletedTrips = journeyRepository.findByArrivalIndicatorTrue().stream()
+                .filter(journey -> {
+                    Car car = journey.getCar();
+                    if (car == null) return false;
+                    if (car instanceof Bus) {
+                        if (((Bus) car).getOfficialAgency() == null) return false;
+                        return ((Bus) car).getOfficialAgency().getId().equals(agency.getId());
+                    }
+                    return false;
+                }).count();
+
+        String logoURL = fileStorageService.getFilePath(agency.getLogo(), "", FileAccessType.PROTECTED);
+        List<OfficialAgencyDTO.Bus> buses = agency.getBuses().stream()
+                .map(bus -> OfficialAgencyDTO.Bus.builder()
+                        .id(bus.getId())
+                        .name(bus.getName())
+                        .licensePlateNumber(bus.getLicensePlateNumber())
+                        .numberOfSeats(bus.getNumberOfSeats())
+                        .build())
+                .collect(Collectors.toList());
+
+        Optional<User> userOptional = agency.getUsers().stream().filter(User::getIsAgencyAdminIndicator).findFirst();
+        OfficialAgencyAdminUserDTO officialAgencyAdminUserDTO = new OfficialAgencyAdminUserDTO();
+        if (userOptional.isPresent()) {
+            officialAgencyAdminUserDTO.setId(userOptional.get().getUserId());
+            officialAgencyAdminUserDTO.setFullName(userOptional.get().getFullName());
+            officialAgencyAdminUserDTO.setEmail(userOptional.get().getEmail());
+        }
+
+        return OfficialAgencyDTO.builder()
+                .agencyRegistrationNumber(agency.getAgencyRegistrationNumber())
+                .agencyName(agency.getAgencyName())
+                .id(agency.getId())
+                .logo(logoURL)
+                .buses(buses)
+                .policy(agency.getPolicy())
+                .code(agency.getCode())
+                .agencyAdmin(officialAgencyAdminUserDTO)
+                .numberOfCompletedTrips(numberOfCompletedTrips)
+                .build();
+    }
+
+    private User getCurrentAuthUser() {
+        UserDTO authUser = userService.getCurrentAuthUser();
+        // get user entity
+        Optional<User> optionalUser = userRepository.findById(authUser.getId());
+        if (!optionalUser.isPresent()) {
+            throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optionalUser.get();
+    }
 }

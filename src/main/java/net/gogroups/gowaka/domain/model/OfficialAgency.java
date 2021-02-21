@@ -12,7 +12,7 @@ import java.util.List;
  */
 @Data
 @Entity
-public class OfficialAgency {
+public class OfficialAgency extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +21,10 @@ public class OfficialAgency {
     private String agencyRegistrationNumber;
     private String agencyAuthorizationDocument;
     private String logo;
+    private String code;
     private Boolean isDisabled;
+    @Lob
+    private String policy;
 
     @OneToMany(mappedBy = "officialAgency")
     private List<Bus> buses;

@@ -11,10 +11,8 @@ import java.util.List;
  */
 public interface CBSService {
 
-    List<CBSBenefitDTO> getAllAvailableBenefit();
+    List<CBSBenefitDTO> getAllUserAvailableBenefit(String accessToken);
 
-    List<CBSBenefitDTO> getAllUserAvailableBenefit(String userId);
-
-    CBSRewardPointDTO getUserRewardPoints(String userId);
+    CBSRewardPointDTO getUserRewardPoints(String accessToken);
 
 }
