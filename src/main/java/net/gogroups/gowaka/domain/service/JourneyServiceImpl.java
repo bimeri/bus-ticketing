@@ -1,6 +1,7 @@
 package net.gogroups.gowaka.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.cfs.model.CustomerDTO;
@@ -488,7 +489,10 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car) {
+        // Note previous car in journey context
+        Car prevCar = journey.getCar();
         journey.setCar(car);
+
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null : journeyDTO.getDestination().getTransitAndStopId()
                 , "Destination");
@@ -526,6 +530,25 @@ public class JourneyServiceImpl implements JourneyService {
                 journeyDTO.getDepartureTime().toInstant().atZone(zoneId).toLocalDateTime());
 
         journey = journeyRepository.save(journey);
+
+        // check if this car's seat structure is different from previous car seat structure
+        // then send notification where necessary
+        // note that null condition is already taken care of by instanceof
+        if (prevCar instanceof Bus && car instanceof Bus) {
+            Integer prevSeatsNum = ((Bus) prevCar).getNumberOfSeats();
+            Integer currSeatsNum = ((Bus) car).getNumberOfSeats();
+            if (!prevSeatsNum.equals(currSeatsNum)) {
+                try {
+                    sendSMSAndEmailNotificationToSubscribers(journey,
+                            "changed seat structure: from "
+                                    + prevSeatsNum + " to " + currSeatsNum + " seats" );
+                }catch (Exception e){
+                    log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
+                    e.printStackTrace();
+                }
+            }
+        }
+
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));

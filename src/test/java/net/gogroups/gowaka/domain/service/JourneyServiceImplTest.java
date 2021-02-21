@@ -1562,4 +1562,39 @@ public class JourneyServiceImplTest {
         verify(mockJourneyRepository).findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc();
         assertThat(journeyResponseDTOS.size(), is(1));
     }
+
+    /*@Test
+    void whenJourneyCarSeatStructureChange_thenCallSendSMSNotification_withAppropriateMessage() {
+        user.setUserId("1");
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setNumberOfSeats(30);
+        Bus bus1 = new Bus();
+        bus1.setId(2L);
+        bus1.setName("Happi");
+        bus1.setNumberOfSeats(70);
+        Journey journey = new Journey();
+        journey.setArrivalIndicator(false);
+        journey.setCar(bus1);
+        journey.setId(1L);
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(1L);
+        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+        when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
+        when(mockOfficialAgency.getBuses()).thenReturn(Arrays.asList(bus, bus1));
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+        when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(destination));
+        JourneyDTO journeyDTO = new JourneyDTO();
+        AddStopDTO addStopDTO = new AddStopDTO();
+        addStopDTO.setTransitAndStopId(1L);
+        journeyDTO.setDestination(addStopDTO);
+        journeyDTO.setDepartureLocation(1L);
+        journeyDTO.setTransitAndStops(Collections.singletonList(addStopDTO));
+        journeyService.updateJourney(journeyDTO, journey.getId(), bus.getId());
+    }*/
+
 }
