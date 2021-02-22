@@ -26,3 +26,4 @@ ___________________________________________
 -------------------------------------------
 * Feb 5th 2021
     * add title to alert notification table
+    * add sms_notification in booked_journey table
