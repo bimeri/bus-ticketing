@@ -3,7 +3,6 @@ package net.gogroups.gowaka.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.validation.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Email;
@@ -37,7 +36,7 @@ public class BookJourneyRequest {
         @Size(max = 50, message = "passenger's name can not be more than 50 characters")
         private String passengerName;
 
-        @NotBlank(message = "passenger name required.")
+//        @NotBlank(message = "passenger name required.")
         @Size(max = 50, message = "passenger's ID number can not be more than 50 characters")
         private String passengerIdNumber;
         @Max(value = 100, message = "seat number can not be more than 100")
