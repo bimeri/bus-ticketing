@@ -38,7 +38,7 @@ public class BookJourneyRequest {
 
 //        @NotBlank(message = "passenger name required.")
         @Size(max = 50, message = "passenger's ID number can not be more than 50 characters")
-        private String passengerIdNumber;
+        private String passengerIdNumber = "000000|00/00/00|0000";
         @Max(value = 100, message = "seat number can not be more than 100")
         private Integer seatNumber;
 
