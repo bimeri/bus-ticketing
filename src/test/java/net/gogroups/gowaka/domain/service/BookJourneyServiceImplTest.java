@@ -407,6 +407,7 @@ public class BookJourneyServiceImplTest {
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
 
@@ -429,6 +430,7 @@ public class BookJourneyServiceImplTest {
         PaymentTransaction paymentTransactionAfterResponseValue = paymentTransactionArgumentCaptor.getAllValues().get(1);
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
+        assertThat(paymentUrlDTO.getBookedJourneyId()).isEqualTo(101);
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(5000.0);
 
         assertThat(bookedJourneyValue.getPassengers().get(0).getEmail()).isEqualTo("email@email.com");
@@ -519,6 +521,7 @@ public class BookJourneyServiceImplTest {
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
 
@@ -541,6 +544,7 @@ public class BookJourneyServiceImplTest {
         PaymentTransaction paymentTransactionAfterResponseValue = paymentTransactionArgumentCaptor.getAllValues().get(1);
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
+        assertThat(paymentUrlDTO.getBookedJourneyId()).isEqualTo(101);
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(5000.0);
 
         assertThat(bookedJourneyValue.getPassengers().get(0).getEmail()).isEqualTo("email@email.com");
@@ -637,6 +641,7 @@ public class BookJourneyServiceImplTest {
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();
         paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
         when(mockPaymentTransactionRepository.save(any()))
                 .thenReturn(paymentTransaction);
 
@@ -659,6 +664,7 @@ public class BookJourneyServiceImplTest {
         PaymentTransaction paymentTransactionAfterResponseValue = paymentTransactionArgumentCaptor.getAllValues().get(1);
 
         assertThat(paymentUrlDTO.getPaymentUrl()).isEqualTo("https://payamgo.com/paymentlink");
+        assertThat(paymentUrlDTO.getBookedJourneyId()).isEqualTo(101);
         assertThat(bookedJourneyValue.getAmount()).isEqualTo(2000.0);
         assertThat(bookedJourneyValue.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT11-123SW-9-10");
         assertThat(bookedJourneyValue.getPassengers().get(0).getPassengerCheckedInIndicator()).isEqualTo(false);

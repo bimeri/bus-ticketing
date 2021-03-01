@@ -123,8 +123,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         savedPaymentTransaction.setTransactionStatus(WAITING.toString());
         savedPaymentTransaction.setProcessingNumber(payAmGoRequestResponseDTO.getProcessingNumber());
         paymentTransactionRepository.save(savedPaymentTransaction);
-
-        return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl());
+        return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl(), savedPaymentTransaction.getBookedJourney().getId());
     }
 
     @Override
