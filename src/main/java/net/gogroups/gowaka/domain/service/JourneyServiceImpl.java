@@ -180,7 +180,7 @@ public class JourneyServiceImpl implements JourneyService {
         }
         if (journeyDepartureIndicator.getDepartureIndicator()) {
             try {
-                sendSMSAndEmailNotificationToSubscribers(journey, "just stared");
+                sendSMSAndEmailNotificationToSubscribers(journey, "just started");
             }catch (Exception e){
                 log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
@@ -871,6 +871,7 @@ public class JourneyServiceImpl implements JourneyService {
                 .map(email -> new EmailAddress(email, email))
                 .collect(Collectors.toSet());
 
+        emailDTO.setFromAddress(fromEmail);
         emailDTO.setToAddresses(Collections.singletonList(new EmailAddress(fromEmail, fromEmail)));
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(new ArrayList<>(emailAddresses));
