@@ -6,7 +6,9 @@ import net.gogroups.gowaka.domain.model.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -32,13 +34,16 @@ public class OnBoardingInfoDTO {
     private String refundApprovedByName;
     private String refundApprovedByEmail;
     private LocalDateTime refundApprovedDate;
+    private Boolean isSubscribeToSMSNotification = false;
 
     private List<PassengerDTO> passengers = new ArrayList<>();
+    private Set<String> uniquePhoneNumbers = new HashSet<>();
 
     public OnBoardingInfoDTO(BookedJourney bookedJourney) {
         if (bookedJourney != null) {
             PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
             Journey journey = bookedJourney.getJourney();
+            isSubscribeToSMSNotification = bookedJourney.getSmsNotification();
             // amount
             this.amount = bookedJourney.getAmount();
             this.id = bookedJourney.getId();
@@ -104,6 +109,7 @@ public class OnBoardingInfoDTO {
                 passengerDTO.setCheckedInCode(pge.getCheckedInCode());
                 passengerDTO.setCheckedIn(pge.getPassengerCheckedInIndicator());
                 passengers.add(passengerDTO);
+                uniquePhoneNumbers.add(pge.getPhoneNumber());
             });
         }
     }
