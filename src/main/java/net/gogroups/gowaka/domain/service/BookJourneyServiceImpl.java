@@ -521,8 +521,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
         String[] names = currentAuthUser.getFullName().split(" ");
-        String firstName = "Anonymous";
-        String lastName = "Anonymous";
+        String firstName = currentAuthUser.getFullName();
+        String lastName = currentAuthUser.getFullName();
         if (names.length > 1) {
             firstName = names[0];
             lastName = names[names.length - 1];
