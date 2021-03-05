@@ -502,13 +502,16 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourney bookedJourney;
         if (isAgencyBooking) {
             try {
-                User proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                User proxy = user;
+                if (!StringUtils.isEmpty(bookJourneyRequest.getDirectToAccount())) {
+                    proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                }
                 bookedJourney = getBookedJourney(passengers, proxy, user, journey, amount, transitAndStop);
             } catch (ApiException e) {
                 bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
             }
         } else {
-            bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
+            bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
         }
         bookedJourney.setIsAgencyBooking(isAgencyBooking);
         bookedJourney.setSmsNotification(bookJourneyRequest.getSubscribeToSMSNotification());
