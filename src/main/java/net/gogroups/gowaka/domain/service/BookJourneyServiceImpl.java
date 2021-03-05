@@ -508,7 +508,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
             }
         } else {
-            bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
+            bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
         }
         bookedJourney.setIsAgencyBooking(isAgencyBooking);
         bookedJourney.setSmsNotification(bookJourneyRequest.getSubscribeToSMSNotification());
