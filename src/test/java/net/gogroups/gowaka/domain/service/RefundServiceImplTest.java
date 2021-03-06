@@ -377,10 +377,30 @@ class RefundServiceImplTest {
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
         refundPaymentTransaction.setRefundStatus("APPROVED");
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        BookedJourney bookedJourney = new BookedJourney();
+        Journey journey = new Journey();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setCity("Buea");
+        location.setAddress("mile 17");
+        location.setState("SW");
+        location.setCountry("Cameroon");
+        transitAndStop.setLocation(location);
+        journey.setDepartureLocation(transitAndStop);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(transitAndStop);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         when(mockRefundPaymentTransactionRepository.findByIdAndPaymentTransaction_BookedJourney_User_UserId(1L, "123"))
                 .thenReturn(Optional.of(refundPaymentTransaction));
+
         RefundDTO userRefund = refundService.getUserRefund(1L, "123");
+
+
         assertThat(userRefund.getAmount()).isEqualTo(1000.00);
+        assertThat(userRefund.getBookedJourney().getDeparture()).isEqualTo("mile 17, Buea, SW, Cameroon");
+        assertThat(userRefund.getBookedJourney().getDestination()).isEqualTo("mile 17, Buea, SW, Cameroon");
     }
 
     @Test
@@ -389,6 +409,21 @@ class RefundServiceImplTest {
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
         refundPaymentTransaction.setRefundStatus("PENDING");
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        BookedJourney bookedJourney = new BookedJourney();
+        Journey journey = new Journey();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setCity("Buea");
+        location.setAddress("mile 17");
+        location.setState("SW");
+        location.setCountry("Cameroon");
+        transitAndStop.setLocation(location);
+        journey.setDepartureLocation(transitAndStop);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(transitAndStop);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         when(mockRefundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_Id(1L))
                 .thenReturn(Collections.singletonList(refundPaymentTransaction));
 
@@ -399,7 +434,7 @@ class RefundServiceImplTest {
 
         when(mockUserRepository.findById("123"))
                 .thenReturn(Optional.of(user));
-        Journey journey = new Journey();
+
         Bus bus = new Bus();
         bus.setOfficialAgency(officialAgency);
         journey.setCar(bus);

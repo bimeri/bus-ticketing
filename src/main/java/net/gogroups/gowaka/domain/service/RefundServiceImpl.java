@@ -214,15 +214,31 @@ public class RefundServiceImpl implements RefundService {
         refundDTO.setRefundedDate(refundPaymentTransaction.getRefundedDate());
 
         refundDTO.setStatus(RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()));
+        PaymentTransaction paymentTransaction = refundPaymentTransaction.getPaymentTransaction();
+        BookedJourney bookedJourneyEntity = paymentTransaction.getBookedJourney();
+
+        RefundDTO.BookedJourney bookedJourney = new RefundDTO.BookedJourney();
+        bookedJourney.setId(bookedJourneyEntity.getId());
+        bookedJourney.setAgencyCharge(paymentTransaction.getAgencyAmount());
+        bookedJourney.setDepartureTime(bookedJourneyEntity.getJourney().getDepartureTime());
+
+        bookedJourney.setDestination(getLocationStr(bookedJourneyEntity.getDestination()));
+        bookedJourney.setDeparture(getLocationStr(bookedJourneyEntity.getJourney().getDepartureLocation()));
+        refundDTO.setBookedJourney(bookedJourney);
 
         try {
-            User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
+            User user = bookedJourneyEntity.getUser();
             refundDTO.setUser(new RefundDTO.User(user.getFullName(), user.getEmail(), user.getPhoneNumber()));
         } catch (NullPointerException exception) {
             log.info("a null pointer was thrown while getting user info for refund: {}", refundPaymentTransaction.getId());
         }
 
         return refundDTO;
+    }
+
+    private String getLocationStr(TransitAndStop destination) {
+        return destination.getLocation().getAddress()+", "+ destination.getLocation().getCity()
+                +", "+ destination.getLocation().getState()+", "+ destination.getLocation().getCountry();
     }
 
     private void sendRefundEmail(RefundPaymentTransaction refundPaymentTransaction) {

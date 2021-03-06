@@ -145,20 +145,19 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         paymentTransaction.setAgencyAmount(paymentTransaction.getAmount());
 
         Double chargeAmount = 0.0;
-//        TODO: Allow agency user to add sms notification service to user
-//        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
-//        if (!serviceCharges.isEmpty()) {
-//            for (ServiceChargeDTO sCharge : serviceCharges) {
-//                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
-//                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
-//                    break;
-//                }
-//            }
-//            Double amountWithoutCharge = paymentTransaction.getAmount();
-//            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
-//            paymentTransaction.setAgencyAmount(amountWithoutCharge);
-//            paymentTransaction.setServiceChargeAmount(chargeAmount);
-//        }
+        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
+        if (!serviceCharges.isEmpty()) {
+            for (ServiceChargeDTO sCharge : serviceCharges) {
+                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
+                    break;
+                }
+            }
+            Double amountWithoutCharge = paymentTransaction.getAmount();
+            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+            paymentTransaction.setAgencyAmount(amountWithoutCharge);
+            paymentTransaction.setServiceChargeAmount(chargeAmount);
+        }
 
         paymentTransaction.setServiceChargeAmount(chargeAmount);
         PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
@@ -503,7 +502,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourney bookedJourney;
         if (isAgencyBooking) {
             try {
-                User proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                User proxy = user;
+                if (!StringUtils.isEmpty(bookJourneyRequest.getDirectToAccount())) {
+                    proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                }
                 bookedJourney = getBookedJourney(passengers, proxy, user, journey, amount, transitAndStop);
             } catch (ApiException e) {
                 bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
@@ -519,8 +521,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
         String[] names = currentAuthUser.getFullName().split(" ");
-        String firstName = "Anonymous";
-        String lastName = "Anonymous";
+        String firstName = currentAuthUser.getFullName();
+        String lastName = currentAuthUser.getFullName();
         if (names.length > 1) {
             firstName = names[0];
             lastName = names[names.length - 1];
