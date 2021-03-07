@@ -18,5 +18,6 @@ public class GwPassenger {
     private String phoneNumber;
     private String email;
 
+    private String accountName;
     private String directedToAccount;
 }

@@ -448,7 +448,15 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     public List<GwPassenger> searchPassenger(PhoneNumberDTO phoneNumberDTO) {
         return new ArrayList<>(passengerRepository.findByPhoneNumber(phoneNumberDTO.getTelCode() + phoneNumberDTO.getPhoneNumber())
                 .stream()
-                .map(p -> new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), p.getBookedJourney().getUser().getEmail()))
+                .map(p -> {
+                    String directToAccountName = "";
+                    String directToAccountEmail = "";
+                    if (p.getBookedJourney().getUser().getOfficialAgency() == null) {
+                        directToAccountName = p.getBookedJourney().getUser().getFullName();
+                        directToAccountEmail = p.getBookedJourney().getUser().getEmail();
+                    }
+                    return new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), directToAccountName, directToAccountEmail);
+                })
                 .collect(Collectors.toSet()));
     }
 

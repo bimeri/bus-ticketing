@@ -93,7 +93,7 @@ public class BookJourneyControllerTest {
     void findPassenger_callsBookJourneyService() {
 
         when(mockBookJourneyService.searchPassenger(any()))
-                .thenReturn(Collections.singletonList(new GwPassenger("John", "1234567", "237676279260", "john@gmail.com", "john@gmail.com")));
+                .thenReturn(Collections.singletonList(new GwPassenger("John", "1234567", "237676279260", "john@gmail.com", "John", "john@gmail.com")));
 
         ResponseEntity<List<GwPassenger>> passengers = bookJourneyController.findPassenger(new PhoneNumberDTO("237", "676279260"));
 
