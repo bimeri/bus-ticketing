@@ -6,6 +6,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.BookJourneyRequest;
 import net.gogroups.gowaka.dto.CodeDTO;
 import net.gogroups.gowaka.dto.PaymentStatusResponseDTO;
+import net.gogroups.gowaka.dto.PhoneNumberDTO;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
@@ -352,14 +353,12 @@ public class BookJourneyControllerIntegrationTest {
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
 
-//        BookedJourney bookedJourney = journey.getBookedJourneys().get(0);
         RequestBuilder requestBuilder = get("/api/protected/bookJourney/history")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-//                .andExpect(content().json("[{\"id\":1,\"amount\":2000.0,\"currencyCode\":\"XAF\",\"paymentStatus\":\"COMPLETED\",\"checkedInCode\":\"1111-1599933993\",\"paymentReason\":\"Bus ticket\",\"paymentChannel\":\"MTN_MOBILE_MONEY\",\"paymentChannelTransactionNumber\":null,\"paymentDate\":\"2020-03-26T09:30:00\",\"checkedIn\":false,\"passengerName\":\"John Doe\",\"passengerIdNumber\":\"1234001\",\"passengerSeatNumber\":8,\"passengerEmail\":\"email@email.net\",\"passengerPhoneNumber\":\"999999\",\"carName\":\"Musango 30 Seater Bus\",\"carLicenseNumber\":\"123SW\",\"carDriverName\":\"Michael John\",\"departureLocation\":\"Buea Moto Part, Buea SW, Cameroon\",\"departureTime\":\"2020-03-26T09:35:00\",\"estimatedArrivalTime\":\"2020-03-26T10:35:00\",\"destinationLocation\":\"Kumba Moto Part, Kumba SW, Cameroon\",\"qrcheckedInImage\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAAA10lEQVR42u3XSw7EIAgGYFx5DG/q46Yeg1UdATvJTOzavwnGRdtvQ0TQ0nga5OLi8g5hmiOMUSlVeUxIIo+NKXBq9yuOzHibRm0OJ0yFUWV0TNFspyuO/T44KVolEvK+fk7KGr089Z2DIlFLwq/Ys0wkkT1IRSvY0g4l2ZLMNEOuhCVB0WZgJJnFESfqWrIca0BiQz+Xb62AyN1dqqT6d0XPixaHxCszE5boSSvdhWbgceCJ3gL+so0iSZe2BzCxZrxwcz84KKtKrLW0TQWfE/+fc3F5qXwAkHCU9h+9LrYAAAAASUVORK5CYII=\"}]"))
                 .andReturn();
     }
 
@@ -501,7 +500,7 @@ public class BookJourneyControllerIntegrationTest {
         String jwtToken = createToken(user.getUserId(), "ggadmin@gg.com", "Me User", secretKey, "AGENCY_BOOKING");
         RequestBuilder requestBuilder = post("/api/protected/checkIn")
                 .header("Authorization", "Bearer " + jwtToken)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(new CodeDTO("2000-1599933988")))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -705,6 +704,20 @@ public class BookJourneyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent())
                 .andReturn();
+    }
+
+    @Test
+    public void findPassenger_success_return200() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_MANAGER");
+
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/find_passenger")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new PhoneNumberDTO("237", "777777777")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk());
     }
 
 

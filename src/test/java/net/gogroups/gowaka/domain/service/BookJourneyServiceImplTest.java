@@ -1893,4 +1893,37 @@ public class BookJourneyServiceImplTest {
         assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isEqualTo("Jones");
         assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isNotEqualTo(passenger.getCheckedInCode());
     }
+
+    @Test
+    void searchPassenger_searchAvailablePassengers() {
+
+
+        Passenger passenger = new Passenger();
+        passenger.setId(2L);
+        passenger.setSeatNumber(10);
+        passenger.setPhoneNumber("237777777778");
+        passenger.setIdNumber("1235487");
+        passenger.setName("John");
+        passenger.setEmail("john@gmail.com");
+        BookedJourney bookedJourney = new BookedJourney();
+        User user = new User();
+        user.setEmail("toacc@gmail.com");
+        bookedJourney.setUser(user);
+        passenger.setBookedJourney(bookedJourney);
+
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        when(mockPassengerRepository.findByPhoneNumber("237777777778"))
+                .thenReturn(Collections.singletonList(passenger));
+
+        List<GwPassenger> gwPassengers = bookJourneyService.searchPassenger(new PhoneNumberDTO("237", "777777778"));
+        assertThat(gwPassengers.get(0).getIdNumber()).isEqualTo("1235487");
+        assertThat(gwPassengers.get(0).getName()).isEqualTo("John");
+        assertThat(gwPassengers.get(0).getEmail()).isEqualTo("john@gmail.com");
+        assertThat(gwPassengers.get(0).getDirectedToAccount()).isEqualTo("toacc@gmail.com");
+        assertThat(gwPassengers.get(0).getPhoneNumber()).isEqualTo("237777777778");
+
+    }
+
+
 }

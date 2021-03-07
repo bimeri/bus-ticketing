@@ -54,6 +54,15 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/find_passenger")
+    ResponseEntity<List<GwPassenger>> findPassenger(@Validated @RequestBody PhoneNumberDTO phoneNumberDTO) {
+        log.info("searching passenger by phone number :{}", phoneNumberDTO.getPhoneNumber());
+        return ResponseEntity.ok( bookJourneyService.searchPassenger(phoneNumberDTO));
+    }
+
+
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/journey/{journeyId}/booked_seats")
     ResponseEntity<List<Integer>> getAllBookedSeats(@PathVariable("journeyId") Long journeyId) {

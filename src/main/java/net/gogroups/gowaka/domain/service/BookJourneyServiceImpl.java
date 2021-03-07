@@ -444,6 +444,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         }
     }
 
+    @Override
+    public List<GwPassenger> searchPassenger(PhoneNumberDTO phoneNumberDTO) {
+        return new ArrayList<>(passengerRepository.findByPhoneNumber(phoneNumberDTO.getTelCode() + phoneNumberDTO.getPhoneNumber())
+                .stream()
+                .map(p -> new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), p.getBookedJourney().getUser().getEmail()))
+                .collect(Collectors.toSet()));
+    }
+
     private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {
         Set<String> phoneNumbers = new HashSet<>();
         for (BookJourneyRequest.Passenger passenger : bookJourneyRequest.getPassengers()) {
