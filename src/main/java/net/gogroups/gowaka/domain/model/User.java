@@ -17,6 +17,7 @@ public class User extends BaseEntity{
 
     @Id
     private String userId;
+    private String code;
     private String fullName;
     private String email;
     private String phoneNumber;

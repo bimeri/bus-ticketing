@@ -10,7 +10,7 @@ public interface UserService {
 
     UserDTO createUser(CreateUserRequest createUserRequest);
 
-    TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO);
+    TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO, String sourceSystem);
 
     void changeUserPassword(ChangePasswordDTO changePasswordDTO);
 
@@ -25,4 +25,6 @@ public interface UserService {
     void verifyEmail(EmailDTO emailDTO);
 
     GWUserDTO validateGWUserByEmail(EmailDTO emailDTO);
+
+    GWAccountDTO getAccountInfo(String code);
 }

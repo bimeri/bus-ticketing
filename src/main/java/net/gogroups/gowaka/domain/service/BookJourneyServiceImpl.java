@@ -460,6 +460,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 .collect(Collectors.toSet()));
     }
 
+
+
     private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {
         Set<String> phoneNumbers = new HashSet<>();
         for (BookJourneyRequest.Passenger passenger : bookJourneyRequest.getPassengers()) {

@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Author: Edward Tanko <br/>
@@ -32,8 +29,8 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(createUserRequest));
     }
     @PostMapping("/public/login")
-    ResponseEntity<TokenDTO> loginUser(@RequestBody EmailPasswordDTO emailPasswordDTO){
-        return ResponseEntity.ok(userService.loginUser(emailPasswordDTO));
+    ResponseEntity<TokenDTO> loginUser(@RequestBody EmailPasswordDTO emailPasswordDTO, @RequestHeader(value = "X-Source-System", defaultValue = "WEB") String sourceSystem){
+        return ResponseEntity.ok(userService.loginUser(emailPasswordDTO, sourceSystem));
     }
     @PostMapping("/public/get_token")
     ResponseEntity<TokenDTO> getNewToken(@RequestBody RefreshTokenDTO refreshTokenDTO){
@@ -66,6 +63,12 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ROLE_GW_ADMIN','ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
     ResponseEntity<GWUserDTO> validateGWUserByEmail(@RequestBody @Validated EmailDTO emailDTO){
         return ResponseEntity.ok(userService.validateGWUserByEmail(emailDTO));
+    }
+
+    @PostMapping("/protected/users/account")
+    @PreAuthorize("hasAnyRole('ROLE_GW_ADMIN','ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING')")
+    ResponseEntity<GWAccountDTO> getUserAccountInfo(@RequestBody @Validated CodeDTO codeDTO){
+        return ResponseEntity.ok(userService.getAccountInfo(codeDTO.getCode()));
     }
 
 }
