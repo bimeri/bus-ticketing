@@ -1,7 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.cfs.model.CustomerDTO;
@@ -69,6 +68,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
+
         return mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
     }
 
@@ -96,17 +96,15 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
-    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit) {
+    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit, Long branchId) {
 
         Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
 
-        List<Long> busIds = verifyCurrentAuthUser().getOfficialAgency().getBuses().stream()
-                .map(Car::getId)
-                .collect(Collectors.toList());
-        Page<Journey> journeyPage = journeyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(busIds, paging);
+        User user = verifyCurrentAuthUser();
+        Page<Journey> journeyPage = journeyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(user.getAgencyBranch().getId(), paging);
 
         List<JourneyResponseDTO> journeys = journeyPage.stream()
-                .map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+                .map(journey -> mapToJourneyResponseDTO(journey, user)).collect(Collectors.toList());
 
         return PaginatedResponse.<JourneyResponseDTO>builder()
                 .items(journeys)
@@ -172,6 +170,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
+        //TODO: should be in journey branch
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
@@ -181,7 +180,7 @@ public class JourneyServiceImpl implements JourneyService {
         if (journeyDepartureIndicator.getDepartureIndicator()) {
             try {
                 sendSMSAndEmailNotificationToSubscribers(journey, "just started");
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
             }
@@ -191,6 +190,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
+        //TODO: should be in journey branch
         Journey journey = getJourney(journeyId);
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
@@ -215,7 +215,7 @@ public class JourneyServiceImpl implements JourneyService {
             }
             try {
                 sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
-            } catch (Exception e){
+            } catch (Exception e) {
                 log.error("Error sending request End journey notification sms for JourneyId: {}", journey.getId());
                 e.printStackTrace();
             }
@@ -224,6 +224,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void removeNonBookedStop(Long journeyId, Long stopId) {
+        //TODO: should be in journey branch
         Journey journey = getJourney(journeyId);
         journeyTerminationFilter(journey);
         checkJourneyCarInOfficialAgency(journey);
@@ -489,9 +490,12 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car) {
+
+        User user = verifyCurrentAuthUser();
         // Note previous car in journey context
         Car prevCar = journey.getCar();
         journey.setCar(car);
+        journey.setAgencyBranch(user.getAgencyBranch());
 
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null : journeyDTO.getDestination().getTransitAndStopId()
@@ -541,8 +545,8 @@ public class JourneyServiceImpl implements JourneyService {
                 try {
                     sendSMSAndEmailNotificationToSubscribers(journey,
                             "changed seat structure: from "
-                                    + prevSeatsNum + " to " + currSeatsNum + " seats" );
-                }catch (Exception e){
+                                    + prevSeatsNum + " to " + currSeatsNum + " seats");
+                } catch (Exception e) {
                     log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                     e.printStackTrace();
                 }
@@ -656,17 +660,24 @@ public class JourneyServiceImpl implements JourneyService {
         return carDTO;
     }
 
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey) {
+        return mapToJourneyResponseDTO(journey, null);
+    }
+
     /**
      * Maps journey to JourneyResponseDTO
      *
      * @param journey
      * @return JourneyResponseDTO
      */
-    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey) {
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey, User user) {
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        if (user != null) {
+            journeyResponseDTO.setUserBranch(journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId()));
+        }
         try {
             // these can throw exceptions
             // no need to throw an exception during get, just log the exception in the catch block

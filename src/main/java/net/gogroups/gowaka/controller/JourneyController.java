@@ -52,9 +52,10 @@ public class JourneyController {
     @GetMapping("/agency/journeys/page")
     public ResponseEntity<PaginatedResponse<JourneyResponseDTO>> getOfficialAgencyJourneys(
             @RequestParam(name = "pageNumber", defaultValue = "0", required = false) Integer pageNumber,
-            @RequestParam(name = "limit", defaultValue = Integer.MAX_VALUE + "", required = false) Integer limit
+            @RequestParam(name = "limit", defaultValue = Integer.MAX_VALUE + "", required = false) Integer limit,
+            @RequestParam(name = "branchId") Long branchId
     ) {
-        return ResponseEntity.ok(journeyService.getOfficialAgencyJourneys(pageNumber, limit));
+        return ResponseEntity.ok(journeyService.getOfficialAgencyJourneys(pageNumber, limit, branchId));
     }
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'AGENCY_BOOKING')")

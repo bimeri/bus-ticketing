@@ -26,4 +26,7 @@ public class AgencyBranch extends BaseEntity {
     @ManyToOne
     private OfficialAgency officialAgency;
 
+    @OneToMany(mappedBy = "agencyBranch", cascade = CascadeType.ALL)
+    private List<Journey> journeys = new ArrayList<>();
+
 }

@@ -235,7 +235,6 @@ public class JourneyServiceImplTest {
     @Test
     void getOfficialAgencyJourneys_should_return_list_of_journeys() {
 
-
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
         Bus bus = new Bus();
@@ -243,22 +242,29 @@ public class JourneyServiceImplTest {
         bus.setName("Muea boy");
         bus.setOfficialAgency(mockOfficialAgency);
 
-        Journey journey = new Journey();
-        journey.setCar(bus);
-        journey.setDepartureTime(LocalDateTime.MIN);
-
-        User user = new User();
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setBuses(Collections.singletonList(bus));
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setId(1L);
+        Journey journey = new Journey();
+
+        journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
+        journey.setAgencyBranch(agencyBranch);
+
+        User user = new User();
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
         when(mockUserRepository.findById("1"))
                 .thenReturn(Optional.of(user));
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
 
-        when(mockJourneyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(any(), any()))
+        when(mockJourneyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(any(), any()))
                 .thenReturn(new PageImpl<>(Collections.singletonList(journey)));
 
-        PaginatedResponse<JourneyResponseDTO> officialAgencyJourneys = journeyService.getOfficialAgencyJourneys(1, 10);
+        PaginatedResponse<JourneyResponseDTO> officialAgencyJourneys = journeyService.getOfficialAgencyJourneys(1, 10, 1L);
         assertFalse(officialAgencyJourneys.getItems().isEmpty());
         assertThat(officialAgencyJourneys.getTotalPages(), is(1));
         assertThat(officialAgencyJourneys.getPageNumber(), is(1));

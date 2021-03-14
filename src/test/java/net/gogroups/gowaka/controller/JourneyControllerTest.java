@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,10 +53,10 @@ public class JourneyControllerTest {
     @Test
     void getOfficialAgencyJourneys_callJourneyService() {
 
-        when(mockJourneyService.getOfficialAgencyJourneys(anyInt(), anyInt()))
+        when(mockJourneyService.getOfficialAgencyJourneys(anyInt(), anyInt(), any()))
                 .thenReturn(new PaginatedResponse<>());
-        ResponseEntity<PaginatedResponse<JourneyResponseDTO>> response = journeyController.getOfficialAgencyJourneys(1, 10);
-        verify(mockJourneyService).getOfficialAgencyJourneys(1, 10);
+        ResponseEntity<PaginatedResponse<JourneyResponseDTO>> response = journeyController.getOfficialAgencyJourneys(1, 10, 1L);
+        verify(mockJourneyService).getOfficialAgencyJourneys(1, 10, 1L);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isInstanceOf(PaginatedResponse.class);
     }

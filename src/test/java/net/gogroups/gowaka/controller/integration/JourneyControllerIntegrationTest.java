@@ -64,6 +64,9 @@ public class JourneyControllerIntegrationTest {
     private BookedJourneyRepository bookedJourneyRepository;
 
     @Autowired
+    private AgencyBranchRepository agencyBranchRepository;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Qualifier("ggClientRestTemplate")
@@ -549,7 +552,14 @@ public class JourneyControllerIntegrationTest {
     public void getOfficialAgencyJourneys_should_return_list_of_journey_response_dtos() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("Malingo Major");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency saveOA = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(saveOA);
+        agencyBranch.setName("main branch");
+
+        AgencyBranch saveBranch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -558,6 +568,7 @@ public class JourneyControllerIntegrationTest {
         bus.setLicensePlateNumber("123454387");
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(saveBranch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -605,6 +616,7 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
+        journey.setAgencyBranch(saveBranch);
 
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop2);
@@ -626,7 +638,7 @@ public class JourneyControllerIntegrationTest {
         journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
 
-        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1")
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1&branchId="+saveBranch.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)

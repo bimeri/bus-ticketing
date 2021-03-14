@@ -28,4 +28,5 @@ public class JourneyResponseDTO {
     private List<LocationStopResponseDTO> transitAndStops;
     private CarResponseDTO car;
     private boolean isDepartureTimeDue;
+    private boolean isUserBranch = false;
 }

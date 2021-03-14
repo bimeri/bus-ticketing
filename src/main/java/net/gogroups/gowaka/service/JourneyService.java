@@ -18,7 +18,7 @@ public interface JourneyService {
 
     List<JourneyResponseDTO> getAllOfficialAgencyJourneys();
 
-    PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit);
+    PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit, Long branchId);
 
     JourneyResponseDTO getJourneyById(Long journeyId);
 

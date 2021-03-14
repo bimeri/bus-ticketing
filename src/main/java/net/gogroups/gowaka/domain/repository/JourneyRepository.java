@@ -24,4 +24,6 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
 
     Page<Journey> findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(List<Long> carId, Pageable pageable);
 
+    Page<Journey> findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(Long branchId, Pageable pageable);
+
 }
