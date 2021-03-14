@@ -66,6 +66,7 @@ public class JourneyControllerIntegrationTest {
     @Autowired
     private AgencyBranchRepository agencyBranchRepository;
 
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -75,14 +76,6 @@ public class JourneyControllerIntegrationTest {
 
     private User user;
 
-
-    private String successClientTokenResponse = "{\n" +
-            "  \"header\": \"Authorization\",\n" +
-            "  \"type\": \"Bearer\",\n" +
-            "  \"issuer\": \"API-Security\",\n" +
-            "  \"version\": \"v1\",\n" +
-            "  \"token\": \"jwt-token\"\n" +
-            "}";
     private String jwtToken;
 
     @BeforeEach
@@ -235,9 +228,16 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void update_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -245,8 +245,8 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -287,6 +287,7 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
+        journey.setAgencyBranch(branch);
 
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop2);
@@ -841,13 +842,21 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void add_stops_should_return_204_no_content() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
         Bus bus = new Bus();
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
+
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
@@ -866,10 +875,11 @@ public class JourneyControllerIntegrationTest {
         journeyStop.setJourney(journey);
         journey.setJourneyStops(Collections.singletonList(journeyStop));
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/add_stops")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -884,17 +894,26 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void delete_Non_Booked_journey_should_delete_journey_successfully() throws Exception {
+
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -903,6 +922,7 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId())
                 .header("Authorization", "Bearer " + jwtToken)
@@ -918,13 +938,20 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void set_journey_departure_indicator_should_update_and_return_no_content() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
         userRepository.save(user);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -933,10 +960,11 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"departureIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -951,17 +979,26 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void update_journey_arrival_indicator_should_update_and_return_no_content() throws Exception {
+
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -970,10 +1007,11 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(true);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"arrivalIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/arrival")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -1750,11 +1788,19 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void given_journey_has_no_booking_for_transit_and_stop_then_remove_transit_and_stop() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -1766,15 +1812,15 @@ public class JourneyControllerIntegrationTest {
         transitAndStop.setLocation(location1);
         transitAndStopRepository.save(transitAndStop1);
 
-
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
-
 
         Journey journey = new Journey();
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
+
         JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 2000.0);
         JourneyStop journeyStop1 = new JourneyStop(journey, transitAndStop1, 300.0);
         journey.setJourneyStops(new ArrayList<>(Arrays.asList(journeyStop, journeyStop1)));

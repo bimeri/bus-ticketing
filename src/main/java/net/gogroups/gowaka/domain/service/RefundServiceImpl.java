@@ -245,7 +245,6 @@ public class RefundServiceImpl implements RefundService {
         User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
         if (user != null) {
             String message = emailContentBuilder.buildRefundStatusEmail(refundPaymentTransaction, user);
-//        log.info("Email message: {}", message);
             SendEmailDTO emailDTO = new SendEmailDTO();
             emailDTO.setSubject(EmailFields.REFUND_UPDATE_SUBJECT.getMessage());
             emailDTO.setMessage(message);
@@ -255,7 +254,6 @@ public class RefundServiceImpl implements RefundService {
             emailDTO.setCcAddresses(Collections.emptyList());
             emailDTO.setBccAddresses(Collections.emptyList());
             notificationService.sendEmail(emailDTO);
-            //TODO: should also send SMS
         }
     }
 }

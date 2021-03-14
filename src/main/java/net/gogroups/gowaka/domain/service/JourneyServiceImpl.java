@@ -170,7 +170,7 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
-        //TODO: should be in journey branch
+
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
@@ -187,10 +187,9 @@ public class JourneyServiceImpl implements JourneyService {
         }
     }
 
-
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
-        //TODO: should be in journey branch
+
         Journey journey = getJourney(journeyId);
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
@@ -224,7 +223,6 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void removeNonBookedStop(Long journeyId, Long stopId) {
-        //TODO: should be in journey branch
         Journey journey = getJourney(journeyId);
         journeyTerminationFilter(journey);
         checkJourneyCarInOfficialAgency(journey);
@@ -716,20 +714,6 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     /**
-     * Gets the transitAndStop for a particular location
-     *
-     * @param location
-     * @return
-     */
-    private TransitAndStop getTransitAndStopByLocation(Location location) {
-        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
-        if (!optionalTransitAndStop.isPresent()) {
-            throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        return optionalTransitAndStop.get();
-    }
-
-    /**
      * throw exception of journey is terminated
      *
      * @param journey
@@ -743,14 +727,13 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     /**
-     * throw exception if journey car is not in official agency
-     *
+     * throw exception if journey branch is not in user official agency branch
+     * update to used branch on Mar14, 2021
      * @param journey
      */
     public void checkJourneyCarInOfficialAgency(Journey journey) {
-        List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
-                .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
-        if (cars.isEmpty()) {
+        User user = verifyCurrentAuthUser();
+        if(!journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId())){
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
     }

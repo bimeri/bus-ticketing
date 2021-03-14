@@ -67,6 +67,8 @@ public class BookJourneyControllerIntegrationTest {
     private MockMvc mockMvc;
     @Autowired
     private PassengerRepository passengerRepository;
+    @Autowired
+    private AgencyBranchRepository agencyBranchRepository;
 
     @MockBean
     private PayAmGoService payAmGoService;
@@ -87,12 +89,18 @@ public class BookJourneyControllerIntegrationTest {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
         officialAgency.setCode("GG");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency savedOA = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(savedOA);
+        agencyBranch.setName("Main Office");
+        AgencyBranch savedBranch = agencyBranchRepository.save(agencyBranch);
 
         User newUser = new User();
         newUser.setUserId("12");
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setOfficialAgency(officialAgency);
+        newUser.setAgencyBranch(savedBranch);
 
         this.user = userRepository.save(newUser);
 
@@ -137,7 +145,7 @@ public class BookJourneyControllerIntegrationTest {
         newJourney.setDepartureLocation(savedDeparture);
         newJourney.setDepartureTime(LocalDateTime.of(2020, 3, 26, 9, 35));
         newJourney.setEstimatedArrivalTime(LocalDateTime.of(2020, 3, 26, 10, 35));
-
+        newJourney.setAgencyBranch(savedBranch);
         Driver driver = new Driver();
         driver.setDriverLicenseNumber("321SW");
         driver.setDriverName("Michael John");
@@ -354,7 +362,7 @@ public class BookJourneyControllerIntegrationTest {
         String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "USERS");
 
         RequestBuilder requestBuilder = get("/api/protected/bookJourney/history")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -373,6 +381,7 @@ public class BookJourneyControllerIntegrationTest {
         newUser.setUserId("11");
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setOfficialAgency(officialAgency);
+        newUser.setAgencyBranch(user.getAgencyBranch());
 
         newUser = userRepository.save(newUser);
 
@@ -417,6 +426,7 @@ public class BookJourneyControllerIntegrationTest {
         newJourney.setDepartureLocation(savedDeparture);
         newJourney.setDepartureTime(LocalDateTime.of(2020, 3, 26, 9, 35));
         newJourney.setEstimatedArrivalTime(LocalDateTime.of(2020, 3, 26, 10, 35));
+        newJourney.setAgencyBranch(user.getAgencyBranch());
 
         Driver driver = new Driver();
         driver.setDriverLicenseNumber("321SW");
@@ -519,6 +529,7 @@ public class BookJourneyControllerIntegrationTest {
         newUser.setUserId("11");
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setOfficialAgency(officialAgency);
+        newUser.setAgencyBranch(user.getAgencyBranch());
 
         newUser = userRepository.save(newUser);
 
@@ -563,7 +574,7 @@ public class BookJourneyControllerIntegrationTest {
         newJourney.setDepartureLocation(savedDeparture);
         newJourney.setDepartureTime(LocalDateTime.of(2020, 3, 26, 9, 35));
         newJourney.setEstimatedArrivalTime(LocalDateTime.of(2020, 3, 26, 10, 35));
-
+        newJourney.setAgencyBranch(user.getAgencyBranch());
         Driver driver = new Driver();
         driver.setDriverLicenseNumber("321SW");
         driver.setDriverName("Michael John");
