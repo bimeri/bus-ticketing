@@ -346,6 +346,53 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
     }
 
+    @Override
+    public void createBranch(CreateBranchDTO createBranchDTO) {
+
+        User currentAuthUser = getCurrentAuthUser();
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName(createBranchDTO.getName());
+        agencyBranch.setAddress(createBranchDTO.getAddress());
+        agencyBranch.setOfficialAgency(currentAuthUser.getOfficialAgency());
+        agencyBranchRepository.save(agencyBranch);
+    }
+
+    @Override
+    public void updateBranch(CreateBranchDTO createBranchDTO, Long branchId) {
+
+        AgencyBranch agencyBranch = getAgencyBranch(branchId);
+        User currentAuthUser = getCurrentAuthUser();
+        verifyIfUserInAgency(agencyBranch, currentAuthUser);
+
+        agencyBranch.setName(createBranchDTO.getName());
+        agencyBranch.setAddress(createBranchDTO.getAddress());
+        agencyBranchRepository.save(agencyBranch);
+    }
+
+    @Override
+    public void deleteBranch(Long branchId) {
+
+        AgencyBranch agencyBranch = getAgencyBranch(branchId);
+        User currentAuthUser = getCurrentAuthUser();
+        verifyIfUserInAgency(agencyBranch, currentAuthUser);
+
+        agencyBranchRepository.deleteById(branchId);
+    }
+
+    private void verifyIfUserInAgency(AgencyBranch agencyBranch, User currentAuthUser) {
+        if (!agencyBranch.getOfficialAgency().getId().equals(currentAuthUser.getOfficialAgency().getId())) {
+            throw new ApiException("User not in agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    private AgencyBranch getAgencyBranch(Long branchId) {
+        Optional<AgencyBranch> agencyBranchOptional = agencyBranchRepository.findById(branchId);
+        if (!agencyBranchOptional.isPresent()) {
+            throw new ApiException("Branch not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return agencyBranchOptional.get();
+    }
+
     private ApiSecurityAccessToken getApiSecurityAccessToken() {
         ApiSecurityClientUser apiSecurityClientUser = new ApiSecurityClientUser();
         apiSecurityClientUser.setClientId(clientUserCredConfig.getClientId());
@@ -411,11 +458,11 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
     private User getCurrentAuthUser() {
         UserDTO authUser = userService.getCurrentAuthUser();
-        // get user entity
         Optional<User> optionalUser = userRepository.findById(authUser.getId());
         if (!optionalUser.isPresent()) {
             throw new ApiException("User not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         return optionalUser.get();
     }
+
 }

@@ -590,7 +590,6 @@ public class OfficialAgencyServiceImplTest {
         assertThat(apiException.getMessage()).isEqualTo("Not a valid agency branch");
     }
 
-
     @Test
     void addAgencyUsers_call_OfficialAgencyRepository() {
 
@@ -722,5 +721,210 @@ public class OfficialAgencyServiceImplTest {
         assertThat(apiException.getMessage()).isEqualTo("User must be a member to your agency.");
 
     }
+
+    @Test
+    void createBranch_call_AgencyBranchRepository() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        ArgumentCaptor<AgencyBranch> agencyBranchArgumentCaptor = ArgumentCaptor.forClass(AgencyBranch.class);
+
+        officialAgencyService.createBranch(createBranchDTO);
+        verify(mockAgencyBranchRepository).save(agencyBranchArgumentCaptor.capture());
+
+        assertThat(agencyBranchArgumentCaptor.getValue().getName()).isEqualTo("Main Branch");
+        assertThat(agencyBranchArgumentCaptor.getValue().getAddress()).isEqualTo("Address");
+
+    }
+
+    @Test
+    void updateBranch_throwsException_whenBranchNotFound() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.updateBranch(createBranchDTO, 1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("Branch not found");
+    }
+
+    @Test
+    void updateBranch_throwsException_whenNotInAgencyUserNotNotFound() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+
+        OfficialAgency officialAgency1 = new OfficialAgency();
+        officialAgency1.setId(3L);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency1);
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.updateBranch(createBranchDTO, 1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("User not in agency");
+    }
+
+    @Test
+    void updateBranch_call_AgencyBranchRepository() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch2");
+        createBranchDTO.setAddress("Address2");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(2L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency);
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        ArgumentCaptor<AgencyBranch> agencyBranchArgumentCaptor = ArgumentCaptor.forClass(AgencyBranch.class);
+
+        officialAgencyService.updateBranch(createBranchDTO, 1L);
+        verify(mockAgencyBranchRepository).save(agencyBranchArgumentCaptor.capture());
+
+        assertThat(agencyBranchArgumentCaptor.getValue().getName()).isEqualTo("Main Branch2");
+        assertThat(agencyBranchArgumentCaptor.getValue().getAddress()).isEqualTo("Address2");
+
+    }
+
+    @Test
+    void deleteBranch_throwsException_whenBranchNotFound() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.deleteBranch(1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("Branch not found");
+    }
+
+    @Test
+    void deleteBranch_throwsException_whenNotInAgencyUserNotNotFound() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+
+        OfficialAgency officialAgency1 = new OfficialAgency();
+        officialAgency1.setId(3L);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency1);
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.deleteBranch(1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("User not in agency");
+    }
+
+    @Test
+    void deleteBranch_call_AgencyBranchRepository() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch2");
+        createBranchDTO.setAddress("Address2");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(2L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency);
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        officialAgencyService.deleteBranch(1L);
+        verify(mockAgencyBranchRepository).deleteById(1L);
+
+    }
+
 
 }

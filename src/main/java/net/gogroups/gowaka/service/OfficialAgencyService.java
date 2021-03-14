@@ -28,4 +28,10 @@ public interface OfficialAgencyService {
     OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO, Long branchId);
 
     void removeAgencyUser(String userId);
+
+    void createBranch(CreateBranchDTO createBranchDTO);
+
+    void updateBranch(CreateBranchDTO createBranchDTO, Long branchId);
+
+    void deleteBranch(Long branchId);
 }

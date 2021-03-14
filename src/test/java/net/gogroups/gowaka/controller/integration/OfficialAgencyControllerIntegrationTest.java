@@ -7,10 +7,7 @@ import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.AgencyBranchRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.dto.CreateOfficialAgencyDTO;
-import net.gogroups.gowaka.dto.EmailDTO;
-import net.gogroups.gowaka.dto.OfficialAgencyDTO;
-import net.gogroups.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
+import net.gogroups.gowaka.dto.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +36,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Author: Edward Tanko <br/>
@@ -102,12 +98,10 @@ public class OfficialAgencyControllerIntegrationTest {
         mockServer.reset();
     }
 
-
     private void startMockServerWith(String url, HttpStatus status, String response) {
         mockServer.expect(requestTo(url))
                 .andRespond(withStatus(status).body(response).contentType(MediaType.APPLICATION_JSON));
     }
-
 
     @Test
     public void createOfficialAgency_success_return_200() throws Exception {
@@ -170,7 +164,7 @@ public class OfficialAgencyControllerIntegrationTest {
         officialAgency.setAgencyRegistrationNumber("reg2");
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
-        RequestBuilder requestBuilder = put("/api/protected/agency/"+officialAgency1.getId())
+        RequestBuilder requestBuilder = put("/api/protected/agency/" + officialAgency1.getId())
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(officialAgencyDTO))
@@ -192,13 +186,13 @@ public class OfficialAgencyControllerIntegrationTest {
         officialAgency.setAgencyRegistrationNumber("reg");
         OfficialAgency officialAgency1 = officialAgencyRepository.save(officialAgency);
 
-        startMockServerWith("http://ggs2.space:9092/api/protected/files?bucketDirectory=GoWaka/agency_logos/"+officialAgency1.getId()+"&identifier=PROTECTED",
+        startMockServerWith("http://ggs2.space:9092/api/protected/files?bucketDirectory=GoWaka/agency_logos/" + officialAgency1.getId() + "&identifier=PROTECTED",
                 HttpStatus.OK, "");
 
-        MockMultipartFile file = new MockMultipartFile("logo", "logo.png","multipart/form-data", "My Logo Content".getBytes());
+        MockMultipartFile file = new MockMultipartFile("logo", "logo.png", "multipart/form-data", "My Logo Content".getBytes());
 
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, new String[]{"USERS", "GW_ADMIN"});
-        RequestBuilder requestBuilder = multipart("/api/protected/agency/"+officialAgency1.getId()+"/logo")
+        RequestBuilder requestBuilder = multipart("/api/protected/agency/" + officialAgency1.getId() + "/logo")
                 .file(file)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -273,7 +267,7 @@ public class OfficialAgencyControllerIntegrationTest {
 
         OfficialAgencyUserRoleRequestDTO officialAgencyUserRoleRequestDTO = new OfficialAgencyUserRoleRequestDTO();
         officialAgencyUserRoleRequestDTO.setUserId("10");
-        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_MANAGER","AGENCY_OPERATOR"));
+        officialAgencyUserRoleRequestDTO.setRoles(Arrays.asList("AGENCY_MANAGER", "AGENCY_OPERATOR"));
 
         String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
 
@@ -396,7 +390,7 @@ public class OfficialAgencyControllerIntegrationTest {
         emailDTO.setEmail("user@example.com");
         String expectedResponse = "{\"id\":\"10\",\"fullName\":\"Agency User10\",\"roles\":[\"USERS\"]}";
 
-        RequestBuilder requestBuilder = post("/api/protected/agency/branch/"+saveAB.getId()+"/user")
+        RequestBuilder requestBuilder = post("/api/protected/agency/branch/" + saveAB.getId() + "/user")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
@@ -451,6 +445,112 @@ public class OfficialAgencyControllerIntegrationTest {
         User user = userRepository.findById("10").get();
         assertThat(user.getOfficialAgency()).isNull();
 
+    }
+
+    @Test
+    public void createBranch_success_return_204() throws Exception {
+
+        User authUser = userRepository.findById("12").get();
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+        authUser.setOfficialAgency(officialAgency);
+
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+        authUser.setOfficialAgency(agency);
+        userRepository.save(authUser);
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");
+
+        RequestBuilder requestBuilder = post("/api/protected/agency/branch")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new CreateBranchDTO("Main Office", "Dla")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+
+    }
+
+    @Test
+    public void createBranch_success_return_400() throws Exception {
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");
+
+        RequestBuilder requestBuilder = post("/api/protected/agency/branch")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new CreateBranchDTO("", "Dla")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("name"))
+                .andExpect(jsonPath("$.errors[0].message").value("name is required"));
+    }
+
+    @Test
+    public void updateBranch_success_return_204() throws Exception {
+
+        User authUser = userRepository.findById("12").get();
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Bda");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch savedAgencyBranch = agencyBranchRepository.save(agencyBranch);
+
+        authUser.setOfficialAgency(agency);
+        authUser.setAgencyBranch(savedAgencyBranch);
+        userRepository.save(authUser);
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");
+
+        RequestBuilder requestBuilder = put("/api/protected/agency/branch/" + savedAgencyBranch.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new CreateBranchDTO("Main Office", "Dla")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void deleteBranch_success_return_204() throws Exception {
+
+        User authUser = userRepository.findById("12").get();
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Bda");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch savedAgencyBranch = agencyBranchRepository.save(agencyBranch);
+
+        authUser.setOfficialAgency(agency);
+        authUser.setAgencyBranch(savedAgencyBranch);
+        userRepository.save(authUser);
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");
+
+        RequestBuilder requestBuilder = delete("/api/protected/agency/branch/" + savedAgencyBranch.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new CreateBranchDTO("Main Office", "Dla")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
     }
 
 }
