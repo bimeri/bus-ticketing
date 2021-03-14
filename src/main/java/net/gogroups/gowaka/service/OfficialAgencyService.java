@@ -25,7 +25,7 @@ public interface OfficialAgencyService {
 
     List<OfficialAgencyUserDTO> getAgencyUsers();
 
-    OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO);
+    OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO, Long branchId);
 
     void removeAgencyUser(String userId);
 }

@@ -1,10 +1,8 @@
 package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
-import net.gogroups.gowaka.domain.model.Bus;
-import net.gogroups.gowaka.domain.model.Journey;
-import net.gogroups.gowaka.domain.model.OfficialAgency;
-import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.repository.AgencyBranchRepository;
 import net.gogroups.gowaka.domain.repository.JourneyRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
@@ -62,6 +60,9 @@ public class OfficialAgencyServiceImplTest {
     @Mock
     private JourneyRepository mockJourneyRepository;
 
+    @Mock
+    private AgencyBranchRepository mockAgencyBranchRepository;
+
     private OfficialAgencyService officialAgencyService;
 
     @BeforeEach
@@ -71,7 +72,7 @@ public class OfficialAgencyServiceImplTest {
         clientUserCredConfig.setClientId("client-secret");
         clientUserCredConfig.setAppName("GoWaka");
 
-        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService, mockJourneyRepository);
+        officialAgencyService = new OfficialAgencyServiceImpl(mockOfficialAgencyRepository, mockUserRepository, mockUserService, mockApiSecurityService, clientUserCredConfig, mockFileStorageService, mockJourneyRepository, mockAgencyBranchRepository);
     }
 
     @Test
@@ -83,6 +84,7 @@ public class OfficialAgencyServiceImplTest {
         ArgumentCaptor<String> fieldArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> roleArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> valueArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<AgencyBranch> agencyBranchArgumentCaptor = ArgumentCaptor.forClass(AgencyBranch.class);
 
         CreateOfficialAgencyDTO createOfficialAgencyDTO = new CreateOfficialAgencyDTO();
         createOfficialAgencyDTO.setAgencyAdminEmail("example@example.com");
@@ -114,6 +116,11 @@ public class OfficialAgencyServiceImplTest {
         officialAgency.setAgencyName("Amo Mezam");
         when(mockOfficialAgencyRepository.save(any()))
                 .thenReturn(officialAgency);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Name");
+        agencyBranch.setId(9L);
+        when(mockAgencyBranchRepository.save(any()))
+                .thenReturn(agencyBranch);
 
         OfficialAgencyDTO officialAgencyDTO = officialAgencyService.createOfficialAgency(createOfficialAgencyDTO);
 
@@ -129,12 +136,14 @@ public class OfficialAgencyServiceImplTest {
         verify(mockUserRepository).save(userArgumentCaptor.capture());
         assertThat(userArgumentCaptor.getValue().getUserId()).isEqualTo("12");
 
+        verify(mockAgencyBranchRepository).save(agencyBranchArgumentCaptor.capture());
+        assertThat(agencyBranchArgumentCaptor.getValue().getName()).isEqualTo("Main Branch");
+
         verify(mockOfficialAgencyRepository).save(officialAgencyArgumentCaptor.capture());
         assertThat(officialAgencyArgumentCaptor.getValue().getAgencyName()).isEqualTo("Amo Mezam");
         assertThat(officialAgencyArgumentCaptor.getValue().getAgencyRegistrationNumber()).isEqualTo("ABC20111234");
         assertThat(officialAgencyArgumentCaptor.getValue().getUsers().size()).isEqualTo(1);
         assertThat(officialAgencyArgumentCaptor.getValue().getIsDisabled()).isEqualTo(false);
-
 
         assertThat(officialAgencyDTO.getAgencyAdmin()).isNotNull();
         assertThat(officialAgencyDTO.getAgencyName()).isEqualTo("Amo Mezam");
@@ -423,11 +432,20 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDTO);
 
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Bda");
         OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("EE Xpress");
+        officialAgency.setId(9L);
         User user1 = new User();
+        user1.setOfficialAgency(officialAgency);
+        user1.setAgencyBranch(agencyBranch);
         user1.setUserId("10");
         User user2 = new User();
         user2.setUserId("11");
+        user2.setOfficialAgency(officialAgency);
+        user2.setAgencyBranch(agencyBranch);
         officialAgency.setUsers(Arrays.asList(user1, user2));
 
         User user = new User();
@@ -475,7 +493,7 @@ public class OfficialAgencyServiceImplTest {
         when(mockUserRepository.findById(any()))
                 .thenReturn(Optional.empty());
 
-        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO, 1L));
         assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(apiException.getMessage()).isEqualTo("User not found.");
 
@@ -522,13 +540,13 @@ public class OfficialAgencyServiceImplTest {
         when(mockApiSecurityService.getUserByUsername(any(), any()))
                 .thenReturn(apiSecurityUser);
 
-        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO, 1L));
         assertThat(apiException.getErrorCode()).isEqualTo("USER_ALREADY_IN_AN_AGENCY");
         assertThat(apiException.getMessage()).isEqualTo("User already a member of an agency.");
     }
 
     @Test
-    void addAgencyUsers_call_OfficialAgencyRepository() {
+    void addAgencyUsers_throwsException_whenBranchNotFound() {
 
         EmailDTO emailDTO = new EmailDTO();
         emailDTO.setEmail("example@example.com");
@@ -567,7 +585,58 @@ public class OfficialAgencyServiceImplTest {
         when(mockApiSecurityService.getUserByUsername(any(), any()))
                 .thenReturn(apiSecurityUser);
 
-        OfficialAgencyUserDTO officialAgencyUserDTO = officialAgencyService.addAgencyUser(emailDTO);
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.addAgencyUser(emailDTO, 1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
+        assertThat(apiException.getMessage()).isEqualTo("Not a valid agency branch");
+    }
+
+
+    @Test
+    void addAgencyUsers_call_OfficialAgencyRepository() {
+
+        EmailDTO emailDTO = new EmailDTO();
+        emailDTO.setEmail("example@example.com");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(1L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setAddress("Bda");
+        agencyBranch.setName("Main branch");
+        officialAgency.setAgencyBranch(Collections.singletonList(agencyBranch));
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        User user = new User();
+        user.setUserId("10");
+        user.getRoles().add("USERS");
+        when(mockUserRepository.findById("10"))
+                .thenReturn(Optional.of(user));
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        when(mockApiSecurityService.getClientToken(any()))
+                .thenReturn(accessToken);
+
+        ApiSecurityUser apiSecurityUser = new ApiSecurityUser();
+        apiSecurityUser.setId("10");
+        apiSecurityUser.setEmail("example@example.com");
+        apiSecurityUser.setUsername("example@example.com");
+        apiSecurityUser.setFullName("John Doe");
+        apiSecurityUser.setRoles("USERS");
+        when(mockApiSecurityService.getUserByUsername(any(), any()))
+                .thenReturn(apiSecurityUser);
+
+        OfficialAgencyUserDTO officialAgencyUserDTO = officialAgencyService.addAgencyUser(emailDTO, 1L);
         verify(mockUserService).getCurrentAuthUser();
         verify(mockUserRepository).findById("12");
         verify(mockApiSecurityService).getUserByUsername("example@example.com", "jwt-token");

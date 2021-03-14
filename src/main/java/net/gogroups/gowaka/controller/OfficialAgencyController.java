@@ -70,9 +70,9 @@ public class OfficialAgencyController {
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
-    @PostMapping("/protected/agency/user")
-    ResponseEntity<OfficialAgencyUserDTO> addAgencyUser(@RequestBody EmailDTO emailDTO) {
-        return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO));
+    @PostMapping("/protected/agency/branch/{branchId}/user")
+    ResponseEntity<OfficialAgencyUserDTO> addAgencyUser(@RequestBody EmailDTO emailDTO, @PathVariable("branchId") Long branchId) {
+        return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO, branchId));
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")

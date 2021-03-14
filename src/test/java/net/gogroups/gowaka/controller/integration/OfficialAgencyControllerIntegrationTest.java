@@ -1,8 +1,10 @@
 package net.gogroups.gowaka.controller.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.gogroups.gowaka.domain.model.AgencyBranch;
 import net.gogroups.gowaka.domain.model.OfficialAgency;
 import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.repository.AgencyBranchRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.CreateOfficialAgencyDTO;
@@ -59,6 +61,9 @@ public class OfficialAgencyControllerIntegrationTest {
 
     @Autowired
     private OfficialAgencyRepository officialAgencyRepository;
+
+    @Autowired
+    private AgencyBranchRepository agencyBranchRepository;
 
     private User user;
 
@@ -315,19 +320,26 @@ public class OfficialAgencyControllerIntegrationTest {
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
 
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency savedOA = officialAgencyRepository.save(officialAgency);
         userRepository.save(authUser);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setOfficialAgency(savedOA);
+        AgencyBranch saveAB = agencyBranchRepository.save(agencyBranch);
 
         User aUser = new User();
         aUser.setUserId("10");
         aUser.setCreatedAt(LocalDateTime.now());
         aUser.setOfficialAgency(officialAgency);
+        aUser.setAgencyBranch(saveAB);
         userRepository.save(aUser);
 
         User anotherUser = new User();
         anotherUser.setUserId("11");
         anotherUser.setCreatedAt(LocalDateTime.now());
         anotherUser.setOfficialAgency(officialAgency);
+        anotherUser.setAgencyBranch(saveAB);
         userRepository.save(anotherUser);
 
         String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
@@ -335,14 +347,13 @@ public class OfficialAgencyControllerIntegrationTest {
         String expectedResponse = "[{\"id\":\"10\",\"fullName\":\"Agency User10\",\"roles\":[\"USERS\",\"AGENCY_MANAGER\"]},{\"id\":\"11\",\"fullName\":\"Agency User11\",\"roles\":[\"USERS\",\"AGENCY_OPERATOR\"]}]";
 
         RequestBuilder requestBuilder = get("/api/protected/agency/user")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
-
     }
 
     @Test
@@ -366,14 +377,18 @@ public class OfficialAgencyControllerIntegrationTest {
         officialAgency.getUsers().add(authUser);
         authUser.setOfficialAgency(officialAgency);
 
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency savedOA = officialAgencyRepository.save(officialAgency);
         userRepository.save(authUser);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setOfficialAgency(savedOA);
+        AgencyBranch saveAB = agencyBranchRepository.save(agencyBranch);
 
         User aUser = new User();
         aUser.setUserId("10");
         aUser.setCreatedAt(LocalDateTime.now());
         userRepository.save(aUser);
-
 
         String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, new String[]{"USERS", "AGENCY_ADMIN"});
 
@@ -381,8 +396,8 @@ public class OfficialAgencyControllerIntegrationTest {
         emailDTO.setEmail("user@example.com");
         String expectedResponse = "{\"id\":\"10\",\"fullName\":\"Agency User10\",\"roles\":[\"USERS\"]}";
 
-        RequestBuilder requestBuilder = post("/api/protected/agency/user")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+        RequestBuilder requestBuilder = post("/api/protected/agency/branch/"+saveAB.getId()+"/user")
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
                 .accept(MediaType.APPLICATION_JSON);

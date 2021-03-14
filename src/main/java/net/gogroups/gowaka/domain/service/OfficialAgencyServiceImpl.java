@@ -1,12 +1,11 @@
 package net.gogroups.gowaka.domain.service;
 
-import io.jsonwebtoken.lang.Collections;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.gogroups.gowaka.constant.UserRoles;
 import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
-import net.gogroups.gowaka.domain.model.Bus;
-import net.gogroups.gowaka.domain.model.Car;
-import net.gogroups.gowaka.domain.model.OfficialAgency;
-import net.gogroups.gowaka.domain.model.User;
+import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.repository.AgencyBranchRepository;
 import net.gogroups.gowaka.domain.repository.JourneyRepository;
 import net.gogroups.gowaka.domain.repository.OfficialAgencyRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
@@ -22,14 +21,14 @@ import net.gogroups.security.model.ApiSecurityUser;
 import net.gogroups.security.service.ApiSecurityService;
 import net.gogroups.storage.constants.FileAccessType;
 import net.gogroups.storage.service.FileStorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,28 +41,22 @@ import static net.gogroups.gowaka.constant.UserRoles.*;
  * Date: 9/17/19 8:23 PM <br/>
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private static final String LOGO_DIRECTORY = "agency_logos";
+    private static final String MAIN_BRANCH = "Main Branch";
 
-    private OfficialAgencyRepository officialAgencyRepository;
-    private UserRepository userRepository;
-    private UserService userService;
-    private ApiSecurityService apiSecurityService;
-    private ClientUserCredConfig clientUserCredConfig;
-    private FileStorageService fileStorageService;
-    private JourneyRepository journeyRepository;
+    private final OfficialAgencyRepository officialAgencyRepository;
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private final ApiSecurityService apiSecurityService;
+    private final ClientUserCredConfig clientUserCredConfig;
+    private final FileStorageService fileStorageService;
+    private final JourneyRepository journeyRepository;
+    private final AgencyBranchRepository agencyBranchRepository;
 
-    public OfficialAgencyServiceImpl(OfficialAgencyRepository officialAgencyRepository, UserRepository userRepository, UserService userService, ApiSecurityService apiSecurityService, ClientUserCredConfig clientUserCredConfig, FileStorageService fileStorageService, JourneyRepository journeyRepository) {
-        this.officialAgencyRepository = officialAgencyRepository;
-        this.userRepository = userRepository;
-        this.userService = userService;
-        this.apiSecurityService = apiSecurityService;
-        this.clientUserCredConfig = clientUserCredConfig;
-        this.fileStorageService = fileStorageService;
-        this.journeyRepository = journeyRepository;
-    }
 
     @Override
     public OfficialAgencyDTO createOfficialAgency(CreateOfficialAgencyDTO createOfficialAgencyDTO) {
@@ -98,9 +91,15 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
 
         OfficialAgency saveOfficialAgency = officialAgencyRepository.save(officialAgency);
 
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName(MAIN_BRANCH);
+        AgencyBranch savedAgencyBranch = agencyBranchRepository.save(agencyBranch);
+
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(savedAgencyBranch);
         user.setIsAgencyAdminIndicator(true);
         userRepository.save(user);
+
 
         OfficialAgencyDTO officialAgencyDTO = new OfficialAgencyDTO();
         OfficialAgencyAdminUserDTO agencyAdminDTO = new OfficialAgencyAdminUserDTO();
@@ -112,6 +111,16 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyDTO.setAgencyAdmin(agencyAdminDTO);
         officialAgencyDTO.setPolicy(saveOfficialAgency.getPolicy());
         officialAgencyDTO.setCode(saveOfficialAgency.getCode());
+
+        OfficialAgencyDTO.Branch branch = new OfficialAgencyDTO.Branch();
+        branch.setId(savedAgencyBranch.getId());
+        branch.setName(savedAgencyBranch.getName());
+        branch.setAddress(savedAgencyBranch.getAddress());
+        branch.setUpdatedAt(savedAgencyBranch.getUpdatedAt());
+        branch.setUpdatedBy(savedAgencyBranch.getUpdatedBy());
+        officialAgencyDTO.setBranches(Collections.singletonList(branch));
+        officialAgencyDTO.setUpdatedAt(savedAgencyBranch.getUpdatedAt());
+        officialAgencyDTO.setUpdatedBy(savedAgencyBranch.getUpdatedBy());
 
         return officialAgencyDTO;
 
@@ -158,7 +167,6 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyRepository.save(officialAgency);
     }
 
-
     @Override
     public List<OfficialAgencyDTO> getAllAgencies() {
 
@@ -195,26 +203,26 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
             throw new ApiException("User must be a member to your agency.", ErrorCodes.USER_NOT_IN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        List<UserRoles> systemRoles = Collections.arrayToList(UserRoles.values());
+        List<UserRoles> systemRoles = Arrays.asList(UserRoles.values());
 
         List<String> roles = officialAgencyUserRoleRequestDTO.getRoles().stream()
                 .filter(role -> systemRoles.contains(UserRoles.valueOf(role)))
                 .filter(role -> !role.equalsIgnoreCase(AGENCY_ADMIN.toString()))
                 .filter(role -> !role.equalsIgnoreCase(GW_ADMIN.toString()))
                 .collect(Collectors.toList());
-        String userRole = USERS.toString();
+        StringBuilder userRole = new StringBuilder(USERS.toString());
         for (String role : roles) {
-            userRole += ";" + role;
+            userRole.append(";").append(role);
         }
 
         ApiSecurityAccessToken clientToken = getApiSecurityAccessToken();
         ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUserId(userId, clientToken.getToken());
 
-        apiSecurityService.updateUserInfo(apiSecurityUser.getId(), "ROLES", userRole, clientToken.getToken());
+        apiSecurityService.updateUserInfo(apiSecurityUser.getId(), "ROLES", userRole.toString(), clientToken.getToken());
         OfficialAgencyUserDTO officialAgencyUserDTO = new OfficialAgencyUserDTO();
         officialAgencyUserDTO.setFullName(apiSecurityUser.getFullName());
         officialAgencyUserDTO.setId(apiSecurityUser.getId());
-        officialAgencyUserDTO.setRoles(Collections.arrayToList(userRole.split(";")));
+        officialAgencyUserDTO.setRoles(Arrays.asList(userRole.toString().split(";")));
 
         return officialAgencyUserDTO;
     }
@@ -237,17 +245,20 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         List<User> agencyUsers = officialAgency.getUsers();
 
         return agencyUsers.stream()
-                .filter(user -> user.getUserId() != authUser.getUserId())
+                .filter(user -> !user.getUserId().equals(authUser.getUserId()))
                 .map(user -> {
                     try {
                         ApiSecurityUser apiSecurityUser = apiSecurityService.getUserByUserId(user.getUserId(), clientToken.getToken());
                         OfficialAgencyUserDTO officialAgencyUserDTO = new OfficialAgencyUserDTO();
                         officialAgencyUserDTO.setId(apiSecurityUser.getId());
                         officialAgencyUserDTO.setFullName(apiSecurityUser.getFullName());
-                        officialAgencyUserDTO.setRoles(Collections.arrayToList(apiSecurityUser.getRoles().split(";")));
+                        officialAgencyUserDTO.setAgencyName(user.getOfficialAgency().getAgencyName());
+                        officialAgencyUserDTO.setBranchName(user.getAgencyBranch().getName());
+                        officialAgencyUserDTO.setBranchAddress(user.getAgencyBranch().getAddress());
+                        officialAgencyUserDTO.setRoles(Arrays.asList(apiSecurityUser.getRoles().split(";")));
                         return officialAgencyUserDTO;
                     } catch (Exception ex) {
-                        logger.info("User <{}> data not in sync with ApiSecurity: {}", user.getUserId(), ex.getMessage());
+                        log.info("User <{}> data not in sync with ApiSecurity: {}", user.getUserId(), ex.getMessage());
                     }
                     return new OfficialAgencyUserDTO();
                 })
@@ -256,7 +267,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
     }
 
     @Override
-    public OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO) {
+    public OfficialAgencyUserDTO addAgencyUser(EmailDTO emailDTO, Long branchId) {
 
         UserDTO authUserDTO = userService.getCurrentAuthUser();
         Optional<User> authUserOptional = userRepository.findById(authUserDTO.getId());
@@ -278,13 +289,26 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
             throw new ApiException("User already a member of an agency.", ErrorCodes.USER_ALREADY_IN_AN_AGENCY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
-        user.setOfficialAgency(authUser.getOfficialAgency());
+        OfficialAgency officialAgency = authUser.getOfficialAgency();
+        Optional<AgencyBranch> agencyBranchOptional = officialAgency.getAgencyBranch().stream()
+                .filter(agencyBranch -> agencyBranch.getId().equals(branchId))
+                .findFirst();
+        if (!agencyBranchOptional.isPresent()) {
+            throw new ApiException("Not a valid agency branch", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        AgencyBranch agencyBranch = agencyBranchOptional.get();
+
+        user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
         userRepository.save(user);
 
         OfficialAgencyUserDTO officialAgencyUserDTO = new OfficialAgencyUserDTO();
         officialAgencyUserDTO.setFullName(apiSecurityUser.getFullName());
         officialAgencyUserDTO.setId(apiSecurityUser.getId());
-        officialAgencyUserDTO.setRoles(Collections.arrayToList(apiSecurityUser.getRoles().split(";")));
+        officialAgencyUserDTO.setAgencyName(officialAgency.getAgencyName());
+        officialAgencyUserDTO.setBranchName(agencyBranch.getName());
+        officialAgencyUserDTO.setBranchAddress(agencyBranch.getAddress());
+        officialAgencyUserDTO.setRoles(Arrays.asList(apiSecurityUser.getRoles().split(";")));
 
         return officialAgencyUserDTO;
     }
@@ -317,6 +341,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         apiSecurityService.updateUserInfo(userId, "ROLES", USERS.toString(), clientToken.getToken());
 
         user.setOfficialAgency(null);
+        user.setAgencyBranch(null);
         userRepository.save(user);
 
     }
@@ -348,6 +373,17 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                         .name(bus.getName())
                         .licensePlateNumber(bus.getLicensePlateNumber())
                         .numberOfSeats(bus.getNumberOfSeats())
+                        .updatedBy(bus.getUpdatedBy())
+                        .updatedAt(bus.getUpdatedAt())
+                        .build())
+                .collect(Collectors.toList());
+        List<OfficialAgencyDTO.Branch> branches = agency.getAgencyBranch().stream()
+                .map(agencyBranch -> OfficialAgencyDTO.Branch.builder()
+                        .id(agencyBranch.getId())
+                        .name(agencyBranch.getName())
+                        .address(agencyBranch.getAddress())
+                        .updatedBy(agencyBranch.getUpdatedBy())
+                        .updatedAt(agencyBranch.getUpdatedAt())
                         .build())
                 .collect(Collectors.toList());
 
@@ -365,6 +401,7 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                 .id(agency.getId())
                 .logo(logoURL)
                 .buses(buses)
+                .branches(branches)
                 .policy(agency.getPolicy())
                 .code(agency.getCode())
                 .agencyAdmin(officialAgencyAdminUserDTO)

@@ -31,6 +31,9 @@ public class User extends BaseEntity{
 
     private Boolean  isAgencyAdminIndicator = false;
 
+    @ManyToOne
+    private AgencyBranch agencyBranch;
+
     @OneToOne
     private PersonalAgency personalAgency;
 

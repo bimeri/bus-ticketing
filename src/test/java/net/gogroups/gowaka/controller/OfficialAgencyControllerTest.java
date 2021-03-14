@@ -105,8 +105,8 @@ public class OfficialAgencyControllerTest {
     @Test
     void addAgencyUser_calls_OfficialAgencyService() {
         EmailDTO emailDTO = new EmailDTO();
-        officialAgencyController.addAgencyUser(emailDTO);
-        verify(mockOfficialAgencyService).addAgencyUser(emailDTO);
+        officialAgencyController.addAgencyUser(emailDTO, 1L);
+        verify(mockOfficialAgencyService).addAgencyUser(emailDTO, 1L);
 
     }
 

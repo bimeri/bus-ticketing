@@ -27,8 +27,13 @@ ___________________________________________
 * Feb 5th 2021
     * add title to alert notification table
     * add sms_notification in booked_journey table
-    
+-------------------------------------------    
 * Mar 13 2021
     * Add `code` to user table
     * Gene UUID code for existing users
     * Deploy latest api-security
+-----------------------------------------------    
+* Mar 13, 2021
+  * add AgencyBranch Entity and Link to the User table
+  * Add AgencyBranch on Journey Entity  
+  * Update branch on all existing agencies  
