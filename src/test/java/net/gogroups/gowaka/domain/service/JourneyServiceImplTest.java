@@ -7,6 +7,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.model.SendSmsDTO;
@@ -257,6 +258,7 @@ public class JourneyServiceImplTest {
         agencyBranch.setOfficialAgency(officialAgency);
         agencyBranch.setId(1L);
         Journey journey = new Journey();
+        officialAgency.setAgencyBranch(Collections.singletonList(agencyBranch));
 
         journey.setCar(bus);
         journey.setDepartureTime(LocalDateTime.MIN);
@@ -279,6 +281,40 @@ public class JourneyServiceImplTest {
         assertThat(officialAgencyJourneys.getTotal(), is(1));
         assertThat(officialAgencyJourneys.getItems().get(0).getCar().getName(), is("Muea boy"));
         assertThat(officialAgencyJourneys.getItems().get(0).isDepartureTimeDue(), is(true));
+    }
+
+    @Test
+    void getOfficialAgencyJourneys_throwException_whenUserBranchNotFound() {
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setBuses(Collections.singletonList(bus));
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setId(1L);
+        Journey journey = new Journey();
+
+        journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
+        journey.setAgencyBranch(agencyBranch);
+
+        User user = new User();
+        user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
+        when(mockUserRepository.findById("1"))
+                .thenReturn(Optional.of(user));
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+
+        ResourceNotFoundException apiException = assertThrows(ResourceNotFoundException.class, () -> journeyService.getOfficialAgencyJourneys(1, 10, 1L));
+        assertThat(apiException.getMessage(), is("Branch not found in user's agency"));
+
     }
 
     /**

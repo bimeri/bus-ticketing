@@ -375,8 +375,25 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         AgencyBranch agencyBranch = getAgencyBranch(branchId);
         User currentAuthUser = getCurrentAuthUser();
         verifyIfUserInAgency(agencyBranch, currentAuthUser);
+        if (!agencyBranch.getJourneys().isEmpty()) {
+            throw new ApiException(ErrorCodes.BRANCH_HAS_JOURNEY.getMessage(), ErrorCodes.BRANCH_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
 
         agencyBranchRepository.deleteById(branchId);
+    }
+
+    @Override
+    public List<AgencyBranchDTO> getAgencyBranches() {
+
+        User currentAuthUser = getCurrentAuthUser();
+        return agencyBranchRepository.findByOfficialAgency_Id(currentAuthUser.getOfficialAgency().getId()).stream()
+                .map(agencyBranch -> {
+                    AgencyBranchDTO agencyBranchDTO = new AgencyBranchDTO();
+                    agencyBranchDTO.setId(agencyBranch.getId());
+                    agencyBranchDTO.setName(agencyBranch.getName());
+                    agencyBranchDTO.setAddress(agencyBranch.getAddress());
+                    return agencyBranchDTO;
+                }).collect(Collectors.toList());
     }
 
     private void verifyIfUserInAgency(AgencyBranch agencyBranch, User currentAuthUser) {

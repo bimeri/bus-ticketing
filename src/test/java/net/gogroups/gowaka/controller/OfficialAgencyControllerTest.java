@@ -129,11 +129,16 @@ public class OfficialAgencyControllerTest {
 
     @Test
     void deleteBranch_calls_OfficialAgencyService() {
-        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
-        createBranchDTO.setName("Main Branch");
-        createBranchDTO.setAddress("Address");
         officialAgencyController.deleteBranch(1L);
         verify(mockOfficialAgencyService).deleteBranch(1L);
+
+    }
+
+    @Test
+    void getAgencyBranches_calls_OfficialAgencyService() {
+
+        officialAgencyController.getAgencyBranches();
+        verify(mockOfficialAgencyService).getAgencyBranches();
 
     }
 

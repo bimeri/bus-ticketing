@@ -552,5 +552,40 @@ public class OfficialAgencyControllerIntegrationTest {
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isNoContent());
     }
+    @Test
+    public void getAgencyBranch_success_return_204() throws Exception {
+
+        User authUser = userRepository.findById("12").get();
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setAgencyName("My Agency");
+        officialAgency.getUsers().add(authUser);
+
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Bda");
+        agencyBranch.setAddress("DLA");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch savedAgencyBranch = agencyBranchRepository.save(agencyBranch);
+
+        authUser.setOfficialAgency(agency);
+        authUser.setAgencyBranch(savedAgencyBranch);
+        userRepository.save(authUser);
+
+        String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");
+
+        RequestBuilder requestBuilder = get("/api/protected/agency/branch/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(new CreateBranchDTO("Main Office", "Dla")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.[0].id").value(agencyBranch.getId()))
+                .andExpect(jsonPath("$.[0].name").value("Main Branch"))
+                .andExpect(jsonPath("$.[0].address").value("DLA"));
+    }
 
 }

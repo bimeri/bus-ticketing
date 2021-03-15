@@ -169,7 +169,7 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
         assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null, qrCodeImage=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAAA1ElEQVR42u3XQQ6EIAwF0LriGNxU4aY9Biv+0IIxk2HWfBNIF+jbNJY2KPi3ZMuWLe+QIm0dQC4x2TYyiW2zb/L9yCNJYvbXuchBKD1rUtFTGMWrrRIwPwcrxbvEPue8f1ZKX71FZnNnpViFLVkrdW9lHgFqQG0W9Ax6lUglo87hPoxEogf0sg6WFl9ZM4gPleRZJ6GSp0tapAAiGdPF53GJlUt8Kt/tm8jEbwF2BrMHncBGiwfoZHSJzu5VK6VXW/p0AZhk3ALqb9bLZf/PbdnyUvkAgRJ55KwjjG0AAAAASUVORK5CYII=, token=null)");
+        assertThat(tokenDTO.getUserDetails()).isNotNull();
 
     }
 
@@ -217,7 +217,7 @@ public class UserServiceImplTest {
         assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getUsername()).isEqualTo("example@example.com");
         assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getPassword()).isEqualTo("secret");
         assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getAppName()).isEqualTo("GoWaka");
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null, qrCodeImage=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAAA1ElEQVR42u3XQQ6EIAwF0LriGNxU4aY9Biv+0IIxk2HWfBNIF+jbNJY2KPi3ZMuWLe+QIm0dQC4x2TYyiW2zb/L9yCNJYvbXuchBKD1rUtFTGMWrrRIwPwcrxbvEPue8f1ZKX71FZnNnpViFLVkrdW9lHgFqQG0W9Ax6lUglo87hPoxEogf0sg6WFl9ZM4gPleRZJ6GSp0tapAAiGdPF53GJlUt8Kt/tm8jEbwF2BrMHncBGiwfoZHSJzu5VK6VXW/p0AZhk3ALqb9bLZf/PbdnyUvkAgRJ55KwjjG0AAAAASUVORK5CYII=, token=null)");
+        assertThat(tokenDTO.getUserDetails()).isNotNull();
 
     }
 

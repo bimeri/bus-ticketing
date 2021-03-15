@@ -83,6 +83,12 @@ public class OfficialAgencyController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
+    @GetMapping("/protected/agency/branch")
+    ResponseEntity<List<AgencyBranchDTO>> getAgencyBranches() {
+        return ResponseEntity.ok(officialAgencyService.getAgencyBranches());
+    }
+
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
     @PostMapping("/protected/agency/branch")
     ResponseEntity<Void> createBranch(@RequestBody @Validated CreateBranchDTO createBranchDTO) {

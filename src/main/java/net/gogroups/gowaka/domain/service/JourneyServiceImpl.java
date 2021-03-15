@@ -17,6 +17,7 @@ import net.gogroups.gowaka.domain.service.utilities.TimeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.EmailAddress;
@@ -101,7 +102,17 @@ public class JourneyServiceImpl implements JourneyService {
         Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
 
         User user = verifyCurrentAuthUser();
-        Page<Journey> journeyPage = journeyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(user.getAgencyBranch().getId(), paging);
+        boolean found = false;
+        for (AgencyBranch branch : user.getOfficialAgency().getAgencyBranch()) {
+            if (branch.getId().equals(branchId)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new ResourceNotFoundException("Branch not found in user's agency");
+        }
+        Page<Journey> journeyPage = journeyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(branchId, paging);
 
         List<JourneyResponseDTO> journeys = journeyPage.stream()
                 .map(journey -> mapToJourneyResponseDTO(journey, user)).collect(Collectors.toList());
@@ -729,11 +740,12 @@ public class JourneyServiceImpl implements JourneyService {
     /**
      * throw exception if journey branch is not in user official agency branch
      * update to used branch on Mar14, 2021
+     *
      * @param journey
      */
     public void checkJourneyCarInOfficialAgency(Journey journey) {
         User user = verifyCurrentAuthUser();
-        if(!journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId())){
+        if (!journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId())) {
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
     }

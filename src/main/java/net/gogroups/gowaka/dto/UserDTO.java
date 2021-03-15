@@ -22,4 +22,17 @@ public class UserDTO {
     private String idCardNumber;
     private String qrCodeImage;
     private TokenDTO token;
+    private Agency agency;
+
+    @Data
+    public static class Agency {
+
+        private Long branchId;
+        private String branchName;
+        private String branchAddress;
+
+        private Long agencyId;
+        private String agencyName;
+
+    }
 }

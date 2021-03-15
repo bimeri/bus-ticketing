@@ -34,4 +34,6 @@ public interface OfficialAgencyService {
     void updateBranch(CreateBranchDTO createBranchDTO, Long branchId);
 
     void deleteBranch(Long branchId);
+
+    List<AgencyBranchDTO> getAgencyBranches();
 }

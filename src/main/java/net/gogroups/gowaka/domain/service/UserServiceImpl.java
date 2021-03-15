@@ -235,6 +235,17 @@ public class UserServiceImpl implements UserService {
         userDTO.setPhoneNumber(user.getPhoneNumber());
         userDTO.setIdCardNumber(user.getIdCardNumber());
         userDTO.setQrCodeImage(QRCodeProvider.getQRCodeBase64EncodedImage(user.getCode()));
+
+        if (user.getOfficialAgency() != null && user.getAgencyBranch() != null) {
+            UserDTO.Agency agency = new UserDTO.Agency();
+            agency.setAgencyId(user.getOfficialAgency().getId());
+            agency.setAgencyName(user.getOfficialAgency().getAgencyName());
+            agency.setBranchId(user.getAgencyBranch().getId());
+            agency.setBranchName(user.getAgencyBranch().getName());
+            agency.setBranchAddress(user.getAgencyBranch().getAddress());
+            userDTO.setAgency(agency);
+        }
+
         userDTO.setRoles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())
@@ -282,7 +293,6 @@ public class UserServiceImpl implements UserService {
                 HttpStatus.NOT_FOUND
         );
     }
-
 
     private User getUserByCode(String code) {
         Optional<User> optional = userRepository.findFirstByCode(code);

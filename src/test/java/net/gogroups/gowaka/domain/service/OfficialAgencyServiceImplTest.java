@@ -926,5 +926,68 @@ public class OfficialAgencyServiceImplTest {
 
     }
 
+    @Test
+    void deleteBranch_throwException_whenJourneyExist() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch2");
+        createBranchDTO.setAddress("Address2");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(2L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setJourneys(Collections.singletonList(new Journey()));
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.deleteBranch(1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("BRANCH_HAS_JOURNEY");
+        assertThat(apiException.getMessage()).isEqualTo("This branch has assigned journeys");
+    }
+    @Test
+    void getAgencyBranches_call_AgencyBranchRepository() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(2L);
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        officialAgency.getUsers().add(authUser);
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(authUser));
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(11L);
+        agencyBranch.setName("Main Office");
+        agencyBranch.setAddress("Dla");
+        when(mockAgencyBranchRepository.findByOfficialAgency_Id(any()))
+                .thenReturn(Collections.singletonList(agencyBranch));
+
+        List<AgencyBranchDTO> agencyBranches = officialAgencyService.getAgencyBranches();
+        verify(mockAgencyBranchRepository).findByOfficialAgency_Id(2L);
+        assertThat(agencyBranches.get(0).getId()).isEqualTo(11L);
+        assertThat(agencyBranches.get(0).getName()).isEqualTo("Main Office");
+        assertThat(agencyBranches.get(0).getAddress()).isEqualTo("Dla");
+
+    }
+
 
 }
