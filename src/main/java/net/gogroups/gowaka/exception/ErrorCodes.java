@@ -31,6 +31,7 @@ public enum ErrorCodes {
     ALREADY_REFUNDED_REQUEST("Request already refunded"),
     INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee"),
     BRANCH_HAS_JOURNEY("This branch has assigned journeys"),
+    BRANCH_HAS_USERS("This branch has assigned users"),
     REFUND_REQUEST_NOT_APPROVED("Refund request not approved.");
 
     private String message;

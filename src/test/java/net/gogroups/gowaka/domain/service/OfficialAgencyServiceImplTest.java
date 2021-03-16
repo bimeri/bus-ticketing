@@ -959,6 +959,48 @@ public class OfficialAgencyServiceImplTest {
         assertThat(apiException.getErrorCode()).isEqualTo("BRANCH_HAS_JOURNEY");
         assertThat(apiException.getMessage()).isEqualTo("This branch has assigned journeys");
     }
+
+    @Test
+    void deleteBranch_throwException_whenUserExistInBranch() {
+
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch2");
+        createBranchDTO.setAddress("Address2");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("12");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(2L);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main Branch");
+        agencyBranch.setAddress("Address");
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setUsers(Collections.singletonList(new User()));
+        agencyBranch.setJourneys(Collections.emptyList());
+
+        User authUser = new User();
+        authUser.setOfficialAgency(officialAgency);
+        authUser.setAgencyBranch(agencyBranch);
+        officialAgency.getUsers().add(authUser);
+
+        when(mockAgencyBranchRepository.findById(1L))
+                .thenReturn(Optional.of(agencyBranch));
+
+        when(mockUserRepository.findById("12"))
+                .thenReturn(Optional.of(authUser));
+
+        ApiException apiException = assertThrows(ApiException.class, () -> officialAgencyService.deleteBranch(1L));
+        assertThat(apiException.getErrorCode()).isEqualTo("BRANCH_HAS_USERS");
+        assertThat(apiException.getMessage()).isEqualTo("This branch has assigned users");
+    }
+
     @Test
     void getAgencyBranches_call_AgencyBranchRepository() {
 

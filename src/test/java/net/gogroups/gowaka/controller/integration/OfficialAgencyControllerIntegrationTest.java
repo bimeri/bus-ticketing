@@ -539,7 +539,6 @@ public class OfficialAgencyControllerIntegrationTest {
         AgencyBranch savedAgencyBranch = agencyBranchRepository.save(agencyBranch);
 
         authUser.setOfficialAgency(agency);
-        authUser.setAgencyBranch(savedAgencyBranch);
         userRepository.save(authUser);
 
         String jwtToken = createToken("12", "agencyadmin@gg.com", "AG Admin", secretKey, "USERS", "AGENCY_ADMIN");

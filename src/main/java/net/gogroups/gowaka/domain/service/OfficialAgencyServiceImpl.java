@@ -378,6 +378,9 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         if (!agencyBranch.getJourneys().isEmpty()) {
             throw new ApiException(ErrorCodes.BRANCH_HAS_JOURNEY.getMessage(), ErrorCodes.BRANCH_HAS_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
+        if (!agencyBranch.getUsers().isEmpty()) {
+            throw new ApiException(ErrorCodes.BRANCH_HAS_USERS.getMessage(), ErrorCodes.BRANCH_HAS_USERS.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
 
         agencyBranchRepository.deleteById(branchId);
     }
