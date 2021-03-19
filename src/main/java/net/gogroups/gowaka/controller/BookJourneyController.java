@@ -105,7 +105,7 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory(pageNumber, limit));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @GetMapping("/protected/checkIn_status")
     public ResponseEntity<OnBoardingInfoDTO> getOnBoardingInfoResponse(@RequestParam("code") String code) {
         log.info("getting on boarding info for code :{}", code);
