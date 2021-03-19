@@ -584,7 +584,10 @@ public class JourneyServiceImpl implements JourneyService {
 
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
-
+        if(journey.getAgencyBranch() != null) {
+            journeyResponseDTO.setBranchId(journey.getAgencyBranch().getId());
+            journeyResponseDTO.setBranchName(journey.getAgencyBranch().getName());
+        }
         return journeyResponseDTO;
     }
 
@@ -657,6 +660,7 @@ public class JourneyServiceImpl implements JourneyService {
                     carDTO.setAgencyName(officialAgency.getAgencyName());
                     carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
                     carDTO.setPolicy(officialAgency.getPolicy());
+                    carDTO.setAgencyId(officialAgency.getId());
                 }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {

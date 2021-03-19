@@ -100,7 +100,14 @@ public class JourneyControllerIntegrationTest {
     public void add_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency savedAgency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("VCL");
+        agencyBranch.setAddress("address");
+        agencyBranch.setOfficialAgency(savedAgency);
+        AgencyBranch savedBranch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -108,8 +115,8 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(savedBranch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -138,7 +145,6 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.plusDays(3).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String currentTimeStamp = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -156,13 +162,12 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/cars/" + bus.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
 
     }
 
@@ -1042,7 +1047,6 @@ public class JourneyControllerIntegrationTest {
         sharedRide.setIsOfficialAgencyIndicator(false);
         sharedRide.setIsCarApproved(true);
 
-
         user.setPersonalAgency(personalAgency);
         userRepository.save(user);
         Location location = new Location();
@@ -1088,13 +1092,12 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/cars/" + sharedRide.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
     }
 
     /**

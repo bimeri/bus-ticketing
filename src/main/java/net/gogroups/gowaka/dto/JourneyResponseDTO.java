@@ -29,4 +29,6 @@ public class JourneyResponseDTO {
     private CarResponseDTO car;
     private boolean isDepartureTimeDue;
     private boolean isUserBranch = false;
+    private Long branchId;
+    private String branchName;
 }

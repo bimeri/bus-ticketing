@@ -152,6 +152,10 @@ public class JourneyServiceImplTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 3500);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(2L);
+        agencyBranch.setName("ACL");
+        journey.setAgencyBranch(agencyBranch);
 
         journey.setJourneyStops(Collections.singletonList(journeyStop));
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);

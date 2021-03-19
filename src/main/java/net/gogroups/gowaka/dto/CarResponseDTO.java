@@ -15,6 +15,7 @@ public class CarResponseDTO {
     private String name;
     private String licensePlateNumber;
     private Boolean isOfficialAgencyIndicator;
+    private Long agencyId;
     private String agencyName;
     private String agencyLogo;
     private String policy;
