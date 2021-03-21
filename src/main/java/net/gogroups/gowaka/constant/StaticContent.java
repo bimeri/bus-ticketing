@@ -7,6 +7,7 @@ package net.gogroups.gowaka.constant;
 public class StaticContent {
 
     public static final String MOBILE = "MOBILE";
+    public static int MIM_TIME_TO_WAIT_FOR_PAYMENT = 5;
 
     public static final String ABOUT_US = "<div>\n" +
             "      <h4>About Us</h4>\n" +

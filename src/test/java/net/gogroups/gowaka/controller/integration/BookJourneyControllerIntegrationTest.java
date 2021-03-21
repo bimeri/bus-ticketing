@@ -226,7 +226,7 @@ public class BookJourneyControllerIntegrationTest {
                 .thenReturn(payAmGoResponse);
 
         RequestBuilder requestBuilder = post("/api/protected/bookJourney/journey/" + journey.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(bookJourneyRequest))
                 .accept(MediaType.APPLICATION_JSON);

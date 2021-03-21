@@ -44,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.gogroups.gowaka.constant.StaticContent.MIM_TIME_TO_WAIT_FOR_PAYMENT;
 import static net.gogroups.gowaka.exception.ErrorCodes.*;
 import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 
@@ -171,7 +172,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public List<Integer> getAllBookedSeats(Long journeyId) {
 
-        int MIM_TIME_TO_WAIT_FOR_PAYMENT = 5;
         Journey journey = getJourney(journeyId);
         Set<Integer> seats = new HashSet<>();
         journey.getBookedJourneys().stream()
@@ -459,8 +459,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 })
                 .collect(Collectors.toSet()));
     }
-
-
 
     private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {
         Set<String> phoneNumbers = new HashSet<>();

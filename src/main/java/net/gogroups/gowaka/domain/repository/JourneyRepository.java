@@ -21,6 +21,10 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
 
     List<Journey> findByArrivalIndicatorTrue();
 
+    List<Journey> findByDepartureIndicatorFalse();
+
     Page<Journey> findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(Long branchId, Pageable pageable);
+
+
 
 }
