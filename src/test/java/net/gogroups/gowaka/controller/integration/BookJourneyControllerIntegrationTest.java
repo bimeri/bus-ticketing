@@ -7,6 +7,7 @@ import net.gogroups.gowaka.dto.BookJourneyRequest;
 import net.gogroups.gowaka.dto.CodeDTO;
 import net.gogroups.gowaka.dto.PaymentStatusResponseDTO;
 import net.gogroups.gowaka.dto.PhoneNumberDTO;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
@@ -72,6 +73,9 @@ public class BookJourneyControllerIntegrationTest {
 
     @MockBean
     private PayAmGoService payAmGoService;
+
+    @MockBean
+    private GwCacheLoaderService mockGwCacheLoaderService;
 
     @MockBean
     private NotificationService notificationService;
@@ -231,8 +235,8 @@ public class BookJourneyControllerIntegrationTest {
                 .content(new ObjectMapper().writeValueAsString(bookJourneyRequest))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
+        mockGwCacheLoaderService.seatsChange(any(), any());
     }
 
     @Test
@@ -257,8 +261,8 @@ public class BookJourneyControllerIntegrationTest {
                 .content(new ObjectMapper().writeValueAsString(bookJourneyRequest))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isNoContent())
-                .andReturn();
+                .andExpect(status().isNoContent());
+        mockGwCacheLoaderService.seatsChange(any(), any());
     }
 
     @Test
@@ -353,7 +357,7 @@ public class BookJourneyControllerIntegrationTest {
         verify(notificationService).sendEmail(any());
         verify(fileStorageService).saveFile(any(), any(), any(), any());
         verify(fileStorageService, times(3)).getFilePath(any(), any(), any());
-
+        mockGwCacheLoaderService.seatsChange(any(), any());
     }
 
     @Test
@@ -713,8 +717,8 @@ public class BookJourneyControllerIntegrationTest {
                 .content(expectedRequest)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isNoContent())
-                .andReturn();
+                .andExpect(status().isNoContent());
+        mockGwCacheLoaderService.seatsChange(any(), any());
     }
 
     @Test

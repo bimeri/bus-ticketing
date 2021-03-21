@@ -7,10 +7,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
-import net.gogroups.gowaka.service.BookJourneyService;
-import net.gogroups.gowaka.service.JourneyService;
-import net.gogroups.gowaka.service.ServiceChargeService;
-import net.gogroups.gowaka.service.UserService;
+import net.gogroups.gowaka.service.*;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.model.PayAmGoRequestDTO;
 import net.gogroups.payamgo.model.PayAmGoRequestResponseDTO;
@@ -68,6 +65,8 @@ public class BookJourneyServiceImplTest {
     private ServiceChargeService mockServiceChargeService;
     @Mock
     private BookJourneyService mockBookJourneyService;
+    @Mock
+    private GwCacheLoaderService mockGwCacheLoaderService;
 
     private BookJourneyService bookJourneyService;
     private ArgumentCaptor<BookedJourney> bookedJourneyArgumentCaptor = ArgumentCaptor.forClass(BookedJourney.class);
@@ -90,7 +89,7 @@ public class BookJourneyServiceImplTest {
                 mockUserRepository, mockPaymentTransactionRepository, mockPassengerRepository,
                 mockUserService, mockPayAmGoService,
                 mocKNotificationService, mockFileStorageService, paymentUrlResponseProps,
-                mockJourneyService, mockServiceChargeService, mockEmailContentBuilder);
+                mockJourneyService, mockServiceChargeService, mockEmailContentBuilder, mockGwCacheLoaderService);
 
         Location destinationLocation = new Location();
         destinationLocation.setAddress("Kumba Moto Part");
@@ -424,6 +423,7 @@ public class BookJourneyServiceImplTest {
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
         verify(mockPayAmGoService).initiatePayment(any());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
 
         BookedJourney bookedJourneyValue = bookedJourneyArgumentCaptor.getValue();
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getAllValues().get(0);
@@ -538,6 +538,7 @@ public class BookJourneyServiceImplTest {
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
         verify(mockPayAmGoService).initiatePayment(any());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
 
         BookedJourney bookedJourneyValue = bookedJourneyArgumentCaptor.getValue();
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getAllValues().get(0);
@@ -658,6 +659,7 @@ public class BookJourneyServiceImplTest {
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
         verify(mockPayAmGoService).initiatePayment(any());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
 
         BookedJourney bookedJourneyValue = bookedJourneyArgumentCaptor.getValue();
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getAllValues().get(0);
@@ -776,6 +778,7 @@ public class BookJourneyServiceImplTest {
         verify(mockUserRepository).findById("10");
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
 
         BookedJourney bookedJourneyValue = bookedJourneyArgumentCaptor.getValue();
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getValue();
@@ -931,6 +934,7 @@ public class BookJourneyServiceImplTest {
         verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
         verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
         BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
 
         assertThat(theBooked.getAgencyUser()).isEqualTo(user);
         assertThat(theBooked.getUser()).isEqualTo(user);
@@ -1354,11 +1358,14 @@ public class BookJourneyServiceImplTest {
         paymentTransaction.setTransactionStatus(WAITING.toString());
         paymentTransaction.setProcessingNumber("processingNumber001");
         paymentTransaction.setAppTransactionNumber("AppTxnNumber");
+        paymentTransaction.setCreatedAt(LocalDateTime.now());
 
         bookedJourney.setPaymentTransaction(paymentTransaction);
 
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.of(bookedJourney));
+        when(mockJourneyRepository.findById(any()))
+                .thenReturn(Optional.of(journey));
 
 
         bookJourneyService.handlePaymentResponse(2L, paymentStatusResponseDTO);
@@ -1367,6 +1374,7 @@ public class BookJourneyServiceImplTest {
         verify(mocKNotificationService).sendEmail(any());
         verify(mockFileStorageService).saveFile(anyString(), any(), anyString(), any());
         verify(mockFileStorageService).getFilePath(anyString(), anyString(), any());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
         PaymentTransaction paymentTransactionValue = paymentTransactionArgumentCaptor.getValue();
 
         assertThat(paymentTransactionValue.getTransactionStatus()).isEqualTo("COMPLETED");
@@ -1846,6 +1854,7 @@ public class BookJourneyServiceImplTest {
         dto.setNewSeatNumber(8);
         bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L);
         verify(mockPassengerRepository).saveAll(passengerArgumentCaptorList.capture());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
         assertThat(passengerArgumentCaptorList.getValue().get(0).getSeatNumber()).isEqualTo(8);
         assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isEqualTo("Jones");
         assertThat(passengerArgumentCaptorList.getValue().get(1).getSeatNumber()).isEqualTo(10);
@@ -1889,6 +1898,7 @@ public class BookJourneyServiceImplTest {
         dto.setNewSeatNumber(3);
         bookJourneyService.changeSeatNumber(Collections.singletonList(dto), 1L);
         verify(mockPassengerRepository).saveAll(passengerArgumentCaptorList.capture());
+        verify(mockGwCacheLoaderService).seatsChange(anyLong(), any());
         assertThat(passengerArgumentCaptorList.getValue().get(0).getSeatNumber()).isEqualTo(3);
         assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isEqualTo("Jones");
         assertThat(passengerArgumentCaptorList.getValue().get(0).getName()).isNotEqualTo(passenger.getCheckedInCode());
@@ -1896,7 +1906,6 @@ public class BookJourneyServiceImplTest {
 
     @Test
     void searchPassenger_searchAvailablePassengers() {
-
 
         Passenger passenger = new Passenger();
         passenger.setId(2L);

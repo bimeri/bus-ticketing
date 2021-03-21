@@ -8,6 +8,7 @@ import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.model.SendSmsDTO;
@@ -79,6 +80,9 @@ public class JourneyServiceImplTest {
 
     @Mock
     private EmailContentBuilder mockEmailContentBuilder;
+
+    @Mock
+    private GwCacheLoaderService mockGwCacheLoaderService;
 
 
     @Test
@@ -1749,6 +1753,7 @@ public class JourneyServiceImplTest {
         verify(mockEmailContentBuilder).buildJourneyStatusEmail(any());
         verify(mockNotificationService).sendEmail(any());
         verify(mockNotificationService).sendSMS(any());
+        verify(mockGwCacheLoaderService).addUpdateJourney(any());
     }
 
 }

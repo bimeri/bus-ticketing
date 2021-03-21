@@ -12,10 +12,7 @@ import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
-import net.gogroups.gowaka.service.BookJourneyService;
-import net.gogroups.gowaka.service.JourneyService;
-import net.gogroups.gowaka.service.ServiceChargeService;
-import net.gogroups.gowaka.service.UserService;
+import net.gogroups.gowaka.service.*;
 import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
@@ -72,11 +69,11 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private PaymentUrlResponseProps paymentUrlResponseProps;
     private JourneyService journeyService;
     private ServiceChargeService serviceChargeService;
-
     private EmailContentBuilder emailContentBuilder;
+    private GwCacheLoaderService gwCacheLoaderService;
 
     @Autowired
-    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, ServiceChargeService serviceChargeService, EmailContentBuilder emailContentBuilder) {
+    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, ServiceChargeService serviceChargeService, EmailContentBuilder emailContentBuilder, GwCacheLoaderService gwCacheLoaderService) {
         this.bookedJourneyRepository = bookedJourneyRepository;
         this.journeyRepository = journeyRepository;
         this.userRepository = userRepository;
@@ -90,6 +87,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.journeyService = journeyService;
         this.serviceChargeService = serviceChargeService;
         this.emailContentBuilder = emailContentBuilder;
+        this.gwCacheLoaderService = gwCacheLoaderService;
     }
 
 
@@ -124,6 +122,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         savedPaymentTransaction.setTransactionStatus(WAITING.toString());
         savedPaymentTransaction.setProcessingNumber(payAmGoRequestResponseDTO.getProcessingNumber());
         paymentTransactionRepository.save(savedPaymentTransaction);
+
+        gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
+
         return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl(), savedPaymentTransaction.getBookedJourney().getId());
     }
 
@@ -167,35 +168,15 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(savedTxn.getBookedJourney());
         notifyPassengers(savedTxn.getBookedJourney(), bookedJourneyStatusDTO);
 
+        gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
+
     }
 
     @Override
     public List<Integer> getAllBookedSeats(Long journeyId) {
 
         Journey journey = getJourney(journeyId);
-        Set<Integer> seats = new HashSet<>();
-        journey.getBookedJourneys().stream()
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(INITIATED.toString())
-                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(WAITING.toString())
-                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString())
-                ).forEach(bookedJourney -> {
-            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
-            String transactionStatus = paymentTransaction.getTransactionStatus();
-            long untilMinute = paymentTransaction.getCreatedAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
-            if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
-                    && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
-                //TODO: should look for the next available seat and set
-                List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
-                    passenger.setSeatNumber(0);
-                    return passenger;
-                }).collect(Collectors.toList());
-                // update seatNumber if more than waiting limit,
-                passengerRepository.saveAll(passengers);
-            } else {
-                seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
-            }
-        });
+        Set<Integer> seats = getBookedSeatsSet(journey);
 
         return new ArrayList<>(seats);
     }
@@ -278,6 +259,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             if (isCompleted) {
                 notifyPassengers(bookedJourney, bookedJourneyStatusDTO);
             }
+            gwCacheLoaderService.seatsChange(bookedJourney.getJourney().getId(), getAllBookedSeats(bookedJourney.getJourney().getId()));
         }
     }
 
@@ -441,6 +423,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         SEAT_ALREADY_TAKEN.getMessage(),
                         SEAT_ALREADY_TAKEN.toString(), HttpStatus.CONFLICT);
             }
+
+            gwCacheLoaderService.seatsChange(journey.getId(), getAllBookedSeats(journey.getId()));
         }
     }
 
@@ -458,6 +442,33 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     return new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), directToAccountName, directToAccountEmail);
                 })
                 .collect(Collectors.toSet()));
+    }
+
+    private Set<Integer> getBookedSeatsSet(Journey journey) {
+        Set<Integer> seats = new HashSet<>();
+        journey.getBookedJourneys().stream()
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(INITIATED.toString())
+                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(WAITING.toString())
+                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString())
+                ).forEach(bookedJourney -> {
+            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+            String transactionStatus = paymentTransaction.getTransactionStatus();
+            long untilMinute = paymentTransaction.getCreatedAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
+            if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
+                    && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
+                //TODO: should look for the next available seat and set
+                List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
+                    passenger.setSeatNumber(0);
+                    return passenger;
+                }).collect(Collectors.toList());
+                // update seatNumber if more than waiting limit,
+                passengerRepository.saveAll(passengers);
+            } else {
+                seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
+            }
+        });
+        return seats;
     }
 
     private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {

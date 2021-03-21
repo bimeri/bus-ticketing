@@ -18,6 +18,7 @@ import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.EmailAddress;
@@ -60,6 +61,7 @@ public class JourneyServiceImpl implements JourneyService {
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
     private final EmailContentBuilder emailContentBuilder;
+    private final GwCacheLoaderService gwCacheLoaderService;
 
     private static final ZoneId zoneId = ZoneId.of("GMT");
 
@@ -70,7 +72,9 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
 
-        return mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
+        JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
+        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        return journeyResponseDTO;
     }
 
     @Override
@@ -78,7 +82,9 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         journeyTerminationFilter(journey);
         checkJourneyCarInOfficialAgency(journey);
-        return mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
+        JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
+        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        return journeyResponseDTO;
     }
 
     @Override
@@ -175,7 +181,10 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
-            if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
+            if (isJourneyNotBooked(journey)) {
+                journeyRepository.delete(journey);
+                gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
+            }
         }
     }
 
@@ -186,15 +195,19 @@ public class JourneyServiceImpl implements JourneyService {
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
-            journeyRepository.save(journey);
+            journey = journeyRepository.save(journey);
         }
         if (journeyDepartureIndicator.getDepartureIndicator()) {
             try {
                 sendSMSAndEmailNotificationToSubscribers(journey, "just started");
+                gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
             } catch (Exception e) {
                 log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
             }
+        } else {
+            JourneyResponseDTO journeyResponseDTO = mapToJourneyResponseDTO(journey, null);
+            gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
         }
     }
 
@@ -584,7 +597,7 @@ public class JourneyServiceImpl implements JourneyService {
 
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
-        if(journey.getAgencyBranch() != null) {
+        if (journey.getAgencyBranch() != null) {
             journeyResponseDTO.setBranchId(journey.getAgencyBranch().getId());
             journeyResponseDTO.setBranchName(journey.getAgencyBranch().getName());
         }
@@ -725,6 +738,10 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
         journeyResponseDTO.setDepartureTimeDue(LocalDateTime.now().isAfter(journey.getDepartureTime()));
+        if (journey.getAgencyBranch() != null) {
+            journeyResponseDTO.setBranchId(journey.getAgencyBranch().getId());
+            journeyResponseDTO.setBranchName(journey.getAgencyBranch().getName());
+        }
         return journeyResponseDTO;
     }
 

@@ -3,6 +3,7 @@ package net.gogroups.gowaka.controller.integration;
 import net.gogroups.gowaka.TimeProviderTestUtil;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static net.gogroups.gowaka.TestUtils.createToken;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -65,6 +68,9 @@ public class JourneyControllerIntegrationTest {
 
     @Autowired
     private AgencyBranchRepository agencyBranchRepository;
+
+    @MockBean
+    private GwCacheLoaderService mockGwCacheLoaderService;
 
 
     @Autowired
@@ -168,6 +174,7 @@ public class JourneyControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk());
+        mockGwCacheLoaderService.addUpdateJourney(any());
 
     }
 
@@ -376,7 +383,7 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/cars/" + bus.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -384,6 +391,8 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
+        mockGwCacheLoaderService.addUpdateJourney(any());
+
     }
 
     /**
@@ -592,7 +601,7 @@ public class JourneyControllerIntegrationTest {
         journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
 
-        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1&branchId="+saveBranch.getId())
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1&branchId=" + saveBranch.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -881,8 +890,8 @@ public class JourneyControllerIntegrationTest {
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isNoContent())
-                .andReturn();
+                .andExpect(status().isNoContent());
+        mockGwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getId(), journey.getAgencyBranch().getOfficialAgency().getId(), journey.getId());
     }
 
     /**
