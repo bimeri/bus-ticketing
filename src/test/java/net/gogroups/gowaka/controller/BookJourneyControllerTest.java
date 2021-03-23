@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -85,6 +86,24 @@ public class BookJourneyControllerTest {
         assertThat(allBookedSeats.getBody().get(1)).isEqualTo(2);
         assertThat(allBookedSeats.getBody().get(2)).isEqualTo(3);
         assertThat(allBookedSeats.getBody().get(3)).isEqualTo(4);
+
+    }
+
+    @Test
+    void findPassenger_callsBookJourneyService() {
+
+        when(mockBookJourneyService.searchPassenger(any()))
+                .thenReturn(Collections.singletonList(new GwPassenger("John", "1234567", "237676279260", "john@gmail.com", "John", "john@gmail.com")));
+
+        ResponseEntity<List<GwPassenger>> passengers = bookJourneyController.findPassenger(new PhoneNumberDTO("237", "676279260"));
+
+        assertThat(passengers.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(passengers.getBody().size()).isEqualTo(1);
+        assertThat(passengers.getBody().get(0).getDirectedToAccount()).isEqualTo("john@gmail.com");
+        assertThat(passengers.getBody().get(0).getEmail()).isEqualTo("john@gmail.com");
+        assertThat(passengers.getBody().get(0).getName()).isEqualTo("John");
+        assertThat(passengers.getBody().get(0).getIdNumber()).isEqualTo("1234567");
+        assertThat(passengers.getBody().get(0).getPhoneNumber()).isEqualTo("237676279260");
 
     }
 

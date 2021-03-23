@@ -51,6 +51,9 @@ public class Journey extends BaseEntity{
     private List<JourneyStop> journeyStops;
 
     @ManyToOne
+    private AgencyBranch agencyBranch;
+
+    @ManyToOne
     private Car car;
 
     public Journey() {

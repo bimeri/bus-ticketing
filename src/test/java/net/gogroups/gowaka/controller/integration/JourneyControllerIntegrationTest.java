@@ -3,6 +3,7 @@ package net.gogroups.gowaka.controller.integration;
 import net.gogroups.gowaka.TimeProviderTestUtil;
 import net.gogroups.gowaka.domain.model.*;
 import net.gogroups.gowaka.domain.repository.*;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static net.gogroups.gowaka.TestUtils.createToken;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -64,6 +67,13 @@ public class JourneyControllerIntegrationTest {
     private BookedJourneyRepository bookedJourneyRepository;
 
     @Autowired
+    private AgencyBranchRepository agencyBranchRepository;
+
+    @MockBean
+    private GwCacheLoaderService mockGwCacheLoaderService;
+
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Qualifier("ggClientRestTemplate")
@@ -72,14 +82,6 @@ public class JourneyControllerIntegrationTest {
 
     private User user;
 
-
-    private String successClientTokenResponse = "{\n" +
-            "  \"header\": \"Authorization\",\n" +
-            "  \"type\": \"Bearer\",\n" +
-            "  \"issuer\": \"API-Security\",\n" +
-            "  \"version\": \"v1\",\n" +
-            "  \"token\": \"jwt-token\"\n" +
-            "}";
     private String jwtToken;
 
     @BeforeEach
@@ -104,7 +106,14 @@ public class JourneyControllerIntegrationTest {
     public void add_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency savedAgency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("VCL");
+        agencyBranch.setAddress("address");
+        agencyBranch.setOfficialAgency(savedAgency);
+        AgencyBranch savedBranch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -112,8 +121,8 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(savedBranch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -142,7 +151,6 @@ public class JourneyControllerIntegrationTest {
         TimeProviderTestUtil.useFixedClockAt(LocalDateTime.now());
         ZonedDateTime localDateTime = TimeProviderTestUtil.now().atZone(ZoneId.of("GMT"));
         String currentDateTime = localDateTime.plusDays(3).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String currentTimeStamp = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         bus.setCreatedAt(TimeProviderTestUtil.now());
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -160,13 +168,13 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/cars/" + bus.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
+        mockGwCacheLoaderService.addUpdateJourney(any());
 
     }
 
@@ -232,9 +240,16 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void update_journey_should_return_ok_with_valid_journey_response_dto() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("GG Express");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -242,8 +257,8 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -284,6 +299,7 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
+        journey.setAgencyBranch(branch);
 
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop2);
@@ -367,7 +383,7 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop2.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/cars/" + bus.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -375,6 +391,8 @@ public class JourneyControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json(expectedResponse))
                 .andReturn();
+        mockGwCacheLoaderService.addUpdateJourney(any());
+
     }
 
     /**
@@ -483,64 +501,12 @@ public class JourneyControllerIntegrationTest {
         journey.setCar(bus);
         journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
-        String expectedResponse = "[{\"id\":" + journey.getId() + ",\"departureTime\":\"" + currentDateTime + "\"," +
-                "\"estimatedArrivalTime\":\"" + currentDateTime + "\"," +
-                "\"departureIndicator\":false," +
-                "\"arrivalIndicator\":false," +
-                "\"timestamp\":\"" + currentDateTime + "\"," +
-                "\"amount\": 0.0," +
-                "\"driver\":{" +
-                "\"driverName\":\"John Doe\"," +
-                "\"driverLicenseNumber\":\"1234567899\"" +
-                "}," +
-                "\"departureLocation\":{" +
-                "\"id\":" + transitAndStop1.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Kumba\"," +
-                "\"address\":\"Buea Road Motor Park\"" +
-                "}," +
-                "\"destination\":{" +
-                "\"id\":" + transitAndStop.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Buea\"," +
-                "\"address\":\"Mile 17 Motto Park\"," +
-                "\"amount\": 0.0" +
-                "}," +
-                "\"transitAndStops\":[" +
-                "{" +
-                "\"id\":" + transitAndStop3.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\": \"South West\"," +
-                "\"city\":\"Ekona\"," +
-                "\"address\":\"Ekona Main Park\"," +
-                "\"amount\":500.0" +
-                "}," +
-                "{" +
-                "\"id\":" + transitAndStop2.getId() + "," +
-                "\"country\":\"Cameroon\"," +
-                "\"state\":\"South West\"," +
-                "\"city\":\"Muyuka\"," +
-                "\"address\":\"Muyuka Main Park\"," +
-                "\"amount\":1500.0" +
-                "}" +
-                "]," +
-                "\"car\":{" +
-                "\"id\":" + bus.getId() + "," +
-                "\"name\":\"Kumba One Chances\"," +
-                "\"licensePlateNumber\":\"123454387\"," +
-                "\"isOfficialAgencyIndicator\":true," +
-                "\"isCarApproved\":true," +
-                "\"timestamp\":\"" + currentDateTime + "\"" +
-                "}}]";
 
         RequestBuilder requestBuilder = get("/api/protected/agency/journeys/")
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())
-                .andExpect(content().json(expectedResponse))
                 .andReturn();
     }
 
@@ -549,7 +515,14 @@ public class JourneyControllerIntegrationTest {
     public void getOfficialAgencyJourneys_should_return_list_of_journey_response_dtos() throws Exception {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setAgencyName("Malingo Major");
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency saveOA = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(saveOA);
+        agencyBranch.setName("main branch");
+
+        AgencyBranch saveBranch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
         bus.setName("Kumba One Chances");
         bus.setNumberOfSeats(3);
@@ -558,6 +531,7 @@ public class JourneyControllerIntegrationTest {
         bus.setLicensePlateNumber("123454387");
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(saveBranch);
         userRepository.save(user);
         Location location = new Location();
         location.setAddress("Mile 17 Motto Park");
@@ -605,6 +579,7 @@ public class JourneyControllerIntegrationTest {
         journey.setEstimatedArrivalTime(localDateTime.toLocalDateTime());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
+        journey.setAgencyBranch(saveBranch);
 
         JourneyStop journeyStop = new JourneyStop();
         journeyStop.setTransitAndStop(transitAndStop2);
@@ -626,7 +601,7 @@ public class JourneyControllerIntegrationTest {
         journey.setCreatedAt(localDateTime.toLocalDateTime());
         journeyRepository.save(journey);
 
-        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1")
+        RequestBuilder requestBuilder = get("/api/protected/agency/journeys/page?limit=10&pageNumber=1&branchId=" + saveBranch.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -829,13 +804,21 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void add_stops_should_return_204_no_content() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
         Bus bus = new Bus();
 
-
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
+
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
@@ -854,10 +837,11 @@ public class JourneyControllerIntegrationTest {
         journeyStop.setJourney(journey);
         journey.setJourneyStops(Collections.singletonList(journeyStop));
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"transitAndStopId\": " + transitAndStop.getId() + ", \"amount\" : 1000.0 }";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/add_stops")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -872,17 +856,26 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void delete_Non_Booked_journey_should_delete_journey_successfully() throws Exception {
+
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -891,13 +884,14 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         RequestBuilder requestBuilder = delete("/api/protected/agency/journeys/" + journey.getId())
                 .header("Authorization", "Bearer " + jwtToken)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isNoContent())
-                .andReturn();
+                .andExpect(status().isNoContent());
+        mockGwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getId(), journey.getAgencyBranch().getOfficialAgency().getId(), journey.getId());
     }
 
     /**
@@ -906,13 +900,20 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void set_journey_departure_indicator_should_update_and_return_no_content() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
         userRepository.save(user);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -921,10 +922,11 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"departureIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/departure")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -939,17 +941,26 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void update_journey_arrival_indicator_should_update_and_return_no_content() throws Exception {
+
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
+
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
-
 
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
@@ -958,10 +969,11 @@ public class JourneyControllerIntegrationTest {
         journey.setDepartureIndicator(true);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
         journeyRepository.save(journey);
         String reqBody = "{\"arrivalIndicator\": true}";
         RequestBuilder requestBuilder = post("/api/protected/agency/journeys/" + journey.getId() + "/arrival")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
@@ -1044,7 +1056,6 @@ public class JourneyControllerIntegrationTest {
         sharedRide.setIsOfficialAgencyIndicator(false);
         sharedRide.setIsCarApproved(true);
 
-
         user.setPersonalAgency(personalAgency);
         userRepository.save(user);
         Location location = new Location();
@@ -1090,13 +1101,12 @@ public class JourneyControllerIntegrationTest {
                 "{\"transitAndStopId\":" + transitAndStop3.getId() + ", \"amount\": 2000}]\n" +
                 "}\n";
         RequestBuilder requestBuilder = post("/api/protected/users/journeys/cars/" + sharedRide.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(reqBody)
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
     }
 
     /**
@@ -1738,11 +1748,19 @@ public class JourneyControllerIntegrationTest {
      */
     @Test
     public void given_journey_has_no_booking_for_transit_and_stop_then_remove_transit_and_stop() throws Exception {
+
         OfficialAgency officialAgency = new OfficialAgency();
-        officialAgencyRepository.save(officialAgency);
+        officialAgency.setAgencyName("GG Express");
+        OfficialAgency agency = officialAgencyRepository.save(officialAgency);
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setName("Main");
+        agencyBranch.setOfficialAgency(agency);
+        AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
         Bus bus = new Bus();
 
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(branch);
         userRepository.save(user);
         Location location = new Location();
         TransitAndStop transitAndStop = new TransitAndStop();
@@ -1754,15 +1772,15 @@ public class JourneyControllerIntegrationTest {
         transitAndStop.setLocation(location1);
         transitAndStopRepository.save(transitAndStop1);
 
-
         bus.setOfficialAgency(officialAgency);
         carRepository.save(bus);
-
 
         Journey journey = new Journey();
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(branch);
+
         JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 2000.0);
         JourneyStop journeyStop1 = new JourneyStop(journey, transitAndStop1, 300.0);
         journey.setJourneyStops(new ArrayList<>(Arrays.asList(journeyStop, journeyStop1)));

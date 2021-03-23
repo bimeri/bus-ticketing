@@ -7,6 +7,8 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.model.SendSmsDTO;
@@ -78,6 +80,9 @@ public class JourneyServiceImplTest {
 
     @Mock
     private EmailContentBuilder mockEmailContentBuilder;
+
+    @Mock
+    private GwCacheLoaderService mockGwCacheLoaderService;
 
 
     @Test
@@ -151,6 +156,10 @@ public class JourneyServiceImplTest {
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
         JourneyStop journeyStop = new JourneyStop(journey, transitAndStop, 3500);
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(2L);
+        agencyBranch.setName("ACL");
+        journey.setAgencyBranch(agencyBranch);
 
         journey.setJourneyStops(Collections.singletonList(journeyStop));
         when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
@@ -186,7 +195,16 @@ public class JourneyServiceImplTest {
      */
     @Test
     void update_location_should_throw_car_not_found_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(agencyBranch);
+        OfficialAgency officialAgency = new OfficialAgency();
+        user.setOfficialAgency(officialAgency);
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
         Bus bus = new Bus();
@@ -198,11 +216,10 @@ public class JourneyServiceImplTest {
         Journey journey = new Journey();
         journey.setArrivalIndicator(false);
         journey.setCar(bus1);
+        journey.setAgencyBranch(agencyBranch);
 
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.updateJourney(new JourneyDTO(), 1L, 1L));
@@ -235,6 +252,47 @@ public class JourneyServiceImplTest {
     @Test
     void getOfficialAgencyJourneys_should_return_list_of_journeys() {
 
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId("1");
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setName("Muea boy");
+        bus.setOfficialAgency(mockOfficialAgency);
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setBuses(Collections.singletonList(bus));
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setId(1L);
+        Journey journey = new Journey();
+        officialAgency.setAgencyBranch(Collections.singletonList(agencyBranch));
+
+        journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
+        journey.setAgencyBranch(agencyBranch);
+
+        User user = new User();
+        user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
+        when(mockUserRepository.findById("1"))
+                .thenReturn(Optional.of(user));
+        when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
+
+        when(mockJourneyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(any(), any()))
+                .thenReturn(new PageImpl<>(Collections.singletonList(journey)));
+
+        PaginatedResponse<JourneyResponseDTO> officialAgencyJourneys = journeyService.getOfficialAgencyJourneys(1, 10, 1L);
+        assertFalse(officialAgencyJourneys.getItems().isEmpty());
+        assertThat(officialAgencyJourneys.getTotalPages(), is(1));
+        assertThat(officialAgencyJourneys.getPageNumber(), is(1));
+        assertThat(officialAgencyJourneys.getTotal(), is(1));
+        assertThat(officialAgencyJourneys.getItems().get(0).getCar().getName(), is("Muea boy"));
+        assertThat(officialAgencyJourneys.getItems().get(0).isDepartureTimeDue(), is(true));
+    }
+
+    @Test
+    void getOfficialAgencyJourneys_throwException_whenUserBranchNotFound() {
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
@@ -243,28 +301,28 @@ public class JourneyServiceImplTest {
         bus.setName("Muea boy");
         bus.setOfficialAgency(mockOfficialAgency);
 
-        Journey journey = new Journey();
-        journey.setCar(bus);
-        journey.setDepartureTime(LocalDateTime.MIN);
-
-        User user = new User();
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setBuses(Collections.singletonList(bus));
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setOfficialAgency(officialAgency);
+        agencyBranch.setId(1L);
+        Journey journey = new Journey();
+
+        journey.setCar(bus);
+        journey.setDepartureTime(LocalDateTime.MIN);
+        journey.setAgencyBranch(agencyBranch);
+
+        User user = new User();
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
         when(mockUserRepository.findById("1"))
                 .thenReturn(Optional.of(user));
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
 
-        when(mockJourneyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(any(), any()))
-                .thenReturn(new PageImpl<>(Collections.singletonList(journey)));
+        ResourceNotFoundException apiException = assertThrows(ResourceNotFoundException.class, () -> journeyService.getOfficialAgencyJourneys(1, 10, 1L));
+        assertThat(apiException.getMessage(), is("Branch not found in user's agency"));
 
-        PaginatedResponse<JourneyResponseDTO> officialAgencyJourneys = journeyService.getOfficialAgencyJourneys(1, 10);
-        assertFalse(officialAgencyJourneys.getItems().isEmpty());
-        assertThat(officialAgencyJourneys.getTotalPages(), is(1));
-        assertThat(officialAgencyJourneys.getPageNumber(), is(1));
-        assertThat(officialAgencyJourneys.getTotal(), is(1));
-        assertThat(officialAgencyJourneys.getItems().get(0).getCar().getName(), is("Muea boy"));
-        assertThat(officialAgencyJourneys.getItems().get(0).isDepartureTimeDue(), is(true));
     }
 
     /**
@@ -427,6 +485,15 @@ public class JourneyServiceImplTest {
      */
     @Test
     void add_stops_should_throw_journey_not_in_agency_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
+        user.setUserId("1");
+        user.setOfficialAgency(new OfficialAgency());
+        user.setAgencyBranch(new AgencyBranch());
+
         user.setUserId("1");
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
@@ -439,16 +506,15 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
-
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
-
-        ApiException apiException = assertThrows(ApiException.class, () -> journeyService.addStop(1L, new AddStopDTO()));
+        ApiException apiException = assertThrows(ApiException.class, () -> {
+            journeyService.addStop(1L, new AddStopDTO());
+        });
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
         assertThat(apiException.getMessage(), is("Journey\'s car not in AuthUser\'s Agency"));
     }
@@ -459,7 +525,14 @@ public class JourneyServiceImplTest {
      */
     @Test
     void add_stops_should_throw_transit_and_stop_not_found_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(agencyBranch);
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -469,14 +542,12 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
-
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.addStop(1L, new AddStopDTO()));
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
@@ -489,7 +560,14 @@ public class JourneyServiceImplTest {
      */
     @Test
     void add_stops_should_add_and_save_journey() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(agencyBranch);
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -499,6 +577,7 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(agencyBranch);
 
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setId(2L);
@@ -507,10 +586,8 @@ public class JourneyServiceImplTest {
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
         when(mockJourneyRepository.save(journey)).thenReturn(journey);
         when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
         journeyService.addStop(1L, addStopDTO);
@@ -551,8 +628,16 @@ public class JourneyServiceImplTest {
      * Scenario: 3 Journey's car is not in AuthUser Agency
      */
     @Test
-    void delete_journey_should_throw_journey_not_in_auth_user_agency_api_exception() {
+    void delete_journey_should_throw_journey_not_in_auth_user_agency_branch_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main");
+
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(new AgencyBranch());
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -564,14 +649,12 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
-
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.deleteNonBookedJourney(1L));
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
@@ -613,7 +696,15 @@ public class JourneyServiceImplTest {
      */
     @Test
     void set_journey_departure_indicator_should_throw_journey_not_in_auth_user_agency_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(new AgencyBranch());
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -625,14 +716,11 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
-
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
-
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.updateJourneyDepartureIndicator(4L, new JourneyDepartureIndicatorDTO()));
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
         assertThat(apiException.getMessage(), is("Journey\'s car not in AuthUser\'s Agency"));
@@ -672,7 +760,14 @@ public class JourneyServiceImplTest {
      */
     @Test
     void update_journey_arrival_indicator_should_throw_journey_not_in_auth_user_agency_api_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(new AgencyBranch());
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -684,13 +779,12 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setDepartureIndicator(true);
         journey.setCar(bus);
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.updateJourneyArrivalIndicator(4L, new JourneyArrivalIndicatorDTO()));
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
@@ -730,9 +824,14 @@ public class JourneyServiceImplTest {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setId(111L);
 
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
         User user = new User();
         user.setUserId("1");
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
@@ -758,6 +857,7 @@ public class JourneyServiceImplTest {
         journey.setCar(bus);
         journey.setDepartureLocation(departureLocation);
         journey.setDepartureLocation(departureLocation);
+        journey.setAgencyBranch(agencyBranch);
 
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setDestination(departureLocation);
@@ -855,9 +955,14 @@ public class JourneyServiceImplTest {
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setId(111L);
 
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
         User user = new User();
         user.setUserId("1");
         user.setOfficialAgency(officialAgency);
+        user.setAgencyBranch(agencyBranch);
 
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
@@ -877,6 +982,7 @@ public class JourneyServiceImplTest {
         journey.setDepartureIndicator(true);
         journey.setCar(bus);
         journey.setDepartureLocation(departureLocation);
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
@@ -889,7 +995,6 @@ public class JourneyServiceImplTest {
         verifyZeroInteractions(mockGgCfsSurveyTemplateJsonRepository);
         verifyZeroInteractions(mockCfsClientService);
     }
-
 
     /**
      * **USERS** Should be able to SharedRide Journey
@@ -1429,8 +1534,15 @@ public class JourneyServiceImplTest {
      * Scenario: 3. Journey's car is NOT in AuthUser Agency
      */
     @Test
-    void given_journey_car_not_in_user_agency_then_throw_not_found_exception() {
+    void given_journey_branch_not_in_user_agency_then_throw_not_found_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main");
+
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(new AgencyBranch());
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -1442,13 +1554,12 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(agencyBranch);
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus1));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.removeNonBookedStop(1L, 1L));
         assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
@@ -1464,7 +1575,15 @@ public class JourneyServiceImplTest {
      */
     @Test
     void given_journey_has_booking_for_transit_and_stop_then_throw_transit_and_stop_already_booked_exception() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(1L);
+        agencyBranch.setName("Main");
+
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(agencyBranch);
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
 
@@ -1476,6 +1595,7 @@ public class JourneyServiceImplTest {
         journey.setId(1L);
         journey.setArrivalIndicator(false);
         journey.setCar(bus);
+        journey.setAgencyBranch(agencyBranch);
 
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setId(1L);
@@ -1487,10 +1607,8 @@ public class JourneyServiceImplTest {
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
 
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockOfficialAgency.getBuses()).thenReturn(Collections.singletonList(bus));
         when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(transitAndStop));
 
         ApiException apiException = assertThrows(ApiException.class, () -> journeyService.removeNonBookedStop(1L, 1L));
@@ -1563,11 +1681,31 @@ public class JourneyServiceImplTest {
         assertThat(journeyResponseDTOS.size(), is(1));
     }
 
-    /*@Test
+    @Test
     void whenJourneyCarSeatStructureChange_thenCallSendSMSNotification_withAppropriateMessage() {
+
+        AgencyBranch agencyBranch = new AgencyBranch();
+        agencyBranch.setId(15L);
+        agencyBranch.setName("Main Branch");
+        User user = new User();
         user.setUserId("1");
+        user.setAgencyBranch(agencyBranch);
+        OfficialAgency officialAgency = new OfficialAgency();
+        user.setOfficialAgency(officialAgency);
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId("1");
+
+        TransitAndStop departure = new TransitAndStop();
+        departure.setId(13L);
+        Location location = new Location();
+        location.setCity("Buea");
+        departure.setLocation(location);
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(1L);
+        destination.setLocation(new Location());
+
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setName("Muea boy");
@@ -1580,14 +1718,31 @@ public class JourneyServiceImplTest {
         journey.setArrivalIndicator(false);
         journey.setCar(bus1);
         journey.setId(1L);
-        TransitAndStop destination = new TransitAndStop();
-        destination.setId(1L);
-        when(user.getOfficialAgency()).thenReturn(mockOfficialAgency);
+        journey.setAgencyBranch(agencyBranch);
+        journey.setDepartureLocation(departure);
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setSmsNotification(true);
+        bookedJourney.setDestination(destination);
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus("COMPLETED");
+        Passenger passenger = new Passenger();
+        passenger.setPhoneNumber("237777777777");
+        passenger.setEmail("hello@helo.com");
+        bookedJourney.setPassengers(Collections.singletonList(passenger));
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        journey.setBookedJourneys(Collections.singletonList(bookedJourney));
+
+        officialAgency.setBuses(Collections.singletonList(bus));
+
+
+
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));
-        when(mockOfficialAgency.getBuses()).thenReturn(Arrays.asList(bus, bus1));
         when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
-        when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(destination));
+        when(mockTransitAndStopRepository.findById(anyLong())).thenReturn(Optional.of(departure));
+        when(mockJourneyRepository.save(any())).thenReturn(journey);
+        when(mockEmailContentBuilder.buildJourneyStatusEmail(any()))
+                .thenReturn("email message");
         JourneyDTO journeyDTO = new JourneyDTO();
         AddStopDTO addStopDTO = new AddStopDTO();
         addStopDTO.setTransitAndStopId(1L);
@@ -1595,6 +1750,10 @@ public class JourneyServiceImplTest {
         journeyDTO.setDepartureLocation(1L);
         journeyDTO.setTransitAndStops(Collections.singletonList(addStopDTO));
         journeyService.updateJourney(journeyDTO, journey.getId(), bus.getId());
-    }*/
+        verify(mockEmailContentBuilder).buildJourneyStatusEmail(any());
+        verify(mockNotificationService).sendEmail(any());
+        verify(mockNotificationService).sendSMS(any());
+        verify(mockGwCacheLoaderService).addUpdateJourney(any());
+    }
 
 }

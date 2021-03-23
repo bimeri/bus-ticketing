@@ -1,7 +1,6 @@
 package net.gogroups.gowaka.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.cfs.model.CustomerDTO;
@@ -18,6 +17,8 @@ import net.gogroups.gowaka.domain.service.utilities.TimeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.gowaka.service.JourneyService;
 import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.EmailAddress;
@@ -60,6 +61,7 @@ public class JourneyServiceImpl implements JourneyService {
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
     private final EmailContentBuilder emailContentBuilder;
+    private final GwCacheLoaderService gwCacheLoaderService;
 
     private static final ZoneId zoneId = ZoneId.of("GMT");
 
@@ -69,7 +71,10 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
-        return mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
+
+        JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
+        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        return journeyResponseDTO;
     }
 
     @Override
@@ -77,7 +82,9 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         journeyTerminationFilter(journey);
         checkJourneyCarInOfficialAgency(journey);
-        return mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
+        JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
+        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        return journeyResponseDTO;
     }
 
     @Override
@@ -96,17 +103,25 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     @Override
-    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit) {
+    public PaginatedResponse<JourneyResponseDTO> getOfficialAgencyJourneys(Integer pageNumber, Integer limit, Long branchId) {
 
         Pageable paging = PageRequest.of(pageNumber < 1 ? 0 : pageNumber - 1, limit);
 
-        List<Long> busIds = verifyCurrentAuthUser().getOfficialAgency().getBuses().stream()
-                .map(Car::getId)
-                .collect(Collectors.toList());
-        Page<Journey> journeyPage = journeyRepository.findByCar_IdIsInOrderByCreatedAtDescArrivalIndicatorAsc(busIds, paging);
+        User user = verifyCurrentAuthUser();
+        boolean found = false;
+        for (AgencyBranch branch : user.getOfficialAgency().getAgencyBranch()) {
+            if (branch.getId().equals(branchId)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new ResourceNotFoundException("Branch not found in user's agency");
+        }
+        Page<Journey> journeyPage = journeyRepository.findByAgencyBranch_IdOrderByCreatedAtDescArrivalIndicatorAsc(branchId, paging);
 
         List<JourneyResponseDTO> journeys = journeyPage.stream()
-                .map(this::mapToJourneyResponseDTO).collect(Collectors.toList());
+                .map(journey -> mapToJourneyResponseDTO(journey, user)).collect(Collectors.toList());
 
         return PaginatedResponse.<JourneyResponseDTO>builder()
                 .items(journeys)
@@ -166,31 +181,39 @@ public class JourneyServiceImpl implements JourneyService {
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
-            if (isJourneyNotBooked(journey)) journeyRepository.delete(journey);
+            if (isJourneyNotBooked(journey)) {
+                journeyRepository.delete(journey);
+                gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
+            }
         }
     }
 
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
+
         Journey journey = getJourney(journeyId);
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
-            journeyRepository.save(journey);
+            journey = journeyRepository.save(journey);
         }
         if (journeyDepartureIndicator.getDepartureIndicator()) {
             try {
                 sendSMSAndEmailNotificationToSubscribers(journey, "just started");
-            }catch (Exception e){
+                gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
+            } catch (Exception e) {
                 log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
             }
+        } else {
+            JourneyResponseDTO journeyResponseDTO = mapToJourneyResponseDTO(journey, null);
+            gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
         }
     }
 
-
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
+
         Journey journey = getJourney(journeyId);
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
@@ -215,7 +238,7 @@ public class JourneyServiceImpl implements JourneyService {
             }
             try {
                 sendSMSAndEmailNotificationToSubscribers(journey, "just ended");
-            } catch (Exception e){
+            } catch (Exception e) {
                 log.error("Error sending request End journey notification sms for JourneyId: {}", journey.getId());
                 e.printStackTrace();
             }
@@ -489,9 +512,12 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     private JourneyResponseDTO mapSaveAndGetJourneyResponseDTO(JourneyDTO journeyDTO, Journey journey, Car car) {
+
+        User user = verifyCurrentAuthUser();
         // Note previous car in journey context
         Car prevCar = journey.getCar();
         journey.setCar(car);
+        journey.setAgencyBranch(user.getAgencyBranch());
 
         TransitAndStop destinationTransitAndStop = getTransitAndStopCanAppendErrMsg(
                 journeyDTO.getDestination() == null ? null : journeyDTO.getDestination().getTransitAndStopId()
@@ -541,8 +567,8 @@ public class JourneyServiceImpl implements JourneyService {
                 try {
                     sendSMSAndEmailNotificationToSubscribers(journey,
                             "changed seat structure: from "
-                                    + prevSeatsNum + " to " + currSeatsNum + " seats" );
-                }catch (Exception e){
+                                    + prevSeatsNum + " to " + currSeatsNum + " seats");
+                } catch (Exception e) {
                     log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                     e.printStackTrace();
                 }
@@ -571,7 +597,10 @@ public class JourneyServiceImpl implements JourneyService {
 
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
-
+        if (journey.getAgencyBranch() != null) {
+            journeyResponseDTO.setBranchId(journey.getAgencyBranch().getId());
+            journeyResponseDTO.setBranchName(journey.getAgencyBranch().getName());
+        }
         return journeyResponseDTO;
     }
 
@@ -644,6 +673,7 @@ public class JourneyServiceImpl implements JourneyService {
                     carDTO.setAgencyName(officialAgency.getAgencyName());
                     carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
                     carDTO.setPolicy(officialAgency.getPolicy());
+                    carDTO.setAgencyId(officialAgency.getId());
                 }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
             } else if (car instanceof SharedRide) {
@@ -656,17 +686,24 @@ public class JourneyServiceImpl implements JourneyService {
         return carDTO;
     }
 
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey) {
+        return mapToJourneyResponseDTO(journey, null);
+    }
+
     /**
      * Maps journey to JourneyResponseDTO
      *
      * @param journey
      * @return JourneyResponseDTO
      */
-    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey) {
+    private JourneyResponseDTO mapToJourneyResponseDTO(Journey journey, User user) {
         JourneyResponseDTO journeyResponseDTO = new JourneyResponseDTO();
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        if (user != null) {
+            journeyResponseDTO.setUserBranch(journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId()));
+        }
         try {
             // these can throw exceptions
             // no need to throw an exception during get, just log the exception in the catch block
@@ -701,21 +738,11 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setId(journey.getId());
         journeyResponseDTO.setAmount(journey.getAmount());
         journeyResponseDTO.setDepartureTimeDue(LocalDateTime.now().isAfter(journey.getDepartureTime()));
-        return journeyResponseDTO;
-    }
-
-    /**
-     * Gets the transitAndStop for a particular location
-     *
-     * @param location
-     * @return
-     */
-    private TransitAndStop getTransitAndStopByLocation(Location location) {
-        Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
-        if (!optionalTransitAndStop.isPresent()) {
-            throw new ApiException("TransitAndStop not found", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        if (journey.getAgencyBranch() != null) {
+            journeyResponseDTO.setBranchId(journey.getAgencyBranch().getId());
+            journeyResponseDTO.setBranchName(journey.getAgencyBranch().getName());
         }
-        return optionalTransitAndStop.get();
+        return journeyResponseDTO;
     }
 
     /**
@@ -732,14 +759,14 @@ public class JourneyServiceImpl implements JourneyService {
     }
 
     /**
-     * throw exception if journey car is not in official agency
+     * throw exception if journey branch is not in user official agency branch
+     * update to used branch on Mar14, 2021
      *
      * @param journey
      */
     public void checkJourneyCarInOfficialAgency(Journey journey) {
-        List<Car> cars = getOfficialAgency(verifyCurrentAuthUser())
-                .getBuses().stream().filter(bus -> journey.getCar() != null && journey.getCar().getId().equals(bus.getId())).collect(Collectors.toList());
-        if (cars.isEmpty()) {
+        User user = verifyCurrentAuthUser();
+        if (!journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId())) {
             throw new ApiException("Journey\'s car not in AuthUser\'s Agency", ErrorCodes.RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
     }

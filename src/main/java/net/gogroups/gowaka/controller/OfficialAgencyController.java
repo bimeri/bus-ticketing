@@ -5,6 +5,7 @@ import net.gogroups.gowaka.service.OfficialAgencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -70,15 +71,42 @@ public class OfficialAgencyController {
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
-    @PostMapping("/protected/agency/user")
-    ResponseEntity<OfficialAgencyUserDTO> addAgencyUser(@RequestBody EmailDTO emailDTO) {
-        return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO));
+    @PostMapping("/protected/agency/branch/{branchId}/user")
+    ResponseEntity<OfficialAgencyUserDTO> addAgencyUser(@RequestBody EmailDTO emailDTO, @PathVariable("branchId") Long branchId) {
+        return ResponseEntity.ok(officialAgencyService.addAgencyUser(emailDTO, branchId));
     }
 
     @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
     @DeleteMapping("/protected/agency/user/{userId}")
     ResponseEntity<?> removeAgencyUser(@PathVariable("userId") String userId) {
         officialAgencyService.removeAgencyUser(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR','ROLE_AGENCY_BOOKING', 'ROLE_AGENCY_CHECKING')")
+    @GetMapping("/protected/agency/branch")
+    ResponseEntity<List<AgencyBranchDTO>> getAgencyBranches() {
+        return ResponseEntity.ok(officialAgencyService.getAgencyBranches());
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @PostMapping("/protected/agency/branch")
+    ResponseEntity<Void> createBranch(@RequestBody @Validated CreateBranchDTO createBranchDTO) {
+        officialAgencyService.createBranch(createBranchDTO);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @PutMapping("/protected/agency/branch/{branchId}")
+    ResponseEntity<Void> updateBranch(@RequestBody @Validated CreateBranchDTO createBranchDTO, @PathVariable("branchId") Long branchId) {
+        officialAgencyService.updateBranch(createBranchDTO, branchId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ROLE_AGENCY_ADMIN')")
+    @DeleteMapping("/protected/agency/branch/{branchId}")
+    ResponseEntity<Void> deleteBranch(@PathVariable("branchId") Long branchId) {
+        officialAgencyService.deleteBranch(branchId);
         return ResponseEntity.noContent().build();
     }
 

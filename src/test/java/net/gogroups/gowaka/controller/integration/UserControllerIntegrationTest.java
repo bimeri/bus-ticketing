@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
-import net.gogroups.gowaka.dto.CreateUserRequest;
-import net.gogroups.gowaka.dto.EmailDTO;
-import net.gogroups.gowaka.dto.EmailPasswordDTO;
-import net.gogroups.gowaka.dto.UpdateProfileDTO;
+import net.gogroups.gowaka.dto.*;
 import net.gogroups.security.model.ApiSecurityAccessToken;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -153,7 +150,7 @@ public class UserControllerIntegrationTest {
         userReq.setPassword("secret");
 
         RequestBuilder requestBuilder = post("/api/public/register")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(userReq))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -180,7 +177,7 @@ public class UserControllerIntegrationTest {
         userReq.setPassword("secret");
 
         RequestBuilder requestBuilder = post("/api/public/register")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(userReq))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -195,6 +192,7 @@ public class UserControllerIntegrationTest {
 
         User user = new User();
         user.setUserId("12");
+        user.setCode("1234");
         userRepository.save(user);
         String jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
 
@@ -213,12 +211,11 @@ public class UserControllerIntegrationTest {
         emailPasswordDTO.setPassword("secret");
 
         RequestBuilder requestBuilder = post("/api/public/login")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
-                .andReturn();
+                .andExpect(status().isOk());
 
     }
 
@@ -235,7 +232,7 @@ public class UserControllerIntegrationTest {
         emailPasswordDTO.setPassword("secret");
 
         RequestBuilder requestBuilder = post("/api/public/login")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -257,7 +254,7 @@ public class UserControllerIntegrationTest {
         emailPasswordDTO.setPassword("secret");
 
         RequestBuilder requestBuilder = post("/api/public/change_password")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -279,7 +276,7 @@ public class UserControllerIntegrationTest {
         String expectedResponse = "{\"code\":\"BAD_USER_CREDENTIALS\",\"message\":\"Your old password does not match.\",\"endpoint\":\"/api/public/change_password\"}";
 
         RequestBuilder requestBuilder = post("/api/public/change_password")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailPasswordDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -298,7 +295,7 @@ public class UserControllerIntegrationTest {
         emailDTO.setEmail("info@go-groups.net");
 
         RequestBuilder requestBuilder = post("/api/public/forgot_password")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -325,7 +322,7 @@ public class UserControllerIntegrationTest {
         updateProfileDTO.setFullName("John Doe");
 
         RequestBuilder requestBuilder = post("/api/protected/users/profile")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(updateProfileDTO))
                 .accept(MediaType.APPLICATION_JSON);
@@ -343,7 +340,7 @@ public class UserControllerIntegrationTest {
         emailDTO.setEmail("info@go-groups.net");
 
         RequestBuilder requestBuilder = post("/api/public/users/verify_email")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
@@ -357,7 +354,7 @@ public class UserControllerIntegrationTest {
         emailDTO.setEmail("info@go-groups.net");
 
         RequestBuilder requestBuilder = post("/api/protected/users/verify_user")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
                 .accept(MediaType.APPLICATION_JSON);
@@ -377,9 +374,36 @@ public class UserControllerIntegrationTest {
 
         String expectedResponse = "{\"email\":\"you.there@example.com\",\"fullName\":\"you there\"}";
         RequestBuilder requestBuilder = post("/api/protected/users/validate_user")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(emailDTO))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andExpect(content().json(expectedResponse))
+                .andReturn();
+    }
+
+    @Test
+    void getAccountInfo_success_returns_200() throws Exception {
+
+        CodeDTO codeDTO = new CodeDTO();
+        codeDTO.setCode("1234");
+
+        User user = new User();
+        user.setUserId("3");
+        user.setEmail("email@email");
+        user.setPhoneNumber("123456789");
+        user.setFullName("you there");
+        user.setIdCardNumber("1234");
+        user.setCode(codeDTO.getCode());
+        userRepository.save(user);
+
+        String expectedResponse = "{\"name\":\"you there\",\"idNumber\":\"1234\",\"phoneNumber\":\"123456789\",\"email\":\"email@email\"}";
+        RequestBuilder requestBuilder = post("/api/protected/users/account")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(codeDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk())

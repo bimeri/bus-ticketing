@@ -18,5 +18,6 @@ public interface PassengerRepository extends JpaRepository<Passenger, Long> {
 
     Optional<Passenger> findByCheckedInCode(String code);
 
-    List<Passenger> findByBookedJourney_Id(Long bookedJourneyId);
+    List<Passenger> findByPhoneNumber(String phoneNumber);
+
 }
