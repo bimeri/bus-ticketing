@@ -90,7 +90,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.gwCacheLoaderService = gwCacheLoaderService;
     }
 
-
     @Override
     @Transactional
     public PaymentUrlDTO bookJourney(Long journeyId, BookJourneyRequest bookJourneyRequest) {
@@ -123,7 +122,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         savedPaymentTransaction.setProcessingNumber(payAmGoRequestResponseDTO.getProcessingNumber());
         paymentTransactionRepository.save(savedPaymentTransaction);
 
-        gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
+        sendBookedSeatsUpdates(journeyId, savedPaymentTransaction.getBookedJourney().getId());
 
         return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl(), savedPaymentTransaction.getBookedJourney().getId());
     }
@@ -168,8 +167,16 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(savedTxn.getBookedJourney());
         notifyPassengers(savedTxn.getBookedJourney(), bookedJourneyStatusDTO);
 
-        gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
-
+        List<Integer> newSeats = bookJourneyRequest.getPassengers().stream()
+                .map(BookJourneyRequest.Passenger::getSeatNumber)
+                .collect(Collectors.toList());
+        try {
+            List<Integer> allBookedSeats = getAllBookedSeats(journeyId);
+            allBookedSeats.addAll(newSeats);
+            gwCacheLoaderService.seatsChange(journeyId, allBookedSeats);
+        } catch (Exception ex) {
+            log.info("Unable to publish seats for booking journey : {}", bookedJourneyStatusDTO.getId());
+        }
     }
 
     @Override
@@ -258,8 +265,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
             if (isCompleted) {
                 notifyPassengers(bookedJourney, bookedJourneyStatusDTO);
+                sendBookedSeatsUpdates(bookedJourney.getJourney().getId(), bookedJourneyStatusDTO.getId());
             }
-            gwCacheLoaderService.seatsChange(bookedJourney.getJourney().getId(), getAllBookedSeats(bookedJourney.getJourney().getId()));
+
         }
     }
 
@@ -424,7 +432,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         SEAT_ALREADY_TAKEN.toString(), HttpStatus.CONFLICT);
             }
 
-            gwCacheLoaderService.seatsChange(journey.getId(), getAllBookedSeats(journey.getId()));
+            sendBookedSeatsUpdates(journey.getId(), bookedJourney.getId());
+
         }
     }
 
@@ -442,6 +451,14 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                     return new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), directToAccountName, directToAccountEmail);
                 })
                 .collect(Collectors.toSet()));
+    }
+
+    void sendBookedSeatsUpdates(Long journeyId, Long bookedJourneyId) {
+        try {
+            gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
+        } catch (Exception ex) {
+            log.info("Unable to publish seats for booking journey : {}", bookedJourneyId);
+        }
     }
 
     private Set<Integer> getBookedSeatsSet(Journey journey) {

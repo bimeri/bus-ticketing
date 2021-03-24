@@ -73,7 +73,7 @@ public class JourneyServiceImpl implements JourneyService {
     public JourneyResponseDTO addJourney(JourneyDTO journey, Long carId) {
 
         JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(journey, new Journey(), getOfficialAgencyCarById(carId));
-        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        sendPublishedJourney(journeyResponseDTO);
         return journeyResponseDTO;
     }
 
@@ -83,7 +83,7 @@ public class JourneyServiceImpl implements JourneyService {
         journeyTerminationFilter(journey);
         checkJourneyCarInOfficialAgency(journey);
         JourneyResponseDTO journeyResponseDTO = mapSaveAndGetJourneyResponseDTO(dto, journey, getOfficialAgencyCarById(carId));
-        gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        sendPublishedJourney(journeyResponseDTO);
         return journeyResponseDTO;
     }
 
@@ -199,8 +199,8 @@ public class JourneyServiceImpl implements JourneyService {
         }
         if (journeyDepartureIndicator.getDepartureIndicator()) {
             try {
-                sendSMSAndEmailNotificationToSubscribers(journey, "just started");
                 gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
+                sendSMSAndEmailNotificationToSubscribers(journey, "just started");
             } catch (Exception e) {
                 log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
@@ -405,6 +405,14 @@ public class JourneyServiceImpl implements JourneyService {
         return journeyRepository.findAllByDepartureIndicatorFalseOrderByDepartureTimeAsc().stream()
                 .map(this::mapToJourneyResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    private void sendPublishedJourney(JourneyResponseDTO journeyResponseDTO){
+        try {
+            gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+        }catch (Exception ex){
+            log.info("Unable to send journey '{}' to catch", journeyResponseDTO.getId());
+        }
     }
 
     private List<JourneyResponseDTO> getJourneyResponseDTOS(Long departureLocationId, Long destinationLocationId, LocalDateTime dateTime) {
