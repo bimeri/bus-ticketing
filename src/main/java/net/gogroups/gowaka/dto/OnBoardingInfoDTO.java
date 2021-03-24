@@ -3,6 +3,7 @@ package net.gogroups.gowaka.dto;
 import lombok.Getter;
 import lombok.Setter;
 import net.gogroups.gowaka.domain.model.*;
+import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -109,6 +110,7 @@ public class OnBoardingInfoDTO {
                 passengerDTO.setCheckedInCode(pge.getCheckedInCode());
                 passengerDTO.setCheckedIn(pge.getPassengerCheckedInIndicator());
                 passengers.add(passengerDTO);
+                passengerDTO.setQRCheckedInImage(QRCodeProvider.getQRCodeBase64EncodedImage(pge.getCheckedInCode()));
                 uniquePhoneNumbers.add(pge.getPhoneNumber());
             });
         }
