@@ -1481,6 +1481,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureLocation(transitAndStop);
         journey.setDriver(new Driver());
         journey.setCar(new Bus());
+        journey.setAgencyBranch(new AgencyBranch());
         Passenger passenger = new Passenger();
         passenger.setBookedJourney(bookedJourney);
         bookedJourney.setDestination(transitAndStop);
@@ -1652,6 +1653,7 @@ public class BookJourneyServiceImplTest {
         journey.setDepartureLocation(transitAndStop);
         journey.setDriver(new Driver());
         journey.setCar(new Bus());
+        journey.setAgencyBranch(new AgencyBranch());
         bookedJourney.setDestination(transitAndStop);
         when(mockBookedJourneyRepository.findAllByJourneyId(anyLong()))
                 .thenReturn(Collections.singletonList(bookedJourney));

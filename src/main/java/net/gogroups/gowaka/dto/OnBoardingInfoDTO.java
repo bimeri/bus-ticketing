@@ -22,6 +22,8 @@ public class OnBoardingInfoDTO {
     private String carLicenseNumber;
     private String carName;
     private String agencyName;
+    private String agencyBranchName;
+    private String agencyBranchAddress;
     private String departureLocation;
     private LocalDateTime departureTime;
     private String destinationLocation;
@@ -98,6 +100,8 @@ public class OnBoardingInfoDTO {
                 }
                 // time
                 this.departureTime = journey.getDepartureTime();
+                this.agencyBranchName = journey.getAgencyBranch().getName();
+                this.agencyBranchAddress = journey.getAgencyBranch().getAddress();
             }
             // passenger
             bookedJourney.getPassengers().forEach(pge -> {

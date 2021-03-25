@@ -244,6 +244,7 @@ public class UserServiceImpl implements UserService {
             agency.setBranchName(user.getAgencyBranch().getName());
             agency.setBranchAddress(user.getAgencyBranch().getAddress());
             userDTO.setAgency(agency);
+
         }
 
         userDTO.setRoles(userDetails.getAuthorities().stream()
