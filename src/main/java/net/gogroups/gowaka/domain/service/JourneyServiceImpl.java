@@ -207,7 +207,7 @@ public class JourneyServiceImpl implements JourneyService {
             }
         } else {
             JourneyResponseDTO journeyResponseDTO = mapToJourneyResponseDTO(journey, null);
-            gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
+            sendPublishedJourney(journeyResponseDTO);
         }
     }
 
