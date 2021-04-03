@@ -411,7 +411,7 @@ public class JourneyServiceImpl implements JourneyService {
         try {
             gwCacheLoaderService.addUpdateJourney(journeyResponseDTO);
         }catch (Exception ex){
-            log.info("Unable to send journey '{}' to catch", journeyResponseDTO.getId());
+            log.info("Unable to send journey '{}' to chache", journeyResponseDTO.getId());
         }
     }
 

@@ -78,7 +78,9 @@ public class GwCacheLoaderServiceImpl implements GwCacheLoaderService {
     }
 
     private String getRequestUri(String path) {
-        return gwCacheServiceProps.getHost() + ":" + gwCacheServiceProps.getPort() + path;
+        String url = gwCacheServiceProps.getHost() + ":" + gwCacheServiceProps.getPort() + path;
+        log.info("Connecting to url: {}", url);
+        return url;
     }
 
 }
