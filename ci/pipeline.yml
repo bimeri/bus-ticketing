@@ -2,10 +2,11 @@ resources:
   - name: source-code-from-gitlab
     type: git
     source:
-      uri: http://golab.live/gowaka/gowaka-service
+      uri: https://golab.live/gowaka/gowaka-service
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: develop
+      skip_ssl_verification: true
 
   - name: minio-s3
     type: s3
@@ -22,20 +23,23 @@ resources:
     type: semver
     source:
       driver: git
-      uri: http://golab.live/gowaka/gowaka-service
+      uri: https://golab.live/gowaka/gowaka-service
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: version
       file: version
+      skip_ssl_verification: true
 
   - name: nexus-settings
     type: git
     source:
       driver: git
-      uri: http://golab.live/gg-cicd-credentails/nexus-pipeline-creds-files
+      uri: https://golab.live/gg-cicd-credentails/nexus-pipeline-creds-files.git
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: master
+      skip_ssl_verification: true
+
 jobs:
   - name: test-and-build
     build_log_retention:
@@ -43,7 +47,7 @@ jobs:
     public: true
     plan:
       - get: source-code-from-gitlab
-        trigger: true
+        trigger: false
       - get: version
         params: { pre: rc }
       - get: nexus-settings
