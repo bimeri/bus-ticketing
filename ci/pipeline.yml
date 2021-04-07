@@ -1,3 +1,10 @@
+
+resource_types:
+  - name: enhanced-semver
+    type: docker-image
+    source:
+      repository: gstack/semver-resource
+
 resources:
   - name: source-code-from-gitlab
     type: git
@@ -20,7 +27,7 @@ resources:
       skip_ssl_verification: true
 
   - name: version
-    type: semver
+    type: enhanced-semver
     source:
       driver: git
       uri: https://golab.live/gowaka/gowaka-service
