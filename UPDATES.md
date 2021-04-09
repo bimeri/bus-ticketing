@@ -34,6 +34,10 @@ ___________________________________________
     * Deploy latest api-security
 -----------------------------------------------    
 * Mar 13, 2021
-  * add AgencyBranch Entity and Link to the User table
+  * Add AgencyBranch Entity and Link to the User table
   * Add AgencyBranch on Journey Entity  
   * Update branch on all existing agencies  
+    
+--------------------------------------------------------------------
+* Thur Apr 08, 2021
+ * Add `seat_structure_code` to seat_structure table environment

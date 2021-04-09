@@ -129,6 +129,7 @@ public class CacheDataProcessorServiceImpl implements CacheDataProcessorService 
         carDTO.setIsCarApproved(car.getIsCarApproved() != null && car.getIsCarApproved());
         carDTO.setIsOfficialAgencyIndicator(car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator());
         carDTO.setNumberOfSeat(((Bus) car).getNumberOfSeats());
+        carDTO.setSeatStructureCode(((Bus) car).getSeatStructure().getSeatStructureCode());
         carDTO.setAgencyName(officialAgency.getAgencyName());
         carDTO.setAgencyLogo(fileStorageService.getFilePath(officialAgency.getLogo(), "", FileAccessType.PROTECTED));
         carDTO.setPolicy(officialAgency.getPolicy());

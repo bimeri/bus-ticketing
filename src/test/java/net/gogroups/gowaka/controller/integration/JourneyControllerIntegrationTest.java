@@ -69,6 +69,9 @@ public class JourneyControllerIntegrationTest {
     @Autowired
     private AgencyBranchRepository agencyBranchRepository;
 
+    @Autowired
+    private SeatStructureRepository seatStructureRepository;
+
     @MockBean
     private GwCacheLoaderService mockGwCacheLoaderService;
 
@@ -120,6 +123,13 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
+
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         user.setAgencyBranch(savedBranch);
@@ -256,6 +266,12 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         user.setAgencyBranch(branch);
@@ -431,6 +447,13 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
+
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
         Location location = new Location();
@@ -529,6 +552,12 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         user.setAgencyBranch(saveBranch);
@@ -630,6 +659,12 @@ public class JourneyControllerIntegrationTest {
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
 
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
@@ -720,6 +755,13 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
+
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);
@@ -953,6 +995,12 @@ public class JourneyControllerIntegrationTest {
         AgencyBranch branch = agencyBranchRepository.save(agencyBranch);
 
         Bus bus = new Bus();
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         user.setAgencyBranch(branch);
@@ -1661,6 +1709,13 @@ public class JourneyControllerIntegrationTest {
         bus.setIsCarApproved(true);
         bus.setIsOfficialAgencyIndicator(true);
         bus.setLicensePlateNumber("123454387");
+
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(3);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+        bus.setSeatStructure(savedSeatStructure);
 
         user.setOfficialAgency(officialAgency);
         userRepository.save(user);

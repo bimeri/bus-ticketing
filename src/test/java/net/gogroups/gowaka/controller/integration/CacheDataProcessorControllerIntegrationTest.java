@@ -56,6 +56,8 @@ public class CacheDataProcessorControllerIntegrationTest {
     @Autowired
     private PassengerRepository passengerRepository;
     @Autowired
+    private SeatStructureRepository seatStructureRepository;
+    @Autowired
     private MockMvc mockMvc;
 
     @MockBean
@@ -109,12 +111,19 @@ public class CacheDataProcessorControllerIntegrationTest {
         TransitAndStop savedDeparture = transitAndStopRepository.save(departure);
         TransitAndStop savedDestination = transitAndStopRepository.save(destination);
 
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        SeatStructure savedSeatStructure = seatStructureRepository.save(seatStructure);
+
         Bus car = new Bus();
         car.setLicensePlateNumber("123SW");
         car.setName("Musango 30 Seater Bus");
         car.setNumberOfSeats(10);
         car.setOfficialAgency(officialAgency);
         car.setIsOfficialAgencyIndicator(true);
+        car.setSeatStructure(savedSeatStructure);
         Bus savedCar = carRepository.save(car);
 
         officialAgency.setBuses(Collections.singletonList(car));
