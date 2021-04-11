@@ -112,11 +112,11 @@ public class BookJourneyControllerTest {
 
         BookedJourneyStatusDTO bookedJourneyStatus = new BookedJourneyStatusDTO();
         bookedJourneyStatus.setId(10L);
-        when(mockBookJourneyService.getBookJourneyStatus(anyLong()))
+        when(mockBookJourneyService.getBookJourneyStatus(anyLong(), anyBoolean()))
                 .thenReturn(bookedJourneyStatus);
 
         ResponseEntity<BookedJourneyStatusDTO> bookJourneyStatus = bookJourneyController.getBookJourneyStatus(1L);
-        verify(mockBookJourneyService).getBookJourneyStatus(1L);
+        verify(mockBookJourneyService).getBookJourneyStatus(1L, true);
         assertThat(bookJourneyStatus.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(bookJourneyStatus.getBody()).isEqualTo(bookedJourneyStatus);
 
@@ -128,13 +128,35 @@ public class BookJourneyControllerTest {
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
 
-        when(mockBookJourneyService.getHtmlReceipt(anyLong()))
+        when(mockBookJourneyService.getHtmlReceipt(anyLong(), anyBoolean()))
                 .thenReturn("<html></html>");
         when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
                 .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
 
         ResponseEntity<Resource> output = bookJourneyController.downloadReceipt(1L);
-        verify(mockBookJourneyService).getHtmlReceipt(1L);
+        verify(mockBookJourneyService).getHtmlReceipt(1L, true);
+        verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
+
+        assertThat(htmlCaptor.getValue()).isEqualTo("<html></html>");
+        assertThat(filenameCaptor.getValue()).contains("GowakaReceipt_");
+
+        assertThat(output.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    }
+
+    @Test
+    void downloadReceiptPublicRoute_callsBookJourneyServiceAndHtmlToPdfGenarator() throws Exception {
+
+        ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(mockBookJourneyService.getHtmlReceipt(anyLong(), anyBoolean()))
+                .thenReturn("<html></html>");
+        when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
+                .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
+
+        ResponseEntity<Resource> output = bookJourneyController.downloadReceiptPublicRoute(1L);
+        verify(mockBookJourneyService).getHtmlReceipt(1L, false);
         verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
 
         assertThat(htmlCaptor.getValue()).isEqualTo("<html></html>");

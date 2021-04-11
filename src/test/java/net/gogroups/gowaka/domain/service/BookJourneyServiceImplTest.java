@@ -1202,7 +1202,7 @@ public class BookJourneyServiceImplTest {
         when(mockBookedJourneyRepository.findById(2L))
                 .thenReturn(Optional.empty());
 
-        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getBookJourneyStatus(2L));
+        ApiException apiException = assertThrows(ApiException.class, () -> bookJourneyService.getBookJourneyStatus(2L, true));
         assertThat(apiException.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(apiException.getErrorCode()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.RESOURCE_NOT_FOUND.getMessage());
@@ -1285,7 +1285,7 @@ public class BookJourneyServiceImplTest {
         userDTO.setId("10");
         when(mockUserService.getCurrentAuthUser())
                 .thenReturn(userDTO);
-        BookedJourneyStatusDTO bookJourneyStatus = bookJourneyService.getBookJourneyStatus(2L);
+        BookedJourneyStatusDTO bookJourneyStatus = bookJourneyService.getBookJourneyStatus(2L, true);
         assertThat(bookJourneyStatus.getAmount()).isEqualTo(2000.00);
         assertThat(bookJourneyStatus.getCurrencyCode()).isEqualTo("XAF");
         assertThat(bookJourneyStatus.getPaymentStatus()).isEqualTo("COMPLETED");
@@ -1322,8 +1322,22 @@ public class BookJourneyServiceImplTest {
                 .thenReturn(userDTO);
         when(mockEmailContentBuilder.buildTicketPdfHtml(any()))
                 .thenReturn("<html></html>");
-        String htmlReceipt = bookJourneyService.getHtmlReceipt(2L);
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(2L, true);
         assertThat(htmlReceipt).isEqualTo("<html></html>");
+
+    }
+
+    @Test
+    void getHtmlReceipt_returnHtmlStringOfReceipt_whenBookJourneyIdExit_and_notAuth() {
+
+        BookedJourney bookJourney = journey.getBookedJourneys().get(0);
+        when(mockBookedJourneyRepository.findById(2L))
+                .thenReturn(Optional.of(bookJourney));
+        when(mockEmailContentBuilder.buildTicketPdfHtml(any()))
+                .thenReturn("<html></html>");
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(2L, false);
+        assertThat(htmlReceipt).isEqualTo("<html></html>");
+        verifyNoInteractions(mockUserService);
 
     }
 
