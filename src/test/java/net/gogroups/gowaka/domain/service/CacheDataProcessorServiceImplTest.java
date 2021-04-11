@@ -58,6 +58,12 @@ class CacheDataProcessorServiceImplTest {
         journey.setDepartureTime(LocalDateTime.now());
         Bus bus = new Bus();
         bus.setNumberOfSeats(30);
+
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(30);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
         journey.setCar(bus);
         BookedJourney bookedJourney = new BookedJourney();
         Passenger passenger = new Passenger();

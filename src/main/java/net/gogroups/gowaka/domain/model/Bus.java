@@ -15,7 +15,7 @@ import java.util.List;
 public class Bus extends Car{
 
     @Column(name = "num_of_seats")
-    private Integer numberOfSeats;
+    private Integer numberOfSeats;  // to reduce join queries
 
     @ManyToOne
     private OfficialAgency officialAgency;

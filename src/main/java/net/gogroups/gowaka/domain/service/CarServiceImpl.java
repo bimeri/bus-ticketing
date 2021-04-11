@@ -14,9 +14,10 @@ import net.gogroups.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,21 +55,13 @@ public class CarServiceImpl implements CarService {
         bus.setLicensePlateNumber(
                 licensePlateNumber == null ? null : licensePlateNumber.trim()
         );
-        bus.setNumberOfSeats(busDTO.getNumberOfSeats());
         bus.setCreatedAt(LocalDateTime.now());
         bus.setIsOfficialAgencyIndicator(true);
         bus.setIsCarApproved(true);
         bus.setOfficialAgency(officialAgency);
         SeatStructure seatStructure = getSeatStructureById(busDTO.getSeatStructureId());
         bus.setSeatStructure(seatStructure);
-        if (busDTO.getNumberOfSeats() != null) {
-            for (int i = 0; i < busDTO.getNumberOfSeats(); i++) {
-                Seat seat = new Seat();
-                seat.setSeatNumber(i + 1);
-                seat.setBus(bus);
-                bus.getSeats().add(seat);
-            }
-        }
+        bus.setNumberOfSeats(seatStructure.getNumberOfSeats());
         Bus savedbus = carRepository.save(bus);
         return getBusResponseDTO(savedbus);
     }
@@ -149,7 +142,10 @@ public class CarServiceImpl implements CarService {
     @Override
     public void updateAgencyCarInfo(Long carId, BusDTO busDTO) {
 
-        List<SeatStructure> allByNumberOfSeats = seatStructureRepository.findAllByNumberOfSeats(busDTO.getNumberOfSeats());
+        Optional<SeatStructure> seatStructureOptional = seatStructureRepository.findById(busDTO.getSeatStructureId());
+        if(!seatStructureOptional.isPresent()){
+            throw new ResourceNotFoundException("Seats structure not found.");
+        }
         // which car to update?
         Car car = getCarById(carId);
         // check if car has journey booked
@@ -162,7 +158,7 @@ public class CarServiceImpl implements CarService {
         if (car instanceof Bus) {
             Bus bus = (Bus) car;
             bus.setNumberOfSeats(busDTO.getNumberOfSeats());
-            if (!allByNumberOfSeats.isEmpty()) bus.setSeatStructure(allByNumberOfSeats.get(0));
+            bus.setSeatStructure(seatStructureOptional.get());
         }
         carRepository.save(car);
     }
@@ -180,15 +176,16 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats) {
+    public List<SeatStructureDTO> getSeatStructures(String seatStructureCode) {
         List<SeatStructure> seatStructures;
-        if (numberOfSeats.equals(0)) {
+        if (StringUtils.isEmpty(seatStructureCode)) {
             seatStructures = seatStructureRepository.findAll();
         } else {
-            seatStructures = seatStructureRepository.findAllByNumberOfSeats(numberOfSeats);
+            seatStructures = seatStructureRepository.findBySeatStructureCode(seatStructureCode);
         }
         return seatStructures.stream()
                 .map(SeatStructureDTO::new)
+                .sorted(Comparator.comparingInt(SeatStructureDTO::getNumberOfSeats))
                 .collect(Collectors.toList());
     }
 

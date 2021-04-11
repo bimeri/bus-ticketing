@@ -133,6 +133,11 @@ public class JourneyServiceImplTest {
         Bus bus1 = new Bus();
         bus1.setId(2L);
         bus1.setName("Contriman saga");
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
 
         TransitAndStop transitAndStop = new TransitAndStop();
         Location location = new Location();
@@ -258,6 +263,11 @@ public class JourneyServiceImplTest {
         bus.setId(1L);
         bus.setName("Muea boy");
         bus.setOfficialAgency(mockOfficialAgency);
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
 
         OfficialAgency officialAgency = new OfficialAgency();
         officialAgency.setBuses(Collections.singletonList(bus));
@@ -338,6 +348,11 @@ public class JourneyServiceImplTest {
         bus.setId(1L);
         bus.setName("Muea boy");
         bus.setOfficialAgency(mockOfficialAgency);
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
 
         Journey journey = new Journey();
         journey.setCar(bus);
@@ -410,6 +425,11 @@ public class JourneyServiceImplTest {
         bus.setId(1L);
         bus.setName("Muea boy");
         bus.setOfficialAgency(mockOfficialAgency);
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(10);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
 
         Journey journey = new Journey();
         journey.setCar(bus);
@@ -1710,10 +1730,20 @@ public class JourneyServiceImplTest {
         bus.setId(1L);
         bus.setName("Muea boy");
         bus.setNumberOfSeats(30);
+        SeatStructure seatStructure = new SeatStructure();
+        seatStructure.setSeatStructureCode("CODE1");
+        seatStructure.setNumberOfSeats(30);
+        seatStructure.setImage("image");
+        bus.setSeatStructure(seatStructure);
         Bus bus1 = new Bus();
         bus1.setId(2L);
         bus1.setName("Happi");
         bus1.setNumberOfSeats(70);
+        SeatStructure seatStructure1 = new SeatStructure();
+        seatStructure1.setSeatStructureCode("CODE1");
+        seatStructure1.setNumberOfSeats(70);
+        seatStructure1.setImage("image");
+        bus1.setSeatStructure(seatStructure);
         Journey journey = new Journey();
         journey.setArrivalIndicator(false);
         journey.setCar(bus1);
@@ -1733,8 +1763,6 @@ public class JourneyServiceImplTest {
         journey.setBookedJourneys(Collections.singletonList(bookedJourney));
 
         officialAgency.setBuses(Collections.singletonList(bus));
-
-
 
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(userDTO.getId())).thenReturn(Optional.of(user));

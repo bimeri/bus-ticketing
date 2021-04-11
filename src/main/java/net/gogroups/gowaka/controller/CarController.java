@@ -92,7 +92,7 @@ public class CarController {
     }
 
     @GetMapping("/car/seat_structure")
-    public ResponseEntity<List<SeatStructureDTO>> getSeatStructures(@RequestParam("numberOfSeat") Integer numberOfSeats) {
-        return ResponseEntity.ok(carService.getSeatStructures(numberOfSeats));
+    public ResponseEntity<List<SeatStructureDTO>> getSeatStructures(@RequestParam(value = "seatStructureCode", required = false) String seatStructureCode) {
+        return ResponseEntity.ok(carService.getSeatStructures(seatStructureCode));
     }
 }
