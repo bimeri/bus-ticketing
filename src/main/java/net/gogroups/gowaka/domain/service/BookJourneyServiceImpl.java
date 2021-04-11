@@ -189,19 +189,21 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
-    public BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId) {
+    public BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId, boolean isAuth) {
 
         Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findById(bookedJourneyId);
         if (!bookedJourneyOptional.isPresent()) {
             throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
         }
         BookedJourney bookedJourney = bookedJourneyOptional.get();
-        UserDTO currentAuthUser = userService.getCurrentAuthUser();
-        if (currentAuthUser == null
-                || currentAuthUser.getId() == null
-                || bookedJourney.getUser() == null
-                || !currentAuthUser.getId().equals(bookedJourney.getUser().getUserId())) {
-            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        if (isAuth) {
+            UserDTO currentAuthUser = userService.getCurrentAuthUser();
+            if (currentAuthUser == null
+                    || currentAuthUser.getId() == null
+                    || bookedJourney.getUser() == null
+                    || !currentAuthUser.getId().equals(bookedJourney.getUser().getUserId())) {
+                throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            }
         }
 
         return getBookedJourneyStatusDTO(bookedJourney);
@@ -320,9 +322,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
-    public String getHtmlReceipt(Long bookedJourneyId) {
+    public String getHtmlReceipt(Long bookedJourneyId, boolean isAuth) {
 
-        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookJourneyStatus(bookedJourneyId);
+        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookJourneyStatus(bookedJourneyId, isAuth);
         return emailContentBuilder.buildTicketPdfHtml(bookedJourneyStatusDTO);
     }
 

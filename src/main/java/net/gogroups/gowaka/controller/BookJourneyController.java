@@ -73,21 +73,18 @@ public class BookJourneyController {
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/{bookedJourneyId}")
     ResponseEntity<BookedJourneyStatusDTO> getBookJourneyStatus(@PathVariable("bookedJourneyId") Long bookedJourneyId) {
-        return ResponseEntity.ok(bookJourneyService.getBookJourneyStatus(bookedJourneyId));
+        return ResponseEntity.ok(bookJourneyService.getBookJourneyStatus(bookedJourneyId, true));
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/{bookedJourneyId}/receipt")
     ResponseEntity<Resource> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
-        String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId);
-        String filename = "GowakaReceipt_" + new Date();
-        File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
+        return getReceiptResourceResponseEntity(bookedJourneyId, true);
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData(filename, filename);
-        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-        return new ResponseEntity<>(new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri()), headers, HttpStatus.OK);
+    @GetMapping("/public/bookJourney/{bookedJourneyId}/receipt")
+    ResponseEntity<Resource> downloadReceiptPublicRoute(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
+        return getReceiptResourceResponseEntity(bookedJourneyId, false);
     }
 
     @PostMapping("/public/booking/status/{bookedJourneyId}")
@@ -134,5 +131,15 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+    private ResponseEntity<Resource> getReceiptResourceResponseEntity(Long bookedJourneyId,  boolean isAuth) throws Exception {
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId, isAuth);
+        String filename = "GowakaReceipt_" + new Date().getTime();
+        File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData(filename, filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+        return new ResponseEntity<>(new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri()), headers, HttpStatus.OK);
+    }
 }
