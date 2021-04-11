@@ -30,5 +30,5 @@ public interface CarService {
 
     void deleteAgencyCarInfo(Long carId);
 
-    List<SeatStructureDTO> getSeatStructures(Integer numberOfSeats);
+    List<SeatStructureDTO> getSeatStructures(String seatStructureCode);
 }

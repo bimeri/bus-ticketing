@@ -684,6 +684,7 @@ public class JourneyServiceImpl implements JourneyService {
                     carDTO.setAgencyId(officialAgency.getId());
                 }
                 carDTO.setNumberOfSeat(bus.getNumberOfSeats());
+                carDTO.setSeatStructureCode(bus.getSeatStructure().getSeatStructureCode());
             } else if (car instanceof SharedRide) {
                 PersonalAgency personalAgency = ((SharedRide) car).getPersonalAgency();
                 if (personalAgency != null) carDTO.setAgencyName(personalAgency.getName());

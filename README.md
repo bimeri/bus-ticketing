@@ -21,4 +21,18 @@ The GoWaka service aim at providing an online booking system in Africa and other
 ### To run your unit an Integration Tests
 ./mvnw clean package
 
+
+### Bus structure codes
+
+* TEN_SEATER,
+* EIGHTEEN_SEATER = 18
+* NINETEEN_SEATER = 19
+* TWENTY_SIX_SEATER = 26
+* TWENTY_NINE_SEATER = 29
+* THIRTY_SEATER = 30
+* THIRTY_FIVE_SEATER = 35
+* SEVENTY_REGULAR_SEATER = 70
+* SEVENTY_CLASSIC_SEATER = 70
+* SEVENTY_FIVE_SEATER = 75
+
 Project Start Date September, 23 2019
