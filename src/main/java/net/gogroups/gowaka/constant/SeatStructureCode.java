@@ -7,6 +7,7 @@ package net.gogroups.gowaka.constant;
 public enum SeatStructureCode {
 
     TEN_SEATER,
+    EIGHTEEN_SEATER,
     NINETEEN_SEATER,
     TWENTY_SIX_SEATER,
     TWENTY_NINE_SEATER,
