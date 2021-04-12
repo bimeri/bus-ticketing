@@ -100,8 +100,11 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: eddytnk/lc
-              tag: latest
+              repository: "ggs2.space:8123/lc"
+              username: ((lcs_username))
+              password: ((lcs_password))
+              tag: "latest"
+              insecure_registries: [ "ggs2.space:8123" ]
           inputs:
             - name: source-code-from-gitlab
             - name: minio-s3
@@ -138,8 +141,11 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: tutum/curl
-              tag: latest
+              repository: "ggs2.space:8123/curl"
+              username: ((lcs_username))
+              password: ((lcs_password))
+              tag: "latest"
+              insecure_registries: [ "ggs2.space:8123" ]
           inputs:
             - name: source-code-from-gitlab
             - name: minio-s3
