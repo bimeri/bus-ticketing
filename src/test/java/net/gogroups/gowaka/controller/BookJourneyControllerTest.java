@@ -95,7 +95,7 @@ public class BookJourneyControllerTest {
         when(mockBookJourneyService.searchPassenger(any()))
                 .thenReturn(Collections.singletonList(new GwPassenger("John", "1234567", "237676279260", "john@gmail.com", "John", "john@gmail.com")));
 
-        ResponseEntity<List<GwPassenger>> passengers = bookJourneyController.findPassenger(new PhoneNumberDTO("237", "676279260"));
+        ResponseEntity<List<GwPassenger>> passengers = bookJourneyController.findPassenger(new SearchPassengerDTO("237", "676279260", "John"));
 
         assertThat(passengers.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(passengers.getBody().size()).isEqualTo(1);

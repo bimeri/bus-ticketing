@@ -2,6 +2,8 @@ package net.gogroups.gowaka.domain.repository;
 
 import net.gogroups.gowaka.domain.model.Passenger;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -18,6 +20,7 @@ public interface PassengerRepository extends JpaRepository<Passenger, Long> {
 
     Optional<Passenger> findByCheckedInCode(String code);
 
-    List<Passenger> findByPhoneNumber(String phoneNumber);
+    @Query("SELECT p FROM Passenger p WHERE p.phoneNumber=:phoneNumber OR p.name LIKE %:name%")
+    List<Passenger> findAllByPhoneNumberOrName(@Param("phoneNumber") String phoneNumber, @Param("name") String name);
 
 }

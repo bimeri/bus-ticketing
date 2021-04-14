@@ -6,7 +6,7 @@ import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.dto.BookJourneyRequest;
 import net.gogroups.gowaka.dto.CodeDTO;
 import net.gogroups.gowaka.dto.PaymentStatusResponseDTO;
-import net.gogroups.gowaka.dto.PhoneNumberDTO;
+import net.gogroups.gowaka.dto.SearchPassengerDTO;
 import net.gogroups.gowaka.service.GwCacheLoaderService;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
@@ -729,7 +729,7 @@ public class BookJourneyControllerIntegrationTest {
         RequestBuilder requestBuilder = post("/api/protected/bookJourney/find_passenger")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
-                .content(new ObjectMapper().writeValueAsString(new PhoneNumberDTO("237", "777777777")))
+                .content(new ObjectMapper().writeValueAsString(new SearchPassengerDTO("237", "777777777", "John")))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
                 .andExpect(status().isOk());

@@ -14,12 +14,9 @@ import javax.validation.constraints.Size;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PhoneNumberDTO {
+public class SearchPassengerDTO {
 
-    @NotBlank(message = "telCode is required")
-    @Size(max = 3, message = "telCode can not be more that 3 characters")
     private String telCode;
-    @NotBlank(message = "phoneNumber is required")
-    @Size(max = 10, message = "phoneNumber must be less than 50 characters")
     private String phoneNumber;
+    private String name;
 }

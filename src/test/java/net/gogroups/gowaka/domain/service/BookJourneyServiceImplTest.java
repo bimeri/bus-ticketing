@@ -1938,10 +1938,10 @@ public class BookJourneyServiceImplTest {
 
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
-        when(mockPassengerRepository.findByPhoneNumber("237777777778"))
+        when(mockPassengerRepository.findAllByPhoneNumberOrName("237777777778", "John"))
                 .thenReturn(Collections.singletonList(passenger));
 
-        List<GwPassenger> gwPassengers = bookJourneyService.searchPassenger(new PhoneNumberDTO("237", "777777778"));
+        List<GwPassenger> gwPassengers = bookJourneyService.searchPassenger(new SearchPassengerDTO("237", "777777778", "John"));
         assertThat(gwPassengers.get(0).getIdNumber()).isEqualTo("1235487");
         assertThat(gwPassengers.get(0).getName()).isEqualTo("John");
         assertThat(gwPassengers.get(0).getEmail()).isEqualTo("john@gmail.com");

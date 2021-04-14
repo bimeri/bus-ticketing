@@ -440,8 +440,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
-    public List<GwPassenger> searchPassenger(PhoneNumberDTO phoneNumberDTO) {
-        return new ArrayList<>(passengerRepository.findByPhoneNumber(phoneNumberDTO.getTelCode() + phoneNumberDTO.getPhoneNumber())
+    public List<GwPassenger> searchPassenger(SearchPassengerDTO searchPassengerDTO) {
+        return new ArrayList<>(passengerRepository.findAllByPhoneNumberOrName(searchPassengerDTO.getTelCode() + searchPassengerDTO.getPhoneNumber(), searchPassengerDTO.getName() )
                 .stream()
                 .map(p -> {
                     String directToAccountName = "";
