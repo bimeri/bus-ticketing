@@ -1950,5 +1950,153 @@ public class BookJourneyServiceImplTest {
 
     }
 
+    @Test
+    void cancelled_BookedJourney_for_a_singlePassengerBooking() {
 
+        User user = new User();
+        user.setUserId("123");
+        user.setEmail("email@gmail.com");
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(9L);
+
+        Journey journey = new Journey();
+        journey.setId(12L);
+        journey.setDepartureIndicator(false);
+        journey.setArrivalIndicator(false);
+        journey.setDestination(destination);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setTransactionStatus(COMPLETED.name());
+
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setJourney(journey);
+        bookedJourney.setPaymentTransaction(paymentTransaction);
+        bookedJourney.setDestination(destination);
+        bookedJourney.setUser(user);
+        Passenger passenger = new Passenger();
+        passenger.setEmail("P1@gmail.com");
+        passenger.setName("P1");
+        passenger.setCheckedInCode("CODE1");
+        bookedJourney.setPassengers(Collections.singletonList(passenger));
+
+        when(mockBookedJourneyRepository.findById(12L))
+                .thenReturn(Optional.of(bookedJourney));
+        bookJourneyService.cancelBookings(12L, Collections.singletonList(new CodeDTO("CODE1")));
+        verify(mockPaymentTransactionRepository).save(paymentTransactionArgumentCaptor.capture());
+        assertThat(paymentTransactionArgumentCaptor.getValue().getTransactionStatus()).isEqualTo("CANCELLED");
+
+        verifyNoMoreInteractions(mockBookedJourneyRepository);
+    }
+
+    @Test
+    void cancelled_BookedJourney_for_a_multiplePassengerBooking() {
+
+        User user = new User();
+        user.setUserId("123");
+        user.setEmail("email@gmail.com");
+
+        UserDTO userDto = new UserDTO();
+        userDto.setId("123");
+
+        TransitAndStop stopTransitAndStop = new TransitAndStop();
+        stopTransitAndStop.setId(102L);
+        stopTransitAndStop.setLocation(new Location());
+
+        TransitAndStop destination = new TransitAndStop();
+        destination.setId(9L);
+        destination.setLocation(new Location());
+
+        Journey journey = new Journey();
+        journey.setId(12L);
+        journey.setArrivalIndicator(false);
+        journey.setDepartureIndicator(false);
+        journey.setAmount(5000.00);
+        journey.setDestination(destination);
+        journey.setDriver(new Driver());
+        journey.setDepartureLocation(stopTransitAndStop);
+
+        JourneyStop stopLocation = new JourneyStop();
+        stopLocation.setTransitAndStop(stopTransitAndStop);
+        stopLocation.setAmount(2000.00);
+        journey.setJourneyStops(Collections.singletonList(stopLocation));
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setCode("VT2");
+        officialAgency.setId(2L);
+        Bus car = new Bus();
+        car.setIsOfficialAgencyIndicator(true);
+        car.setLicensePlateNumber("125SW");
+        car.setOfficialAgency(officialAgency);
+        user.setOfficialAgency(officialAgency);
+        journey.setCar(car);
+
+        when(mockJourneyRepository.findById(anyLong()))
+                .thenReturn(Optional.of(journey));
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDto);
+        when(mockUserRepository.findById(anyString()))
+                .thenReturn(Optional.of(user));
+        when(mockUserRepository.findFirstByEmail(anyString())).thenReturn(Optional.empty());
+        BookedJourney bookedJourney = new BookedJourney();
+        bookedJourney.setId(103L);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(destination);
+        when(mockBookedJourneyRepository.save(any()))
+                .thenReturn(bookedJourney);
+        UserDTO userDTO = new UserDTO();
+        userDTO.setFullName("John Doe");
+        userDTO.setEmail("email@email.com");
+        userDTO.setPhoneNumber("676767676");
+        userDTO.setId("10");
+        when(mockUserService.getCurrentAuthUser())
+                .thenReturn(userDTO);
+
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        paymentTransaction.setAmount(10.0);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        when(mockPaymentTransactionRepository.save(any()))
+                .thenReturn(paymentTransaction, new PaymentTransaction());
+
+        PaymentTransaction paymentTransactionOld = new PaymentTransaction();
+        paymentTransactionOld.setTransactionStatus(COMPLETED.name());
+
+        BookedJourney bookedJourneyOld = new BookedJourney();
+        bookedJourneyOld.setJourney(journey);
+        bookedJourneyOld.setPaymentTransaction(paymentTransactionOld);
+        bookedJourneyOld.setDestination(destination);
+        bookedJourneyOld.setUser(user);
+
+        Passenger passenger = new Passenger();
+        passenger.setEmail("P1@gmail.com");
+        passenger.setName("P1");
+        passenger.setCheckedInCode("VT212-125SW-74-123");
+        passenger.setSeatNumber(74);
+
+        Passenger passenger2 = new Passenger();
+        passenger2.setEmail("P2@gmail.com");
+        passenger2.setName("P2");
+        passenger2.setCheckedInCode("VT212-125SW-75-123");
+        passenger2.setSeatNumber(75);
+
+        bookedJourneyOld.setPassengers(Arrays.asList(passenger, passenger2));
+
+        when(mockBookedJourneyRepository.findById(12L))
+                .thenReturn(Optional.of(bookedJourneyOld));
+        bookJourneyService.cancelBookings(12L, Collections.singletonList(new CodeDTO("VT212-125SW-74-123")));
+        verify(mockPaymentTransactionRepository, times(2)).save(paymentTransactionArgumentCaptor.capture());
+        assertThat(paymentTransactionArgumentCaptor.getAllValues().get(1).getTransactionStatus()).isEqualTo("CANCELLED");
+
+        verify(mockBookedJourneyRepository).save(bookedJourneyArgumentCaptor.capture());
+        BookedJourney theBooked = bookedJourneyArgumentCaptor.getValue();
+
+        verify(mockPassengerRepository, times(2)).saveAll(passengerArgumentCaptorList.capture());
+        assertThat(passengerArgumentCaptorList.getAllValues().get(0).get(0).getCheckedInCode()).isEqualTo("VT212-125SW-74-123-CANCELLED");
+
+        assertThat(theBooked.getUser().getUserId()).isEqualTo("123");
+        assertThat(theBooked.getPassengers().size()).isEqualTo(1);
+        assertThat(theBooked.getPassengers().get(0).getName()).isEqualTo("P2");
+        assertThat(theBooked.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT212-125SW-75-123");
+
+    }
 }

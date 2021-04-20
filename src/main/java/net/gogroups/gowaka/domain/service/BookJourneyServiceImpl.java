@@ -41,6 +41,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.gogroups.gowaka.constant.StaticContent.CANCELLED;
 import static net.gogroups.gowaka.constant.StaticContent.MIM_TIME_TO_WAIT_FOR_PAYMENT;
 import static net.gogroups.gowaka.exception.ErrorCodes.*;
 import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
@@ -191,11 +192,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     @Override
     public BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId, boolean isAuth) {
 
-        Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findById(bookedJourneyId);
-        if (!bookedJourneyOptional.isPresent()) {
-            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        BookedJourney bookedJourney = bookedJourneyOptional.get();
+        BookedJourney bookedJourney = getBookedJourneyById(bookedJourneyId);
         if (isAuth) {
             UserDTO currentAuthUser = userService.getCurrentAuthUser();
             if (currentAuthUser == null
@@ -441,7 +438,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
 
     @Override
     public List<GwPassenger> searchPassenger(SearchPassengerDTO searchPassengerDTO) {
-        return new ArrayList<>(passengerRepository.findAllByPhoneNumberOrName(searchPassengerDTO.getTelCode() + searchPassengerDTO.getPhoneNumber(), searchPassengerDTO.getName() )
+        return new ArrayList<>(passengerRepository.findAllByPhoneNumberOrName(searchPassengerDTO.getTelCode() + searchPassengerDTO.getPhoneNumber(), searchPassengerDTO.getName())
                 .stream()
                 .map(p -> {
                     String directToAccountName = "";
@@ -455,7 +452,56 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                 .collect(Collectors.toSet()));
     }
 
-    void sendBookedSeatsUpdates(Long journeyId, Long bookedJourneyId) {
+    @Override
+    public void cancelBookings(Long bookJourneyId, List<CodeDTO> codes) {
+        BookedJourney bookedJourney = getBookedJourneyById(bookJourneyId);
+        PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
+                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) &&
+                paymentAcceptedOrElseReject(paymentTransaction)) {
+
+            BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+            bookJourneyRequest.setDestinationIndicator(bookedJourney.getDestination().getId().equals(bookedJourney.getJourney().getDestination().getId()));
+            bookJourneyRequest.setTransitAndStopId(bookedJourney.getDestination().getId());
+            bookJourneyRequest.setDirectToAccount(bookedJourney.getUser().getEmail());
+            bookJourneyRequest.setSubscribeToSMSNotification(bookedJourney.getSmsNotification());
+
+            HashMap<String, Boolean> codePassengerHashMap = new HashMap<>();
+            for (CodeDTO codeDTO : codes) {
+                codePassengerHashMap.put(codeDTO.getCode(), Boolean.TRUE);
+            }
+            List<BookJourneyRequest.Passenger> passengers = new ArrayList<>();
+            List<Passenger> oldPassengers = new ArrayList<>();
+            for (Passenger passenger : bookedJourney.getPassengers()) {
+                if (codePassengerHashMap.get(passenger.getCheckedInCode()) == null) {
+                    BookJourneyRequest.Passenger newPassenger = new BookJourneyRequest.Passenger();
+                    newPassenger.setPassengerName(passenger.getName());
+                    newPassenger.setPassengerIdNumber(passenger.getIdNumber());
+                    newPassenger.setEmail(passenger.getEmail());
+                    newPassenger.setPhoneNumber(passenger.getPhoneNumber());
+                    newPassenger.setSeatNumber(passenger.getSeatNumber());
+                    passengers.add(newPassenger);
+                }
+                passenger.setCheckedInCode(passenger.getCheckedInCode() + "-" + CANCELLED);
+                oldPassengers.add(passenger);
+            }
+            passengerRepository.saveAll(oldPassengers);
+            bookJourneyRequest.setPassengers(passengers);
+            try {
+                if (bookJourneyRequest.getPassengers().size() > 0) {
+                    agencyUserBookJourney(bookedJourney.getJourney().getId(), bookJourneyRequest);
+                }
+                paymentTransaction.setTransactionStatus(CANCELLED);
+                paymentTransactionRepository.save(paymentTransaction);
+            } catch (Exception exception) {
+                log.info("An error occurred while cancelling trip: {}", exception.getMessage());
+                throw new ApiException(exception.getMessage(), OPERATION_NOT_ALLOWED.name(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
+
+    }
+
+    private void sendBookedSeatsUpdates(Long journeyId, Long bookedJourneyId) {
         try {
             gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
         } catch (Exception ex) {
