@@ -136,6 +136,7 @@ public class CacheDataProcessorServiceImpl implements CacheDataProcessorService 
         carDTO.setAgencyId(officialAgency.getId());
         carDTO.setTimestamp(car.getCreatedAt() == null ? null :
                 Date.from(car.getCreatedAt().atZone(zoneId).toInstant()));
+        carDTO.setSeatStructureCode(((Bus) car).getSeatStructure().getSeatStructureCode());
         return carDTO;
     }
 
