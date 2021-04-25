@@ -78,14 +78,14 @@ public class JourneyController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @DeleteMapping("/agency/journeys/{journeyId}")
     public ResponseEntity<Void> deleteJourney(@PathVariable("journeyId") Long journeyId) {
         journeyService.deleteNonBookedJourney(journeyId);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/departure")
     public ResponseEntity<Void> updateJourneyDepartureIndicator(
             @RequestBody @Valid JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO,
@@ -94,7 +94,7 @@ public class JourneyController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @PostMapping("/agency/journeys/{journeyId}/arrival")
     public ResponseEntity<Void> updateJourneyArrivalIndicator(
             @RequestBody @Valid JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO,
@@ -103,7 +103,7 @@ public class JourneyController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN','ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR')")
     @DeleteMapping("/agency/journeys/{journeyId}/transitAndStops/{transitAndStopId}")
     public ResponseEntity<Void> removeNonBookedStop(
             @PathVariable("journeyId") Long journeyId, @PathVariable("transitAndStopId") Long stopId) {
