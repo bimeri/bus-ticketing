@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -59,7 +60,7 @@ public class BookJourneyController {
     @PostMapping("/protected/bookJourney/find_passenger")
     ResponseEntity<List<GwPassenger>> findPassenger(@Validated @RequestBody SearchPassengerDTO phoneNumberDTO) {
         log.info("searching passenger by phone number :{}", phoneNumberDTO.getPhoneNumber());
-        return ResponseEntity.ok( bookJourneyService.searchPassenger(phoneNumberDTO));
+        return ResponseEntity.ok(bookJourneyService.searchPassenger(phoneNumberDTO));
     }
 
 
@@ -109,12 +110,21 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.getPassengerOnBoardingInfo(code));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/checkIn")
     public ResponseEntity<?> checkInPassengerByCode(@RequestBody @Validated CodeDTO dto) {
         log.info("checking in code :{}", dto.getCode());
         bookJourneyService.checkInPassengerByCode(dto.getCode());
         log.info("checking successful for code :{}", dto.getCode());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/{bookedJourneyId}/cancel_trip")
+    public ResponseEntity<?> cancelBookings(@PathVariable("bookedJourneyId") Long bookJourneyId, @RequestBody @Validated List<@Valid CodeDTO> codes) {
+        log.info("cancel booking in codes :{} and id: {}", codes, bookJourneyId);
+        bookJourneyService.cancelBookings(bookJourneyId, codes);
+        log.info("cancel successful for code :{}and id: {}", codes, bookJourneyId);
         return ResponseEntity.noContent().build();
     }
 
@@ -131,7 +141,7 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
-    private ResponseEntity<Resource> getReceiptResourceResponseEntity(Long bookedJourneyId,  boolean isAuth) throws Exception {
+    private ResponseEntity<Resource> getReceiptResourceResponseEntity(Long bookedJourneyId, boolean isAuth) throws Exception {
         String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId, isAuth);
         String filename = "GowakaReceipt_" + new Date().getTime();
         File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);

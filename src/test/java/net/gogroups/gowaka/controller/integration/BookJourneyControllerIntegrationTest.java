@@ -735,5 +735,19 @@ public class BookJourneyControllerIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    public void cancelBookings_success_return200() throws Exception {
+
+        String jwtToken = createToken("12", "ggadmin@gg.com", "Me User", secretKey, "AGENCY_MANAGER");
+
+        RequestBuilder requestBuilder = post("/api/protected/bookJourney/{bookedJourneyId}/cancel_trip", journey.getBookedJourneys().get(0).getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .content(new ObjectMapper().writeValueAsString(Collections.singletonList("1111-1599933993")))
+                .accept(MediaType.APPLICATION_JSON);
+        mockMvc.perform(requestBuilder)
+                .andExpect(status().isNoContent());
+    }
+
 
 }

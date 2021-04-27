@@ -34,4 +34,6 @@ public interface BookJourneyService {
     void changeSeatNumber(List<ChangeSeatDTO> changeSeatList, Long bookJourneyId);
 
     List<GwPassenger> searchPassenger(SearchPassengerDTO phoneNumberDTO);
+
+    void cancelBookings(Long bookJourneyId, List<CodeDTO> codes);
 }
