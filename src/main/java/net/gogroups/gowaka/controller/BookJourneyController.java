@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -120,7 +121,7 @@ public class BookJourneyController {
 
     @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/bookJourney/{bookedJourneyId}/cancel_trip")
-    public ResponseEntity<?> cancelBookings(@PathVariable("bookedJourneyId") Long bookJourneyId, @RequestBody @Validated List<CodeDTO> codes) {
+    public ResponseEntity<?> cancelBookings(@PathVariable("bookedJourneyId") Long bookJourneyId, @RequestBody @Validated List<@Valid CodeDTO> codes) {
         log.info("cancel booking in codes :{} and id: {}", codes, bookJourneyId);
         bookJourneyService.cancelBookings(bookJourneyId, codes);
         log.info("cancel successful for code :{}and id: {}", codes, bookJourneyId);

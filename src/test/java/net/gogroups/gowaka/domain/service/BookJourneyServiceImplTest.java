@@ -2099,4 +2099,5 @@ public class BookJourneyServiceImplTest {
         assertThat(theBooked.getPassengers().get(0).getCheckedInCode()).isEqualTo("VT212-125SW-75-123");
 
     }
+
 }
