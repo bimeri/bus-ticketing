@@ -30,6 +30,8 @@ public class OfficialAgencyDTO {
     private long numberOfCompletedTrips;
     private LocalDateTime updatedAt;
     private String updatedBy;
+    private String address;
+    private String phoneNumber;
     private List<Branch> branches = new ArrayList<>();
 
     @Data

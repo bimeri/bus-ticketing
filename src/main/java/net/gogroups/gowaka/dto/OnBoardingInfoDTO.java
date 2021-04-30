@@ -22,6 +22,8 @@ public class OnBoardingInfoDTO {
     private String carLicenseNumber;
     private String carName;
     private String agencyName;
+    private String agencyAddress;
+    private String agencyPhoneNumber;
     private String agencyBranchName;
     private String agencyBranchAddress;
     private String departureLocation;
@@ -30,6 +32,8 @@ public class OnBoardingInfoDTO {
     private String paymentMethod;
     private LocalDateTime paymentDate;
     private String paidBy;
+    private String tlaDestinationLocation;
+    private String tlaDepartureLocation;
 
     private Boolean hasRefund = Boolean.FALSE;
     private String refundStatus = "NO REFUND";
@@ -77,6 +81,8 @@ public class OnBoardingInfoDTO {
                     this.carName = car.getName();
                     if (car.getIsOfficialAgencyIndicator() != null && car.getIsOfficialAgencyIndicator()) {
                         this.agencyName = ((Bus) car).getOfficialAgency().getAgencyName();
+                        this.agencyAddress = ((Bus) car).getOfficialAgency().getAddress();
+                        this.agencyPhoneNumber = ((Bus) car).getOfficialAgency().getPhoneNumber();
                     }
                 }
                 // location
@@ -84,19 +90,33 @@ public class OnBoardingInfoDTO {
                 TransitAndStop transitAndStopDep = journey.getDepartureLocation();
                 if (transitAndStopDest != null) {
                     Location locationDest = transitAndStopDest.getLocation();
-                    if (locationDest != null) this.destinationLocation =
-                            (locationDest.getAddress() == null ? "" : locationDest.getAddress() + ", ") +
-                                    (locationDest.getCity() == null ? "" : locationDest.getCity() + ", ") +
-                                    (locationDest.getState() == null ? "" : locationDest.getState() + ", ") +
-                                    (locationDest.getCountry() == null ? "" : locationDest.getCountry());
+                    if (locationDest != null) {
+                        this.destinationLocation =
+                                (locationDest.getAddress() == null ? "" : locationDest.getAddress() + ", ") +
+                                        (locationDest.getCity() == null ? "" : locationDest.getCity() + ", ") +
+                                        (locationDest.getState() == null ? "" : locationDest.getState() + ", ") +
+                                        (locationDest.getCountry() == null ? "" : locationDest.getCountry());
+                        this.tlaDestinationLocation =
+                                (locationDest.getTlaAddress() == null ? "" : locationDest.getTlaAddress() + ", ") +
+                                        (locationDest.getTlaCity() == null ? "" : locationDest.getTlaCity() + ", ") +
+                                        (locationDest.getState() == null ? "" : locationDest.getTlaState() + ", ") +
+                                        (locationDest.getTlaCountry() == null ? "" : locationDest.getTlaCountry());
+                    }
                 }
                 if (transitAndStopDep != null) {
                     Location locationDep = transitAndStopDep.getLocation();
-                    if (locationDep != null) this.departureLocation =
-                            (locationDep.getAddress() == null ? "" : locationDep.getAddress() + ", ") +
-                                    (locationDep.getCity() == null ? "" : locationDep.getCity() + ", ") +
-                                    (locationDep.getState() == null ? "" : locationDep.getState() + ", ") +
-                                    (locationDep.getCountry() == null ? "" : locationDep.getCountry());
+                    if (locationDep != null) {
+                        this.departureLocation =
+                                (locationDep.getAddress() == null ? "" : locationDep.getAddress() + ", ") +
+                                        (locationDep.getCity() == null ? "" : locationDep.getCity() + ", ") +
+                                        (locationDep.getState() == null ? "" : locationDep.getState() + ", ") +
+                                        (locationDep.getCountry() == null ? "" : locationDep.getCountry());
+                        this.tlaDepartureLocation =
+                                (locationDep.getTlaAddress() == null ? "" : locationDep.getTlaAddress() + ", ") +
+                                        (locationDep.getTlaCity() == null ? "" : locationDep.getTlaCity() + ", ") +
+                                        (locationDep.getState() == null ? "" : locationDep.getTlaState() + ", ") +
+                                        (locationDep.getTlaCountry() == null ? "" : locationDep.getTlaCountry());
+                    }
                 }
                 // time
                 this.departureTime = journey.getDepartureTime();

@@ -32,12 +32,17 @@ public class BookedJourneyStatusDTO {
     private String carLicenseNumber;
     private String carDriverName;
     private String agencyName;
+    private String agencyAddress;
+    private String agencyPhoneNumber;
     private String agencyLogo;
 
     private String departureLocation;
+    private String destinationLocation;
+    private String tlaDepartureLocation;
+    private String tlaDestinationLocation;
+
     private LocalDateTime departureTime;
     private LocalDateTime estimatedArrivalTime;
-    private String destinationLocation;
     private Boolean departureIndicator;
     private Boolean arrivalIndicator;
     private Boolean subscribeToSMSNotification;

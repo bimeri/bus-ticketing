@@ -23,6 +23,9 @@ public class OfficialAgency extends BaseEntity{
     private String logo;
     private String code;
     private Boolean isDisabled;
+    private String address;
+    private String phoneNumber;
+
     @Lob
     private String policy;
 

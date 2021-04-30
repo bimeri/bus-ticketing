@@ -18,4 +18,13 @@ public class LocationDTO {
     private String city;
     @NotBlank(message = "address is required")
     private String address;
+
+    @NotBlank(message = "tlaCountry is required")
+    private String tlaCountry;
+    @NotBlank(message = "tlaState is required")
+    private String tlaState;
+    @NotBlank(message = "tlaCity is required")
+    private String tlaCity;
+    @NotBlank(message = "tlaAddress is required")
+    private String tlaAddress;
 }

@@ -3,29 +3,24 @@ package net.gogroups.gowaka.controller.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gogroups.gowaka.domain.model.Location;
 import net.gogroups.gowaka.domain.model.TransitAndStop;
-import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
 import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.LocationDTO;
 import net.gogroups.gowaka.dto.LocationResponseDTO;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -47,53 +42,34 @@ public class TransitAndStopControllerIntegrationTest {
     private String secretKey = "";
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private TransitAndStopRepository transitAndStopRepository;
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Qualifier("ggClientRestTemplate")
-    @Autowired
-    private RestTemplate restTemplate;
-
-    private User user;
-
-    private MockRestServiceServer mockServer;
-
-
-    private String successClientTokenResponse = "{\n" +
-            "  \"header\": \"Authorization\",\n" +
-            "  \"type\": \"Bearer\",\n" +
-            "  \"issuer\": \"API-Security\",\n" +
-            "  \"version\": \"v1\",\n" +
-            "  \"token\": \"jwt-token\"\n" +
-            "}";
     private String jwtToken;
 
     @BeforeEach
     public void setUp() throws Exception {
-
-        mockServer = MockRestServiceServer.createServer(restTemplate);
-        User newUser = new User();
-        newUser.setUserId("12");
-        newUser.setCreatedAt(LocalDateTime.now());
-
-        this.user = userRepository.save(newUser);
-
         jwtToken = createToken("12", "ggadmin@gg.com", "GW Root", secretKey, "USERS", "GW_ADMIN", "AGENCY_MANAGER");
     }
 
+    @AfterEach
+    void tearDown() {
+        transitAndStopRepository.deleteAll();
+    }
+
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void transit_should_return_201_created_status() throws Exception{
         LocationDTO locationDTO = new LocationDTO();
         locationDTO.setState("SW");
         locationDTO.setCountry("CMR");
         locationDTO.setAddress("Malingo");
         locationDTO.setCity("Buea");
+        locationDTO.setTlaAddress("ML");
+        locationDTO.setTlaCity("BUE");
+        locationDTO.setTlaState("SWR");
+        locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -111,6 +87,10 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
         locationDTO.setCity("Buea");
+        locationDTO.setTlaAddress("ML");
+        locationDTO.setTlaCity("BUE");
+        locationDTO.setTlaState("SWR");
+        locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -130,6 +110,10 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setCountry("CMR");
         locationDTO.setAddress("Malingo");
         locationDTO.setCity("Buea");
+        locationDTO.setTlaAddress("ML");
+        locationDTO.setTlaCity("BUE");
+        locationDTO.setTlaState("SWR");
+        locationDTO.setTlaCountry("CMR");
         Location location = new Location();
         location.setAddress("Long Street");
         location.setCity(locationDTO.getCity());
@@ -154,6 +138,10 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setState("SW");
         locationDTO.setAddress("Malingo");
         locationDTO.setCity("Buea");
+        locationDTO.setTlaAddress("ML");
+        locationDTO.setTlaCity("BUE");
+        locationDTO.setTlaState("SWR");
+        locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location/1")
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .header("Authorization", "Bearer " + jwtToken)
@@ -167,7 +155,6 @@ public class TransitAndStopControllerIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void transit_update_should_return_409_conflict_transit_already_in_use() throws Exception {
 
         LocationDTO locationDTO = new LocationDTO();
@@ -175,11 +162,19 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setCountry("CMR");
         locationDTO.setAddress("Malingo");
         locationDTO.setCity("Buea");
+        locationDTO.setTlaAddress("ML");
+        locationDTO.setTlaCity("BUE");
+        locationDTO.setTlaState("SWR");
+        locationDTO.setTlaCountry("CMR");
         Location location = new Location();
         location.setAddress(locationDTO.getAddress());
         location.setCity(locationDTO.getCity());
         location.setState(locationDTO.getState());
         location.setCountry(locationDTO.getCountry());
+        location.setTlaAddress("ML");
+        location.setTlaCity("BUE");
+        location.setTlaState("SWR");
+        location.setTlaCountry("CMR");
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
@@ -189,7 +184,7 @@ public class TransitAndStopControllerIntegrationTest {
                 "  \"endpoint\": \"/api/protected/location/" + transitAndStop.getId() + "\"\n" +
                 "}";
         RequestBuilder requestBuilder = post("/api/protected/location/" + transitAndStop.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(locationDTO))
                 .accept(MediaType.APPLICATION_JSON);
@@ -209,7 +204,6 @@ public class TransitAndStopControllerIntegrationTest {
                 .andReturn();
     }
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void get_all_transit_and_stop_locations_should_return_200_with_location_list() throws Exception{
         Location location = new Location();
         location.setAddress("Malingo");
@@ -246,7 +240,6 @@ public class TransitAndStopControllerIntegrationTest {
     }
 
     @Test
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     public void get_all_transit_and_stop_locations_should_return_empty_list() throws Exception {
         RequestBuilder requestBuilder = get("/api/public/location/")
                 .header("Authorization", "Bearer " + jwtToken);

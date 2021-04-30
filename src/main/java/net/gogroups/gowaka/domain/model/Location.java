@@ -16,6 +16,12 @@ public class Location {
     private String state;
     private String city;
     private String address;
+
+    private String tlaCountry;
+    private String tlaState;
+    private String tlaCity;
+    private String tlaAddress;
+
 //    private Integer longitude;
 //    private Integer latitude;
 }

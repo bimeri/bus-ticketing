@@ -719,16 +719,20 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         if (bookedJourney.getJourney().getCar().getIsOfficialAgencyIndicator()) {
             Bus bus = (Bus) bookedJourney.getJourney().getCar();
             bookedJourneyStatusDTO.setAgencyName(bus.getOfficialAgency().getAgencyName());
+            bookedJourneyStatusDTO.setAgencyAddress(bus.getOfficialAgency().getAddress());
+            bookedJourneyStatusDTO.setAgencyPhoneNumber(bus.getOfficialAgency().getPhoneNumber());
             bookedJourneyStatusDTO.setAgencyLogo(fileStorageService.getFilePath(bus.getOfficialAgency().getLogo(), "", FileAccessType.PROTECTED));
         }
 
         Location departureLocation = bookedJourney.getJourney().getDepartureLocation().getLocation();
         bookedJourneyStatusDTO.setDepartureLocation(departureLocation.getAddress() + ", " + departureLocation.getCity() + ", " + departureLocation.getState() + ", " + departureLocation.getCountry());
+        bookedJourneyStatusDTO.setTlaDepartureLocation(departureLocation.getTlaAddress() + ", " + departureLocation.getTlaCity() + ", " + departureLocation.getTlaState() + ", " + departureLocation.getTlaCountry());
         bookedJourneyStatusDTO.setDepartureTime(bookedJourney.getJourney().getDepartureTime());
         bookedJourneyStatusDTO.setEstimatedArrivalTime(bookedJourney.getJourney().getEstimatedArrivalTime());
 
         Location destinationLocation = bookedJourney.getDestination().getLocation();
         bookedJourneyStatusDTO.setDestinationLocation(destinationLocation.getAddress() + ", " + destinationLocation.getCity() + ", " + destinationLocation.getState() + ", " + destinationLocation.getCountry());
+        bookedJourneyStatusDTO.setTlaDestinationLocation(destinationLocation.getTlaAddress() + ", " + destinationLocation.getTlaCity() + ", " + destinationLocation.getTlaCity() + ", " + destinationLocation.getTlaCountry());
 
         List<PassengerDTO> passengers = bookedJourney.getPassengers().stream()
                 .map(pge -> {
