@@ -37,7 +37,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -220,7 +219,7 @@ public class JourneyServiceImpl implements JourneyService {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
             if(journeyArrivalIndicatorDTO.getArrivalIndicator())
-                journey.setArrivalTime(LocalDateTime.now(ZoneId.of("GMT+02:00")));
+                journey.setArrivalTime(LocalDateTime.now());
             journeyRepository.save(journey);
         }
         if (journeyArrivalIndicatorDTO.getArrivalIndicator()) {
