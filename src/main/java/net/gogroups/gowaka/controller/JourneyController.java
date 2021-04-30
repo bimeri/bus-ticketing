@@ -172,6 +172,4 @@ public class JourneyController {
         return ResponseEntity.noContent().build();
 
     }
-
-
 }
