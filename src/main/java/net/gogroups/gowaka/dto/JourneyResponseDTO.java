@@ -19,6 +19,7 @@ public class JourneyResponseDTO {
     private Date estimatedArrivalTime;
     private Boolean departureIndicator;
     private Boolean arrivalIndicator;
+    private Boolean isJourneyFinished;
     private double amount;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timestamp;
@@ -28,4 +29,7 @@ public class JourneyResponseDTO {
     private List<LocationStopResponseDTO> transitAndStops;
     private CarResponseDTO car;
     private boolean isDepartureTimeDue;
+    private boolean isUserBranch = false;
+    private Long branchId;
+    private String branchName;
 }

@@ -6,6 +6,7 @@ import net.gogroups.gowaka.domain.repository.ServiceChargeServiceRepository;
 import net.gogroups.gowaka.dto.ServiceChargeDTO;
 import net.gogroups.gowaka.exception.ResourceNotFoundException;
 import net.gogroups.gowaka.service.ServiceChargeService;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,10 +28,11 @@ public class ServiceChargeServiceImpl implements ServiceChargeService {
     }
 
     @Override
+    @Cacheable("service_charges")
     public List<ServiceChargeDTO> getServiceCharges() {
         return serviceChargeServiceRepository.findAll()
                 .stream()
-                .map(serviceCharge -> new ServiceChargeDTO(serviceCharge.getId(), serviceCharge.getPercentageCharge()))
+                .map(serviceCharge -> new ServiceChargeDTO(serviceCharge.getId(), serviceCharge.getPercentageCharge(), serviceCharge.getFlatCharge()))
                 .collect(Collectors.toList());
     }
 

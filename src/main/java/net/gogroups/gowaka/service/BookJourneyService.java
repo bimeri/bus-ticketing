@@ -17,7 +17,7 @@ public interface BookJourneyService {
 
     List<Integer> getAllBookedSeats(Long journeyId);
 
-    BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId);
+    BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId,  boolean isAuth);
 
     PaginatedResponse<BookedJourneyStatusDTO> getUserBookedJourneyHistory(Integer pageNumber, Integer limit);
 
@@ -27,10 +27,13 @@ public interface BookJourneyService {
 
     void checkInPassengerByCode(String checkedInCode);
 
-    String getHtmlReceipt(Long bookedJourneyId);
+    String getHtmlReceipt(Long bookedJourneyId,  boolean isAuth);
 
     List<OnBoardingInfoDTO> getAllPassengerOnBoardingInfo(Long journeyId);
 
     void changeSeatNumber(List<ChangeSeatDTO> changeSeatList, Long bookJourneyId);
 
+    List<GwPassenger> searchPassenger(SearchPassengerDTO phoneNumberDTO);
+
+    void cancelBookings(Long bookJourneyId, List<CodeDTO> codes);
 }

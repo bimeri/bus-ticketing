@@ -61,6 +61,7 @@ public class UserServiceImplTest {
     ArgumentCaptor<User> userArgumentCaptor;
     ArgumentCaptor<ApiSecurityChangePassword> apiSecurityChangePasswordArgumentCaptor;
     ArgumentCaptor<ApiSecurityForgotPassword> apiSecurityForgotPasswordArgumentCaptor;
+    ArgumentCaptor<ApiSecurityUsernamePassword> apiSecurityUsernamePasswordArgumentCaptor;
     ArgumentCaptor<ApiSecurityVerifyEmail> apiSecurityVerifyEmailArgumentCaptor;
 
     @BeforeEach
@@ -70,12 +71,14 @@ public class UserServiceImplTest {
         this.clientUserCredConfig.setClientId("client-id");
         this.clientUserCredConfig.setClientId("client-secret");
         this.clientUserCredConfig.setAppName("GoWaka");
+        this.clientUserCredConfig.setMobileLoginMilli(222222L);
 
         userService = new UserServiceImpl(mockUserRepository, mockApiSecurityService, clientUserCredConfig, mockJwtTokenProvider, mockEmailContentBuilder);
 
         apiSecurityUserArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityUser.class);
         stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
         userArgumentCaptor = ArgumentCaptor.forClass(User.class);
+        apiSecurityUsernamePasswordArgumentCaptor = ArgumentCaptor.forClass(ApiSecurityUsernamePassword.class);
         ((UserServiceImpl) userService).setNotificationService(mockNotificationService);
 
     }
@@ -128,7 +131,7 @@ public class UserServiceImplTest {
 
 
     @Test
-    void loginUser_calls_ApiSecurityService() {
+    void loginUser_calls_ApiSecurityService_forWEB() {
 
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
         emailPasswordDTO.setEmail("example@example.com");
@@ -153,10 +156,11 @@ public class UserServiceImplTest {
         when(mockJwtTokenProvider.getUserDetails(any()))
                 .thenReturn(userDetails);
         User user = new User();
+        user.setCode("123");
         when(mockUserRepository.findById(any()))
                 .thenReturn(Optional.of(user));
 
-        TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO);
+        TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO, "WEB");
 
         verify(mockApiSecurityService).getUserToken(any());
         assertThat(tokenDTO.getAccessToken()).isEqualTo("jwt-token");
@@ -165,9 +169,58 @@ public class UserServiceImplTest {
         assertThat(tokenDTO.getType()).isEqualTo("Bearer");
         assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
-        assertThat(tokenDTO.getUserDetails().toString()).isEqualTo("UserDTO(id=1111, fullName=Full Name, email=example@example.com, roles=[USERS, AGENCY], phoneNumber=null, idCardNumber=null, token=null)");
+        assertThat(tokenDTO.getUserDetails()).isNotNull();
 
     }
+
+    @Test
+    void loginUser_calls_ApiSecurityService_forMOBILE() {
+
+        EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
+        emailPasswordDTO.setEmail("example@example.com");
+        emailPasswordDTO.setPassword("secret");
+
+        ApiSecurityAccessToken accessToken = new ApiSecurityAccessToken();
+        accessToken.setToken("jwt-token");
+        accessToken.setHeader("Authorization");
+        accessToken.setIssuer("Api-Security");
+        accessToken.setType("Bearer");
+        accessToken.setRefreshToken("refresh-token");
+        accessToken.setExpiredIn(1000L);
+        accessToken.setVersion("v1");
+
+        when(mockApiSecurityService.getUserToken(any(), anyLong()))
+                .thenReturn(accessToken);
+        UserDetailsImpl userDetails = new UserDetailsImpl();
+        userDetails.setFullName("Full Name");
+        userDetails.setUsername("example@example.com");
+        userDetails.setId("1111");
+        userDetails.setAuthorities(Arrays.asList(new AppGrantedAuthority("USERS"), new AppGrantedAuthority("AGENCY")));
+        when(mockJwtTokenProvider.getUserDetails(any()))
+                .thenReturn(userDetails);
+        User user = new User();
+        user.setCode("123");
+        when(mockUserRepository.findById(any()))
+                .thenReturn(Optional.of(user));
+
+        TokenDTO tokenDTO = userService.loginUser(emailPasswordDTO, "MOBILE");
+        ArgumentCaptor<Long> longArgumentCaptor = ArgumentCaptor.forClass(Long.class);
+
+        verify(mockApiSecurityService).getUserToken(apiSecurityUsernamePasswordArgumentCaptor.capture(), longArgumentCaptor.capture());
+        assertThat(tokenDTO.getAccessToken()).isEqualTo("jwt-token");
+        assertThat(tokenDTO.getHeader()).isEqualTo("Authorization");
+        assertThat(tokenDTO.getIssuer()).isEqualTo("Api-Security");
+        assertThat(tokenDTO.getType()).isEqualTo("Bearer");
+        assertThat(tokenDTO.getRefreshToken()).isEqualTo("refresh-token");
+        assertThat(tokenDTO.getExpiredIn()).isEqualTo(1000L);
+        assertThat(longArgumentCaptor.getValue()).isEqualTo(222222L);
+        assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getUsername()).isEqualTo("example@example.com");
+        assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getPassword()).isEqualTo("secret");
+        assertThat(apiSecurityUsernamePasswordArgumentCaptor.getValue().getAppName()).isEqualTo("GoWaka");
+        assertThat(tokenDTO.getUserDetails()).isNotNull();
+
+    }
+
 
     @Test
     void getNewToken_calls_ApiSecurityService() {
@@ -385,6 +438,31 @@ public class UserServiceImplTest {
         assertThat(emailChecked).isEqualTo(dto.getEmail());
         assertThat(userDTO.getEmail()).isEqualTo(you.getEmail());
         assertThat(userDTO.getFullName()).isEqualTo(you.getFullName());
+    }
+
+    @Test
+    public void getAccountInfo_whenEmailInvalid_shouldThrowResourceNotFoundException(){
+        when(mockUserRepository.findFirstByCode(anyString())).thenReturn(Optional.empty());
+
+        ApiException apiException = assertThrows(ApiException.class,
+                () -> userService.getAccountInfo("1234"));
+        MatcherAssert.assertThat(apiException.getErrorCode(), is(ErrorCodes.RESOURCE_NOT_FOUND.toString()));
+        MatcherAssert.assertThat(apiException.getMessage(), is(ErrorCodes.RESOURCE_NOT_FOUND.getMessage()));
+    }
+
+    @Test
+    public void getAccountInfo_whenEmailValid_shouldReturnGWUserDTO() {
+        User you = new User();
+        you.setEmail("you@example.com");
+        you.setFullName("you");
+
+        when(mockUserRepository.findFirstByCode(anyString())).thenReturn(Optional.of(you));
+        GWAccountDTO userDTO = userService.getAccountInfo("1234");
+        verify(mockUserRepository).findFirstByCode(stringArgumentCaptor.capture());
+        String emailChecked = stringArgumentCaptor.getValue();
+        assertThat(emailChecked).isEqualTo("1234");
+        assertThat(userDTO.getEmail()).isEqualTo(you.getEmail());
+        assertThat(userDTO.getName()).isEqualTo(you.getFullName());
     }
 
 }

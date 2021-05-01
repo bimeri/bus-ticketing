@@ -15,6 +15,7 @@ public class CarResponseDTO {
     private String name;
     private String licensePlateNumber;
     private Boolean isOfficialAgencyIndicator;
+    private Long agencyId;
     private String agencyName;
     private String agencyLogo;
     private String policy;
@@ -22,5 +23,6 @@ public class CarResponseDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private Date timestamp;
     private Number numberOfSeat;
+    private String seatStructureCode;
 
 }

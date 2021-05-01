@@ -44,11 +44,17 @@ public class Journey extends BaseEntity{
     @Column(name = "arrival_indicator")
     private Boolean arrivalIndicator;
 
+    @Column(name = "is_journey_finished")
+    private Boolean isJourneyFinished;
+
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BookedJourney> bookedJourneys;
 
     @OneToMany(mappedBy = "journey", cascade = {CascadeType.ALL})
     private List<JourneyStop> journeyStops;
+
+    @ManyToOne
+    private AgencyBranch agencyBranch;
 
     @ManyToOne
     private Car car;

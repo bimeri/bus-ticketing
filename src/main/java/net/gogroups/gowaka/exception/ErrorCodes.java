@@ -30,7 +30,10 @@ public enum ErrorCodes {
     RESOURCE_ALREADY_EXIST("Resource already exist."),
     ALREADY_REFUNDED_REQUEST("Request already refunded"),
     INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee"),
-    REFUND_REQUEST_NOT_APPROVED("Refund request not approved.");
+    BRANCH_HAS_JOURNEY("This branch has assigned journeys"),
+    BRANCH_HAS_USERS("This branch has assigned users"),
+    REFUND_REQUEST_NOT_APPROVED("Refund request not approved."),
+    JOURNEY_IS_FINISHED("The journey is closed.");
 
     private String message;
 

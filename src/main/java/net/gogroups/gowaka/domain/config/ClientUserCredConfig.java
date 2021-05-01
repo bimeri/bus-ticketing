@@ -16,4 +16,5 @@ public class ClientUserCredConfig {
     private String clientSecret;
     private String appName;
     private String url;
+    private Long mobileLoginMilli;
 }

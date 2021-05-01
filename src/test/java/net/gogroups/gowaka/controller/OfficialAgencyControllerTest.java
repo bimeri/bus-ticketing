@@ -1,9 +1,6 @@
 package net.gogroups.gowaka.controller;
 
-import net.gogroups.gowaka.dto.CreateOfficialAgencyDTO;
-import net.gogroups.gowaka.dto.EmailDTO;
-import net.gogroups.gowaka.dto.OfficialAgencyDTO;
-import net.gogroups.gowaka.dto.OfficialAgencyUserRoleRequestDTO;
+import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.OfficialAgencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,9 +102,45 @@ public class OfficialAgencyControllerTest {
     @Test
     void addAgencyUser_calls_OfficialAgencyService() {
         EmailDTO emailDTO = new EmailDTO();
-        officialAgencyController.addAgencyUser(emailDTO);
-        verify(mockOfficialAgencyService).addAgencyUser(emailDTO);
+        officialAgencyController.addAgencyUser(emailDTO, 1L);
+        verify(mockOfficialAgencyService).addAgencyUser(emailDTO, 1L);
 
     }
+
+    @Test
+    void createBranch_calls_OfficialAgencyService() {
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+        officialAgencyController.createBranch(createBranchDTO);
+        verify(mockOfficialAgencyService).createBranch(createBranchDTO);
+
+    }
+
+    @Test
+    void updateBranch_calls_OfficialAgencyService() {
+        CreateBranchDTO createBranchDTO = new CreateBranchDTO();
+        createBranchDTO.setName("Main Branch");
+        createBranchDTO.setAddress("Address");
+        officialAgencyController.updateBranch(createBranchDTO, 1L);
+        verify(mockOfficialAgencyService).updateBranch(createBranchDTO, 1L);
+
+    }
+
+    @Test
+    void deleteBranch_calls_OfficialAgencyService() {
+        officialAgencyController.deleteBranch(1L);
+        verify(mockOfficialAgencyService).deleteBranch(1L);
+
+    }
+
+    @Test
+    void getAgencyBranches_calls_OfficialAgencyService() {
+
+        officialAgencyController.getAgencyBranches();
+        verify(mockOfficialAgencyService).getAgencyBranches();
+
+    }
+
 
 }

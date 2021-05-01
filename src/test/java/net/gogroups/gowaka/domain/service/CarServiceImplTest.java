@@ -363,8 +363,14 @@ public class CarServiceImplTest {
         journey.setBookedJourneys(Collections.singletonList(new BookedJourney()));
         bus.setJourneys(Collections.singletonList(journey));
         when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
+        when(mockSeatStructureRepository.findById(anyLong()))
+                .thenReturn(Optional.of(new SeatStructure()));
 
-        ApiException apiException = assertThrows(ApiException.class, () -> carService.updateAgencyCarInfo(1L, new BusDTO()));
+        ApiException apiException = assertThrows(ApiException.class, () -> {
+            BusDTO busDTO = new BusDTO();
+            busDTO.setSeatStructureId(111L);
+            carService.updateAgencyCarInfo(1L, busDTO);
+        });
         assertThat(apiException.getErrorCode()).isEqualTo("CAR_ALREADY_HAS_JOURNEY");
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.CAR_ALREADY_HAS_JOURNEY.getMessage());
     }
@@ -382,6 +388,8 @@ public class CarServiceImplTest {
         userDTO.setId("1");
         when(mockUserService.getCurrentAuthUser()).thenReturn(userDTO);
         when(mockUserRepository.findById(anyString())).thenReturn(Optional.of(user));
+        when(mockSeatStructureRepository.findById(anyLong()))
+                .thenReturn(Optional.of(new SeatStructure()));
         OfficialAgency officialAgency = new OfficialAgency();
         Bus bus1 = new Bus();
         bus1.setId(2L);
@@ -389,7 +397,11 @@ public class CarServiceImplTest {
         when(user.getOfficialAgency()).thenReturn(officialAgency);
         when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
 
-        ApiException apiException = assertThrows(ApiException.class, () -> carService.updateAgencyCarInfo(1L, new BusDTO()));
+        ApiException apiException = assertThrows(ApiException.class, () -> {
+            BusDTO busDTO = new BusDTO();
+            busDTO.setSeatStructureId(111L);
+            carService.updateAgencyCarInfo(1L, busDTO);
+        });
         assertThat(apiException.getErrorCode()).isEqualTo("CAR_NOT_IN_USERS_AGENCY");
         assertThat(apiException.getMessage()).isEqualTo(ErrorCodes.CAR_NOT_IN_USERS_AGENCY.getMessage());
 
@@ -412,7 +424,11 @@ public class CarServiceImplTest {
         officialAgency.setBuses(Collections.singletonList(bus));
         when(user.getOfficialAgency()).thenReturn(officialAgency);
         when(mockCarRepository.findById(anyLong())).thenReturn(Optional.of(bus));
-        carService.updateAgencyCarInfo(1L, new BusDTO());
+        when(mockSeatStructureRepository.findById(anyLong()))
+                .thenReturn(Optional.of(new SeatStructure()));
+        BusDTO busDTO = new BusDTO();
+        busDTO.setSeatStructureId(111L);
+        carService.updateAgencyCarInfo(1L, busDTO);
         verify(mockCarRepository).save(bus);
     }
 
@@ -488,31 +504,28 @@ public class CarServiceImplTest {
         seatStructure.setId(1L);
         seatStructure.setNumberOfSeats(10);
         seatStructure.setImage("10.png");
-        SeatStructure seatStructure1 = new SeatStructure();
-        seatStructure1.setId(2L);
-        seatStructure1.setNumberOfSeats(10);
-        seatStructure1.setImage("10-1.png");
+        seatStructure.setSeatStructureCode("CODE");
 
-        when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(new ArrayList<>(
-                Arrays.asList(seatStructure, seatStructure1)
+        when(mockSeatStructureRepository.findBySeatStructureCode(anyString())).thenReturn(new ArrayList<>(
+                Arrays.asList(seatStructure)
         ));
-        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10);
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures("CODE");
         assertFalse(seatStructureDTOS.isEmpty());
         assertThat(seatStructureDTOS.get(0).getNumberOfSeats(), is(equalTo(10)));
-        assertThat(seatStructureDTOS.get(1).getImage(),
-                is(equalTo("seatstructures/" + seatStructure1.getImage())));
+        assertThat(seatStructureDTOS.get(0).getImage(),
+                is(equalTo("seatstructures/" + seatStructure.getImage())));
     }
 
     @Test
     void get_seat_structures_should_return_empty_list_of_no_structure_exits() {
 
-        when(mockSeatStructureRepository.findAllByNumberOfSeats(anyInt())).thenReturn(Collections.emptyList());
-        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(10);
+        when(mockSeatStructureRepository.findBySeatStructureCode("CODE")).thenReturn(Collections.emptyList());
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures("CODE");
         assertTrue(seatStructureDTOS.isEmpty());
     }
 
     @Test
-    void get_seat_structures_should_return_allSeatStructure_whenNumberOfSeatIsZero() {
+    void get_seat_structures_should_return_allSeatStructure_whenNotSeatCodeExist() {
 
         SeatStructure seatStructure = new SeatStructure();
         seatStructure.setId(1L);
@@ -520,7 +533,7 @@ public class CarServiceImplTest {
         seatStructure.setImage("10.png");
 
         when(mockSeatStructureRepository.findAll()).thenReturn(Collections.singletonList(seatStructure));
-        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures(0);
+        List<SeatStructureDTO> seatStructureDTOS = carService.getSeatStructures("");
         verify(mockSeatStructureRepository).findAll();
         assertEquals("seatstructures/10.png", seatStructureDTOS.get(0).getImage());
     }

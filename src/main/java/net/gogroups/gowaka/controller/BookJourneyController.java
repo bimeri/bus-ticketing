@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -54,6 +55,15 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_ADMIN', 'ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/find_passenger")
+    ResponseEntity<List<GwPassenger>> findPassenger(@Validated @RequestBody SearchPassengerDTO phoneNumberDTO) {
+        log.info("searching passenger by phone number :{}", phoneNumberDTO.getPhoneNumber());
+        return ResponseEntity.ok(bookJourneyService.searchPassenger(phoneNumberDTO));
+    }
+
+
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/journey/{journeyId}/booked_seats")
     ResponseEntity<List<Integer>> getAllBookedSeats(@PathVariable("journeyId") Long journeyId) {
@@ -64,21 +74,18 @@ public class BookJourneyController {
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/{bookedJourneyId}")
     ResponseEntity<BookedJourneyStatusDTO> getBookJourneyStatus(@PathVariable("bookedJourneyId") Long bookedJourneyId) {
-        return ResponseEntity.ok(bookJourneyService.getBookJourneyStatus(bookedJourneyId));
+        return ResponseEntity.ok(bookJourneyService.getBookJourneyStatus(bookedJourneyId, true));
     }
 
     @PreAuthorize("hasRole('ROLE_USERS')")
     @GetMapping("/protected/bookJourney/{bookedJourneyId}/receipt")
     ResponseEntity<Resource> downloadReceipt(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
-        String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId);
-        String filename = "GowakaReceipt_" + new Date();
-        File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
+        return getReceiptResourceResponseEntity(bookedJourneyId, true);
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData(filename, filename);
-        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-        return new ResponseEntity<>(new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri()), headers, HttpStatus.OK);
+    @GetMapping("/public/bookJourney/{bookedJourneyId}/receipt")
+    ResponseEntity<Resource> downloadReceiptPublicRoute(@PathVariable("bookedJourneyId") Long bookedJourneyId) throws Exception {
+        return getReceiptResourceResponseEntity(bookedJourneyId, false);
     }
 
     @PostMapping("/public/booking/status/{bookedJourneyId}")
@@ -96,19 +103,28 @@ public class BookJourneyController {
         return ResponseEntity.ok(bookJourneyService.getUserBookedJourneyHistory(pageNumber, limit));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @GetMapping("/protected/checkIn_status")
     public ResponseEntity<OnBoardingInfoDTO> getOnBoardingInfoResponse(@RequestParam("code") String code) {
         log.info("getting on boarding info for code :{}", code);
         return ResponseEntity.ok(bookJourneyService.getPassengerOnBoardingInfo(code));
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER','ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_CHECKING', 'ROLE_AGENCY_BOOKING')")
     @PostMapping("/protected/checkIn")
     public ResponseEntity<?> checkInPassengerByCode(@RequestBody @Validated CodeDTO dto) {
         log.info("checking in code :{}", dto.getCode());
         bookJourneyService.checkInPassengerByCode(dto.getCode());
         log.info("checking successful for code :{}", dto.getCode());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ROLE_AGENCY_MANAGER', 'ROLE_AGENCY_OPERATOR', 'ROLE_AGENCY_BOOKING')")
+    @PostMapping("/protected/bookJourney/{bookedJourneyId}/cancel_trip")
+    public ResponseEntity<?> cancelBookings(@PathVariable("bookedJourneyId") Long bookJourneyId, @RequestBody @Validated List<@Valid CodeDTO> codes) {
+        log.info("cancel booking in codes :{} and id: {}", codes, bookJourneyId);
+        bookJourneyService.cancelBookings(bookJourneyId, codes);
+        log.info("cancel successful for code :{}and id: {}", codes, bookJourneyId);
         return ResponseEntity.noContent().build();
     }
 
@@ -125,5 +141,15 @@ public class BookJourneyController {
         return ResponseEntity.noContent().build();
     }
 
+    private ResponseEntity<Resource> getReceiptResourceResponseEntity(Long bookedJourneyId, boolean isAuth) throws Exception {
+        String htmlReceipt = bookJourneyService.getHtmlReceipt(bookedJourneyId, isAuth);
+        String filename = "GowakaReceipt_" + new Date().getTime();
+        File pdfFIle = htmlToPdfGenarator.createPdf(htmlReceipt, filename);
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData(filename, filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+        return new ResponseEntity<>(new UrlResource(Paths.get(pdfFIle.getAbsolutePath()).toUri()), headers, HttpStatus.OK);
+    }
 }

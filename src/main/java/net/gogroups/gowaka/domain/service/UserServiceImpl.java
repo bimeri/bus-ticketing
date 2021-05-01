@@ -1,9 +1,15 @@
 package net.gogroups.gowaka.domain.service;
 
+import net.gogroups.gowaka.constant.notification.EmailFields;
+import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
+import net.gogroups.gowaka.domain.model.User;
 import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
+import net.gogroups.gowaka.exception.ResourceNotFoundException;
+import net.gogroups.gowaka.service.UserService;
 import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
@@ -11,11 +17,6 @@ import net.gogroups.security.accessconfig.JwtTokenProvider;
 import net.gogroups.security.accessconfig.UserDetailsImpl;
 import net.gogroups.security.model.*;
 import net.gogroups.security.service.ApiSecurityService;
-import net.gogroups.gowaka.constant.notification.EmailFields;
-import net.gogroups.gowaka.domain.config.ClientUserCredConfig;
-import net.gogroups.gowaka.domain.model.User;
-import net.gogroups.gowaka.exception.ResourceNotFoundException;
-import net.gogroups.gowaka.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,13 +24,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static net.gogroups.gowaka.constant.StaticContent.MOBILE;
 import static net.gogroups.gowaka.constant.UserRoles.USERS;
+import static net.gogroups.gowaka.exception.ErrorCodes.RESOURCE_NOT_FOUND;
 
 /**
  * Author: Edward Tanko <br/>
@@ -82,6 +85,7 @@ public class UserServiceImpl implements UserService {
         user.setUserId(savedApiSecurityUser.getId());
         user.setEmail(savedApiSecurityUser.getEmail());
         user.setFullName(savedApiSecurityUser.getFullName());
+        user.setCode(UUID.randomUUID().toString().toUpperCase());
         userRepository.save(user);
 
         TokenDTO tokenDTO = new TokenDTO();
@@ -102,14 +106,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO) {
+    public TokenDTO loginUser(EmailPasswordDTO emailPasswordDTO, String sourceSystem) {
 
         ApiSecurityUsernamePassword apiSecurityUsernamePassword = new ApiSecurityUsernamePassword();
         apiSecurityUsernamePassword.setUsername(emailPasswordDTO.getEmail());
         apiSecurityUsernamePassword.setPassword(emailPasswordDTO.getPassword());
         apiSecurityUsernamePassword.setAppName(clientUserCredConfig.getAppName());
 
-        ApiSecurityAccessToken userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
+        ApiSecurityAccessToken userToken = null;
+        if (MOBILE.equals(sourceSystem)) {
+            userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword, clientUserCredConfig.getMobileLoginMilli());
+        } else {
+            userToken = apiSecurityService.getUserToken(apiSecurityUsernamePassword);
+        }
         UserDetailsImpl userDetails = jwtTokenProvider.getUserDetails(userToken.getToken());
 
         Optional<User> userOptional = userRepository.findById(userDetails.getId());
@@ -194,6 +203,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public GWAccountDTO getAccountInfo(String code) {
+        User user = getUserByCode(code);
+        return new GWAccountDTO(user.getFullName(), user.getIdCardNumber(), user.getPhoneNumber(), user.getEmail());
+    }
+
+    @Override
     public TokenDTO getNewToken(RefreshTokenDTO refreshTokenDTO) {
         ApiRefreshToken apiRefreshToken = new ApiRefreshToken();
         apiRefreshToken.setRefreshToken(refreshTokenDTO.getRefreshToken());
@@ -212,12 +227,26 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserDTO getUserDTO(UserDetailsImpl userDetails, User user) {
+
         UserDTO userDTO = new UserDTO();
         userDTO.setId(userDetails.getId());
         userDTO.setFullName(userDetails.getFullName());
         userDTO.setEmail(userDetails.getUsername());
         userDTO.setPhoneNumber(user.getPhoneNumber());
         userDTO.setIdCardNumber(user.getIdCardNumber());
+        userDTO.setQrCodeImage(QRCodeProvider.getQRCodeBase64EncodedImage(user.getCode()));
+
+        if (user.getOfficialAgency() != null && user.getAgencyBranch() != null) {
+            UserDTO.Agency agency = new UserDTO.Agency();
+            agency.setAgencyId(user.getOfficialAgency().getId());
+            agency.setAgencyName(user.getOfficialAgency().getAgencyName());
+            agency.setBranchId(user.getAgencyBranch().getId());
+            agency.setBranchName(user.getAgencyBranch().getName());
+            agency.setBranchAddress(user.getAgencyBranch().getAddress());
+            userDTO.setAgency(agency);
+
+        }
+
         userDTO.setRoles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList())
@@ -264,6 +293,14 @@ public class UserServiceImpl implements UserService {
                 ErrorCodes.RESOURCE_NOT_FOUND.toString(),
                 HttpStatus.NOT_FOUND
         );
+    }
+
+    private User getUserByCode(String code) {
+        Optional<User> optional = userRepository.findFirstByCode(code);
+        if (!optional.isPresent()) {
+            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        }
+        return optional.get();
     }
 
 }

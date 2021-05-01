@@ -36,6 +36,7 @@ public class EmailContentBuilder {
     public String buildTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
         Context context = new Context();
         context.setVariable("journeyInfo", bookedJourneyStatusDTO);
+        context.setVariable("notes", "Your online ticket purchase does not cover extra luggage charges");
         context.setVariable("logo", getLogo());
         return templateEngine.process("ticket-email", context);
     }
@@ -43,6 +44,7 @@ public class EmailContentBuilder {
     public String buildTicketPdfHtml(BookedJourneyStatusDTO bookedJourneyStatusDTO) {
         Context context = new Context();
         context.setVariable("journeyInfo", bookedJourneyStatusDTO);
+        context.setVariable("notes", "Your online ticket purchase does not cover extra luggage charges");
         context.setVariable("logo", getLogo());
 
         return templateEngine.process("ticket-pdf", context);
@@ -68,6 +70,15 @@ public class EmailContentBuilder {
         context.setVariable("fullName", user.getFullName());
         context.setVariable("logo", getLogo());
         return templateEngine.process("refund-email", context);
+    }
+
+
+    public String buildJourneyStatusEmail(String message) {
+
+        Context context = new Context();
+        context.setVariable("message", message);
+        context.setVariable("logo", getLogo());
+        return templateEngine.process("journey-update-email", context);
     }
 
 

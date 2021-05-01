@@ -37,6 +37,8 @@ public class RefundDTO {
     private User user;
     private RefundStatus status = PENDING;
 
+    private BookedJourney bookedJourney;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -47,11 +49,16 @@ public class RefundDTO {
         private String phoneNumber;
     }
 
-    public static class bookedJourney{
-        private int id;
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BookedJourney{
+
+        private Long id;
         private String departure;
         private String destination;
-        private int agencyCharge;
-        private String departureTime;
+        private Double agencyCharge;
+        private LocalDateTime departureTime;
+
     }
 }

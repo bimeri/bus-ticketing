@@ -18,7 +18,8 @@ import javax.persistence.Id;
 public class ServiceCharge extends BaseEntity{
 
     @Id
-    private String id;
+    private String id; //PLATFORM_SERVICE_CHARGE,SMS_NOTIF,
     private Double percentageCharge;
+    private Double flatCharge;
 
 }

@@ -40,6 +40,7 @@ public class BookedJourneyStatusDTO {
     private String destinationLocation;
     private Boolean departureIndicator;
     private Boolean arrivalIndicator;
+    private Boolean subscribeToSMSNotification;
 
     private Double agencyAmount;
     private Double serviceChargeAmount;

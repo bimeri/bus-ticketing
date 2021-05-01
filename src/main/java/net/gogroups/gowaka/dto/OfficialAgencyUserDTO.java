@@ -15,6 +15,9 @@ public class OfficialAgencyUserDTO {
     private String id;
     private String fullName;
     private List<String> roles;
+    private String agencyName;
+    private String branchName;
+    private String branchAddress;
 
     public OfficialAgencyUserDTO() {
         this.roles = new ArrayList<>();

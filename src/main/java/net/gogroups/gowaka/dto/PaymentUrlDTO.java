@@ -10,11 +10,10 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class PaymentUrlDTO {
 
     private String paymentUrl;
+    private Long bookedJourneyId;
 
-    public PaymentUrlDTO(String paymentUrl) {
-        this.paymentUrl = paymentUrl;
-    }
 }

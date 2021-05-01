@@ -17,3 +17,27 @@
 * Dec 22nd, 2020
     * BookedJourney entity
         1. add agencyUser to BookedJourney entity (join column is 'agency_user_id') 
+* Jan 24th, 2021
+    * add 'AppAlertNotice' entity table
+___________________________________________
+* Jan 29th 2021
+    * add flatCharge field in ServiceCharge Entity table
+    * changed IDs to `PLATFORM_SERVICE_CHARGE,SMS_NOTIF`
+-------------------------------------------
+* Feb 5th 2021
+    * add title to alert notification table
+    * add sms_notification in booked_journey table
+-------------------------------------------    
+* Mar 13 2021
+    * Add `code` to user table
+    * Gene UUID code for existing users
+    * Deploy latest api-security
+-----------------------------------------------    
+* Mar 13, 2021
+  * Add AgencyBranch Entity and Link to the User table
+  * Add AgencyBranch on Journey Entity  
+  * Update branch on all existing agencies  
+    
+--------------------------------------------------------------------
+* Thur Apr 08, 2021
+ * Add `seat_structure_code` to seat_structure table environment

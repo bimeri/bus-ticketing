@@ -20,5 +20,19 @@ public class UserDTO {
     // there are additional fields on Gowka Database
     private String phoneNumber;
     private String idCardNumber;
+    private String qrCodeImage;
     private TokenDTO token;
+    private Agency agency;
+
+    @Data
+    public static class Agency {
+
+        private Long branchId;
+        private String branchName;
+        private String branchAddress;
+
+        private Long agencyId;
+        private String agencyName;
+
+    }
 }

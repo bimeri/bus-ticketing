@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
@@ -89,15 +90,33 @@ public class BookJourneyControllerTest {
     }
 
     @Test
+    void findPassenger_callsBookJourneyService() {
+
+        when(mockBookJourneyService.searchPassenger(any()))
+                .thenReturn(Collections.singletonList(new GwPassenger("John", "1234567", "237676279260", "john@gmail.com", "John", "john@gmail.com")));
+
+        ResponseEntity<List<GwPassenger>> passengers = bookJourneyController.findPassenger(new SearchPassengerDTO("237", "676279260", "John"));
+
+        assertThat(passengers.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(passengers.getBody().size()).isEqualTo(1);
+        assertThat(passengers.getBody().get(0).getDirectedToAccount()).isEqualTo("john@gmail.com");
+        assertThat(passengers.getBody().get(0).getEmail()).isEqualTo("john@gmail.com");
+        assertThat(passengers.getBody().get(0).getName()).isEqualTo("John");
+        assertThat(passengers.getBody().get(0).getIdNumber()).isEqualTo("1234567");
+        assertThat(passengers.getBody().get(0).getPhoneNumber()).isEqualTo("237676279260");
+
+    }
+
+    @Test
     void getBookJourneyStatus_callsBookJourneyService() {
 
         BookedJourneyStatusDTO bookedJourneyStatus = new BookedJourneyStatusDTO();
         bookedJourneyStatus.setId(10L);
-        when(mockBookJourneyService.getBookJourneyStatus(anyLong()))
+        when(mockBookJourneyService.getBookJourneyStatus(anyLong(), anyBoolean()))
                 .thenReturn(bookedJourneyStatus);
 
         ResponseEntity<BookedJourneyStatusDTO> bookJourneyStatus = bookJourneyController.getBookJourneyStatus(1L);
-        verify(mockBookJourneyService).getBookJourneyStatus(1L);
+        verify(mockBookJourneyService).getBookJourneyStatus(1L, true);
         assertThat(bookJourneyStatus.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(bookJourneyStatus.getBody()).isEqualTo(bookedJourneyStatus);
 
@@ -109,13 +128,35 @@ public class BookJourneyControllerTest {
         ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
 
-        when(mockBookJourneyService.getHtmlReceipt(anyLong()))
+        when(mockBookJourneyService.getHtmlReceipt(anyLong(), anyBoolean()))
                 .thenReturn("<html></html>");
         when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
                 .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
 
         ResponseEntity<Resource> output = bookJourneyController.downloadReceipt(1L);
-        verify(mockBookJourneyService).getHtmlReceipt(1L);
+        verify(mockBookJourneyService).getHtmlReceipt(1L, true);
+        verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
+
+        assertThat(htmlCaptor.getValue()).isEqualTo("<html></html>");
+        assertThat(filenameCaptor.getValue()).contains("GowakaReceipt_");
+
+        assertThat(output.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    }
+
+    @Test
+    void downloadReceiptPublicRoute_callsBookJourneyServiceAndHtmlToPdfGenarator() throws Exception {
+
+        ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> filenameCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(mockBookJourneyService.getHtmlReceipt(anyLong(), anyBoolean()))
+                .thenReturn("<html></html>");
+        when(mockHtmlToPdfGenarator.createPdf(anyString(), anyString()))
+                .thenReturn(File.createTempFile("myPdfFile", ".pdf"));
+
+        ResponseEntity<Resource> output = bookJourneyController.downloadReceiptPublicRoute(1L);
+        verify(mockBookJourneyService).getHtmlReceipt(1L, false);
         verify(mockHtmlToPdfGenarator).createPdf(htmlCaptor.capture(), filenameCaptor.capture());
 
         assertThat(htmlCaptor.getValue()).isEqualTo("<html></html>");

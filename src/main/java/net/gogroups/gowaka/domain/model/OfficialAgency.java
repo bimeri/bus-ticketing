@@ -32,6 +32,9 @@ public class OfficialAgency extends BaseEntity{
     @OneToMany(mappedBy = "officialAgency")
     private List<User> users;
 
+    @OneToMany(mappedBy = "officialAgency", cascade = CascadeType.ALL)
+    private List<AgencyBranch> agencyBranch = new ArrayList<>();
+
     public OfficialAgency() {
         this.buses = new ArrayList<>();
         this.users = new ArrayList<>();

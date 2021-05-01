@@ -2,10 +2,7 @@ package net.gogroups.gowaka.domain.service;
 
 import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.domain.model.*;
-import net.gogroups.gowaka.domain.repository.PassengerRepository;
-import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
-import net.gogroups.gowaka.domain.repository.RefundPaymentTransactionRepository;
-import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
 import net.gogroups.gowaka.dto.RefundDTO;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
@@ -54,6 +51,9 @@ class RefundServiceImplTest {
     @Mock
     private NotificationService mockNotificationService;
 
+    @Mock
+    private JourneyRepository mockJourneyRepository;
+
     private ArgumentCaptor<RefundPaymentTransaction> refundPaymentTransactionArgumentCaptor = ArgumentCaptor.forClass(RefundPaymentTransaction.class);
 
     private ArgumentCaptor<List<Passenger>> passengerArgumentCaptorList = ArgumentCaptor.forClass(List.class);
@@ -61,8 +61,8 @@ class RefundServiceImplTest {
     @BeforeEach
     void setUp() {
         refundService = new RefundServiceImpl(mockPaymentTransactionRepository,
-                mockRefundPaymentTransactionRepository,
-                mockUserRepository, mockPassengerRepository, mockEmailContentBuilder, mockNotificationService);
+                mockRefundPaymentTransactionRepository, mockUserRepository, mockPassengerRepository,
+                mockJourneyRepository, mockEmailContentBuilder, mockNotificationService);
 
     }
 
@@ -377,10 +377,30 @@ class RefundServiceImplTest {
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
         refundPaymentTransaction.setRefundStatus("APPROVED");
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        BookedJourney bookedJourney = new BookedJourney();
+        Journey journey = new Journey();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setCity("Buea");
+        location.setAddress("mile 17");
+        location.setState("SW");
+        location.setCountry("Cameroon");
+        transitAndStop.setLocation(location);
+        journey.setDepartureLocation(transitAndStop);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(transitAndStop);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
         when(mockRefundPaymentTransactionRepository.findByIdAndPaymentTransaction_BookedJourney_User_UserId(1L, "123"))
                 .thenReturn(Optional.of(refundPaymentTransaction));
+
         RefundDTO userRefund = refundService.getUserRefund(1L, "123");
+
+
         assertThat(userRefund.getAmount()).isEqualTo(1000.00);
+        assertThat(userRefund.getBookedJourney().getDeparture()).isEqualTo("mile 17, Buea, SW, Cameroon");
+        assertThat(userRefund.getBookedJourney().getDestination()).isEqualTo("mile 17, Buea, SW, Cameroon");
     }
 
     @Test
@@ -389,10 +409,108 @@ class RefundServiceImplTest {
         RefundPaymentTransaction refundPaymentTransaction = new RefundPaymentTransaction();
         refundPaymentTransaction.setAmount(1000.00);
         refundPaymentTransaction.setRefundStatus("PENDING");
-        when(mockRefundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_IdAndPaymentTransaction_BookedJourney_User_UserId(1L, "123"))
+        PaymentTransaction paymentTransaction = new PaymentTransaction();
+        BookedJourney bookedJourney = new BookedJourney();
+        Journey journey = new Journey();
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setCity("Buea");
+        location.setAddress("mile 17");
+        location.setState("SW");
+        location.setCountry("Cameroon");
+        transitAndStop.setLocation(location);
+        journey.setDepartureLocation(transitAndStop);
+        bookedJourney.setJourney(journey);
+        bookedJourney.setDestination(transitAndStop);
+        paymentTransaction.setBookedJourney(bookedJourney);
+        refundPaymentTransaction.setPaymentTransaction(paymentTransaction);
+        when(mockRefundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_Id(1L))
                 .thenReturn(Collections.singletonList(refundPaymentTransaction));
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        User user = new User();
+        officialAgency.setId(99L);
+        user.setOfficialAgency(officialAgency);
+
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency);
+        journey.setCar(bus);
+        when(mockJourneyRepository.findById(1L))
+                .thenReturn(Optional.of(journey));
         List<RefundDTO> userRefunds = refundService.getAllJourneyRefunds(1L, "123");
         assertThat(userRefunds.get(0).getAmount()).isEqualTo(1000.00);
+    }
+
+    @Test
+    void getAllJourneyRefunds_throwsException_when_userNotFound() {
+
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> refundService.getAllJourneyRefunds(1L, "123"));
+        assertThat(exception.getMessage()).isEqualTo("User not found.");
+    }
+
+    @Test
+    void getAllJourneyRefunds_throwsException_when_journeyNotFound() {
+
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(new User()));
+        when(mockJourneyRepository.findById(1L))
+                .thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> refundService.getAllJourneyRefunds(1L, "123"));
+        assertThat(exception.getMessage()).isEqualTo("Journey not found.");
+    }
+
+    @Test
+    void getAllJourneyRefunds_throwsException_whenJourneyNotInUserAgency() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(99L);
+        OfficialAgency officialAgency2 = new OfficialAgency();
+        officialAgency2.setId(98L);
+
+        User user = new User();
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        Bus bus = new Bus();
+        bus.setOfficialAgency(officialAgency2);
+        journey.setCar(bus);
+
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findById(1L))
+                .thenReturn(Optional.of(journey));
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> refundService.getAllJourneyRefunds(1L, "123"));
+        assertThat(exception.getMessage()).isEqualTo("Resource not found.");
+    }
+
+    @Test
+    void getAllJourneyRefunds_throwsException_whenJourneyNotaBusType() {
+
+        OfficialAgency officialAgency = new OfficialAgency();
+        officialAgency.setId(99L);
+
+        User user = new User();
+        user.setOfficialAgency(officialAgency);
+
+        Journey journey = new Journey();
+        SharedRide car = new SharedRide();
+        journey.setCar(car);
+
+        when(mockUserRepository.findById("123"))
+                .thenReturn(Optional.of(user));
+        when(mockJourneyRepository.findById(1L))
+                .thenReturn(Optional.of(journey));
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> refundService.getAllJourneyRefunds(1L, "123"));
+        assertThat(exception.getMessage()).isEqualTo("Resource not found.");
     }
 
     @Test

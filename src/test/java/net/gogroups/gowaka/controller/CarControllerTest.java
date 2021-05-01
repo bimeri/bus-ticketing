@@ -226,11 +226,11 @@ public class CarControllerTest {
 
     @Test
     void getSeatStructures_returnsListOfSeatStructure() {
-        when(mockCarService.getSeatStructures(10))
+        when(mockCarService.getSeatStructures("CODE"))
                 .thenReturn(Collections.singletonList(new SeatStructureDTO()));
 
-        ResponseEntity<List<SeatStructureDTO>> seatStructures = carController.getSeatStructures(10);
-        verify(mockCarService).getSeatStructures(10);
+        ResponseEntity<List<SeatStructureDTO>> seatStructures = carController.getSeatStructures("CODE");
+        verify(mockCarService).getSeatStructures("CODE");
         assertThat(seatStructures.getBody().size(), is(1));
     }
 }

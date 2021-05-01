@@ -12,10 +12,7 @@ import net.gogroups.gowaka.domain.service.utilities.QRCodeProvider;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
-import net.gogroups.gowaka.service.BookJourneyService;
-import net.gogroups.gowaka.service.JourneyService;
-import net.gogroups.gowaka.service.ServiceChargeService;
-import net.gogroups.gowaka.service.UserService;
+import net.gogroups.gowaka.service.*;
 import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
@@ -44,6 +41,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.gogroups.gowaka.constant.StaticContent.CANCELLED;
+import static net.gogroups.gowaka.constant.StaticContent.MIM_TIME_TO_WAIT_FOR_PAYMENT;
 import static net.gogroups.gowaka.exception.ErrorCodes.*;
 import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 
@@ -54,6 +53,10 @@ import static net.gogroups.payamgo.constants.PayAmGoPaymentStatus.*;
 @Service
 @Slf4j
 public class BookJourneyServiceImpl implements BookJourneyService {
+
+    private static final String SMS_NOTIF = "SMS_NOTIF";
+    private static final String PLATFORM_SERVICE_CHARGE = "PLATFORM_SERVICE_CHARGE";
+    private static final String CASHIER = "CASHIER";
 
     private BookedJourneyRepository bookedJourneyRepository;
     private JourneyRepository journeyRepository;
@@ -67,11 +70,11 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     private PaymentUrlResponseProps paymentUrlResponseProps;
     private JourneyService journeyService;
     private ServiceChargeService serviceChargeService;
-
     private EmailContentBuilder emailContentBuilder;
+    private GwCacheLoaderService gwCacheLoaderService;
 
     @Autowired
-    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, ServiceChargeService serviceChargeService, EmailContentBuilder emailContentBuilder) {
+    public BookJourneyServiceImpl(BookedJourneyRepository bookedJourneyRepository, JourneyRepository journeyRepository, UserRepository userRepository, PaymentTransactionRepository paymentTransactionRepository, PassengerRepository passengerRepository, UserService userService, PayAmGoService payAmGoService, NotificationService notificationService, FileStorageService fileStorageService, PaymentUrlResponseProps paymentUrlResponseProps, JourneyService journeyService, ServiceChargeService serviceChargeService, EmailContentBuilder emailContentBuilder, GwCacheLoaderService gwCacheLoaderService) {
         this.bookedJourneyRepository = bookedJourneyRepository;
         this.journeyRepository = journeyRepository;
         this.userRepository = userRepository;
@@ -85,8 +88,8 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         this.journeyService = journeyService;
         this.serviceChargeService = serviceChargeService;
         this.emailContentBuilder = emailContentBuilder;
+        this.gwCacheLoaderService = gwCacheLoaderService;
     }
-
 
     @Override
     @Transactional
@@ -96,9 +99,16 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         User user = getUser();
         PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, false);
 
+        Double chargeAmount = 0.0;
         List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
-        if (serviceCharges.size() > 0) {
-            Double chargeAmount = paymentTransaction.getAmount() * (serviceCharges.get(0).getPercentageCharge() / 100);
+        if (!serviceCharges.isEmpty()) {
+            for (ServiceChargeDTO sCharge : serviceCharges) {
+                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
+                } else if (sCharge.getId().equals(PLATFORM_SERVICE_CHARGE)) {
+                    chargeAmount += paymentTransaction.getAmount() * (sCharge.getPercentageCharge() / 100);
+                }
+            }
             Double amountWithoutCharge = paymentTransaction.getAmount();
             paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
             paymentTransaction.setAgencyAmount(amountWithoutCharge);
@@ -113,7 +123,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         savedPaymentTransaction.setProcessingNumber(payAmGoRequestResponseDTO.getProcessingNumber());
         paymentTransactionRepository.save(savedPaymentTransaction);
 
-        return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl());
+        sendBookedSeatsUpdates(journeyId, savedPaymentTransaction.getBookedJourney().getId());
+
+        return new PaymentUrlDTO(payAmGoRequestResponseDTO.getPaymentUrl(), savedPaymentTransaction.getBookedJourney().getId());
     }
 
     @Override
@@ -130,64 +142,65 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         PaymentTransaction paymentTransaction = getPaymentTransaction(journey, user, bookJourneyRequest, true);
         paymentTransaction.setTransactionStatus(COMPLETED.toString());
         paymentTransaction.setPaymentChannelTransactionNumber(UUID.randomUUID().toString());
-        paymentTransaction.setPaymentChannel("CASHIER");
+        paymentTransaction.setPaymentChannel(CASHIER);
         paymentTransaction.setPaymentDate(LocalDateTime.now());
         paymentTransaction.setAgencyAmount(paymentTransaction.getAmount());
-        paymentTransaction.setServiceChargeAmount(0.0);
+
+        Double chargeAmount = 0.0;
+        List<ServiceChargeDTO> serviceCharges = serviceChargeService.getServiceCharges();
+        if (!serviceCharges.isEmpty()) {
+            for (ServiceChargeDTO sCharge : serviceCharges) {
+                if (sCharge.getId().equals(SMS_NOTIF) && bookJourneyRequest.getSubscribeToSMSNotification()) {
+                    chargeAmount += getSMSChargeAmount(bookJourneyRequest, sCharge);
+                    break;
+                }
+            }
+            Double amountWithoutCharge = paymentTransaction.getAmount();
+            paymentTransaction.setAmount(amountWithoutCharge + chargeAmount);
+            paymentTransaction.setAgencyAmount(amountWithoutCharge);
+            paymentTransaction.setServiceChargeAmount(chargeAmount);
+        }
+
+        paymentTransaction.setServiceChargeAmount(chargeAmount);
         PaymentTransaction savedTxn = paymentTransactionRepository.save(paymentTransaction);
         savedTxn.getBookedJourney().setPaymentTransaction(savedTxn);
 
         BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(savedTxn.getBookedJourney());
         notifyPassengers(savedTxn.getBookedJourney(), bookedJourneyStatusDTO);
 
+        List<Integer> newSeats = bookJourneyRequest.getPassengers().stream()
+                .map(BookJourneyRequest.Passenger::getSeatNumber)
+                .collect(Collectors.toList());
+        try {
+            List<Integer> allBookedSeats = getAllBookedSeats(journeyId);
+            allBookedSeats.addAll(newSeats);
+            gwCacheLoaderService.seatsChange(journeyId, allBookedSeats);
+        } catch (Exception ex) {
+            log.info("Unable to publish seats for booking journey : {}", bookedJourneyStatusDTO.getId());
+        }
     }
 
     @Override
     public List<Integer> getAllBookedSeats(Long journeyId) {
 
-        int MIM_TIME_TO_WAIT_FOR_PAYMENT = 5;
         Journey journey = getJourney(journeyId);
-        Set<Integer> seats = new HashSet<>();
-        journey.getBookedJourneys().stream()
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
-                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(INITIATED.toString())
-                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(WAITING.toString())
-                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString())
-                ).forEach(bookedJourney -> {
-            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
-            String transactionStatus = paymentTransaction.getTransactionStatus();
-            long untilMinute = paymentTransaction.getCreatedAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
-            if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
-                    && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
-                //TODO: should look for the next available seat and set
-                List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
-                    passenger.setSeatNumber(-1);
-                    return passenger;
-                }).collect(Collectors.toList());
-                // update seatNumber if more than waiting limit,
-                passengerRepository.saveAll(passengers);
-            } else {
-                seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
-            }
-        });
+        Set<Integer> seats = getBookedSeatsSet(journey);
 
         return new ArrayList<>(seats);
     }
 
     @Override
-    public BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId) {
+    public BookedJourneyStatusDTO getBookJourneyStatus(Long bookedJourneyId, boolean isAuth) {
 
-        Optional<BookedJourney> bookedJourneyOptional = bookedJourneyRepository.findById(bookedJourneyId);
-        if (!bookedJourneyOptional.isPresent()) {
-            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
-        }
-        BookedJourney bookedJourney = bookedJourneyOptional.get();
-        UserDTO currentAuthUser = userService.getCurrentAuthUser();
-        if (currentAuthUser == null
-                || currentAuthUser.getId() == null
-                || bookedJourney.getUser() == null
-                || !currentAuthUser.getId().equals(bookedJourney.getUser().getUserId())) {
-            throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+        BookedJourney bookedJourney = getBookedJourneyById(bookedJourneyId);
+        if (isAuth) {
+            UserDTO currentAuthUser = userService.getCurrentAuthUser();
+            if (currentAuthUser == null
+                    || currentAuthUser.getId() == null
+                    || bookedJourney.getUser() == null
+                    || !currentAuthUser.getId().equals(bookedJourney.getUser().getUserId())) {
+                throw new ApiException(RESOURCE_NOT_FOUND.getMessage(), RESOURCE_NOT_FOUND.toString(), HttpStatus.NOT_FOUND);
+            }
         }
 
         return getBookedJourneyStatusDTO(bookedJourney);
@@ -251,7 +264,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookedJourneyStatusDTO(bookedJourney);
             if (isCompleted) {
                 notifyPassengers(bookedJourney, bookedJourneyStatusDTO);
+                sendBookedSeatsUpdates(bookedJourney.getJourney().getId(), bookedJourneyStatusDTO.getId());
             }
+
         }
     }
 
@@ -304,9 +319,9 @@ public class BookJourneyServiceImpl implements BookJourneyService {
     }
 
     @Override
-    public String getHtmlReceipt(Long bookedJourneyId) {
+    public String getHtmlReceipt(Long bookedJourneyId, boolean isAuth) {
 
-        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookJourneyStatus(bookedJourneyId);
+        BookedJourneyStatusDTO bookedJourneyStatusDTO = getBookJourneyStatus(bookedJourneyId, isAuth);
         return emailContentBuilder.buildTicketPdfHtml(bookedJourneyStatusDTO);
     }
 
@@ -415,7 +430,118 @@ public class BookJourneyServiceImpl implements BookJourneyService {
                         SEAT_ALREADY_TAKEN.getMessage(),
                         SEAT_ALREADY_TAKEN.toString(), HttpStatus.CONFLICT);
             }
+
+            sendBookedSeatsUpdates(journey.getId(), bookedJourney.getId());
+
         }
+    }
+
+    @Override
+    public List<GwPassenger> searchPassenger(SearchPassengerDTO searchPassengerDTO) {
+        return new ArrayList<>(passengerRepository.findAllByPhoneNumberOrName(searchPassengerDTO.getTelCode() + searchPassengerDTO.getPhoneNumber(), searchPassengerDTO.getName())
+                .stream()
+                .map(p -> {
+                    String directToAccountName = "";
+                    String directToAccountEmail = "";
+                    if (p.getBookedJourney().getUser().getOfficialAgency() == null) {
+                        directToAccountName = p.getBookedJourney().getUser().getFullName();
+                        directToAccountEmail = p.getBookedJourney().getUser().getEmail();
+                    }
+                    return new GwPassenger(p.getName(), p.getIdNumber(), p.getPhoneNumber(), p.getEmail(), directToAccountName, directToAccountEmail);
+                })
+                .collect(Collectors.toSet()));
+    }
+
+    @Override
+    public void cancelBookings(Long bookJourneyId, List<CodeDTO> codes) {
+        BookedJourney bookedJourney = getBookedJourneyById(bookJourneyId);
+        PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+        if (journeyNotStartedOrElseReject(bookedJourney.getJourney()) &&
+                journeyNotTerminatedOrElseReject(bookedJourney.getJourney()) &&
+                paymentAcceptedOrElseReject(paymentTransaction)) {
+
+            BookJourneyRequest bookJourneyRequest = new BookJourneyRequest();
+            bookJourneyRequest.setDestinationIndicator(bookedJourney.getDestination().getId().equals(bookedJourney.getJourney().getDestination().getId()));
+            bookJourneyRequest.setTransitAndStopId(bookedJourney.getDestination().getId());
+            bookJourneyRequest.setDirectToAccount(bookedJourney.getUser().getEmail());
+            bookJourneyRequest.setSubscribeToSMSNotification(bookedJourney.getSmsNotification());
+
+            HashMap<String, Boolean> codePassengerHashMap = new HashMap<>();
+            for (CodeDTO codeDTO : codes) {
+                codePassengerHashMap.put(codeDTO.getCode(), Boolean.TRUE);
+            }
+            List<BookJourneyRequest.Passenger> passengers = new ArrayList<>();
+            List<Passenger> oldPassengers = new ArrayList<>();
+            for (Passenger passenger : bookedJourney.getPassengers()) {
+                if (codePassengerHashMap.get(passenger.getCheckedInCode()) == null) {
+                    BookJourneyRequest.Passenger newPassenger = new BookJourneyRequest.Passenger();
+                    newPassenger.setPassengerName(passenger.getName());
+                    newPassenger.setPassengerIdNumber(passenger.getIdNumber());
+                    newPassenger.setEmail(passenger.getEmail());
+                    newPassenger.setPhoneNumber(passenger.getPhoneNumber());
+                    newPassenger.setSeatNumber(passenger.getSeatNumber());
+                    passengers.add(newPassenger);
+                }
+                passenger.setCheckedInCode(passenger.getCheckedInCode() + "-" + CANCELLED);
+                oldPassengers.add(passenger);
+            }
+            passengerRepository.saveAll(oldPassengers);
+            bookJourneyRequest.setPassengers(passengers);
+            try {
+                if (bookJourneyRequest.getPassengers().size() > 0) {
+                    agencyUserBookJourney(bookedJourney.getJourney().getId(), bookJourneyRequest);
+                }
+                paymentTransaction.setTransactionStatus(CANCELLED);
+                paymentTransactionRepository.save(paymentTransaction);
+            } catch (Exception exception) {
+                log.info("An error occurred while cancelling trip: {}", exception.getMessage());
+                throw new ApiException(exception.getMessage(), OPERATION_NOT_ALLOWED.name(), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }
+
+    }
+
+    private void sendBookedSeatsUpdates(Long journeyId, Long bookedJourneyId) {
+        try {
+            gwCacheLoaderService.seatsChange(journeyId, getAllBookedSeats(journeyId));
+        } catch (Exception ex) {
+            log.info("Unable to publish seats for booking journey : {}", bookedJourneyId);
+        }
+    }
+
+    private Set<Integer> getBookedSeatsSet(Journey journey) {
+        Set<Integer> seats = new HashSet<>();
+        journey.getBookedJourneys().stream()
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction() != null)
+                .filter(bookedJourney -> bookedJourney.getPaymentTransaction().getTransactionStatus().equals(INITIATED.toString())
+                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(WAITING.toString())
+                        || bookedJourney.getPaymentTransaction().getTransactionStatus().equals(COMPLETED.toString())
+                ).forEach(bookedJourney -> {
+            PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
+            String transactionStatus = paymentTransaction.getTransactionStatus();
+            long untilMinute = paymentTransaction.getCreatedAt().until(LocalDateTime.now(), ChronoUnit.MINUTES);
+            if ((transactionStatus.equals(WAITING.toString()) || transactionStatus.equals(INITIATED.toString()))
+                    && untilMinute > MIM_TIME_TO_WAIT_FOR_PAYMENT) {
+                //TODO: should look for the next available seat and set
+                List<Passenger> passengers = bookedJourney.getPassengers().stream().map(passenger -> {
+                    passenger.setSeatNumber(0);
+                    return passenger;
+                }).collect(Collectors.toList());
+                // update seatNumber if more than waiting limit,
+                passengerRepository.saveAll(passengers);
+            } else {
+                seats.addAll(bookedJourney.getPassengers().stream().map(Passenger::getSeatNumber).collect(Collectors.toList()));
+            }
+        });
+        return seats;
+    }
+
+    private Double getSMSChargeAmount(BookJourneyRequest bookJourneyRequest, ServiceChargeDTO sCharge) {
+        Set<String> phoneNumbers = new HashSet<>();
+        for (BookJourneyRequest.Passenger passenger : bookJourneyRequest.getPassengers()) {
+            phoneNumbers.add(passenger.getPhoneNumber().trim());
+        }
+        return sCharge.getFlatCharge() * phoneNumbers.size();
     }
 
     private void notifyPassengers(BookedJourney bookedJourney, BookedJourneyStatusDTO dto, List<Passenger> passengers) {
@@ -468,7 +594,10 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourney bookedJourney;
         if (isAgencyBooking) {
             try {
-                User proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                User proxy = user;
+                if (!StringUtils.isEmpty(bookJourneyRequest.getDirectToAccount())) {
+                    proxy = getUserByEmail(bookJourneyRequest.getDirectToAccount());
+                }
                 bookedJourney = getBookedJourney(passengers, proxy, user, journey, amount, transitAndStop);
             } catch (ApiException e) {
                 bookedJourney = getBookedJourney(passengers, user, user, journey, amount, transitAndStop);
@@ -477,14 +606,15 @@ public class BookJourneyServiceImpl implements BookJourneyService {
             bookedJourney = getBookedJourney(passengers, user, journey, amount, transitAndStop);
         }
         bookedJourney.setIsAgencyBooking(isAgencyBooking);
+        bookedJourney.setSmsNotification(bookJourneyRequest.getSubscribeToSMSNotification());
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
         passengers.forEach(passenger -> passenger.setBookedJourney(savedBookedJourney));
         passengerRepository.saveAll(passengers);
 
         UserDTO currentAuthUser = userService.getCurrentAuthUser();
         String[] names = currentAuthUser.getFullName().split(" ");
-        String firstName = "Anonymous";
-        String lastName = "Anonymous";
+        String firstName = currentAuthUser.getFullName();
+        String lastName = currentAuthUser.getFullName();
         if (names.length > 1) {
             firstName = names[0];
             lastName = names[names.length - 1];
@@ -527,7 +657,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
-        //TODO: should also send SMS
     }
 
     private void sendChangeSeatTicketEmail(BookedJourneyStatusDTO bookedJourneyStatusDTO, List<Passenger> passengers) {
@@ -546,7 +675,6 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         emailDTO.setCcAddresses(Collections.emptyList());
         emailDTO.setBccAddresses(Collections.emptyList());
         notificationService.sendEmail(emailDTO);
-        //TODO: should also send SMS
     }
 
     private BookedJourneyStatusDTO getBookedJourneyStatusDTO(BookedJourney bookedJourney) {
@@ -554,7 +682,7 @@ public class BookJourneyServiceImpl implements BookJourneyService {
         BookedJourneyStatusDTO bookedJourneyStatusDTO = new BookedJourneyStatusDTO();
         bookedJourneyStatusDTO.setId(bookedJourney.getId());
         bookedJourneyStatusDTO.setJourneyId(bookedJourney.getJourney().getId());
-
+        bookedJourneyStatusDTO.setSubscribeToSMSNotification(bookedJourney.getSmsNotification());
         PaymentTransaction paymentTransaction = bookedJourney.getPaymentTransaction();
 
         bookedJourneyStatusDTO.setAmount(paymentTransaction.getAmount());

@@ -54,6 +54,9 @@ public class RefundControllerIntegrationTest {
     private PaymentTransactionRepository paymentTransactionRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private TransitAndStopRepository transitAndStopRepository;
+
     @MockBean
     private NotificationService mockNotificationService;
 
@@ -91,13 +94,27 @@ public class RefundControllerIntegrationTest {
         bus.setOfficialAgency(savedOfficialAgency);
         Bus savedCar = carRepository.save(bus);
 
+
+        TransitAndStop transitAndStop = new TransitAndStop();
+        Location location = new Location();
+        location.setCity("Buea");
+        location.setAddress("mile 17");
+        location.setState("SW");
+        location.setCountry("Cameroon");
+        transitAndStop.setLocation(location);
+
+        TransitAndStop savedTransitAndStop = transitAndStopRepository.save(transitAndStop);
+
         Journey journey = new Journey();
         journey.setCar(savedCar);
+        journey.setDepartureLocation(transitAndStop);
         Journey savedJourney = journeyRepository.save(journey);
+
 
         BookedJourney bookedJourney = new BookedJourney();
         bookedJourney.setJourney(savedJourney);
         bookedJourney.setUser(savedUser);
+        bookedJourney.setDestination(savedTransitAndStop);
         BookedJourney savedBookedJourney = bookedJourneyRepository.save(bookedJourney);
 
         PaymentTransaction paymentTransaction = new PaymentTransaction();

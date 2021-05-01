@@ -1,13 +1,11 @@
 package net.gogroups.gowaka.domain.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.gogroups.gowaka.constant.RefundStatus;
 import net.gogroups.gowaka.constant.notification.EmailFields;
 import net.gogroups.gowaka.domain.model.*;
-import net.gogroups.gowaka.domain.repository.PassengerRepository;
-import net.gogroups.gowaka.domain.repository.PaymentTransactionRepository;
-import net.gogroups.gowaka.domain.repository.RefundPaymentTransactionRepository;
-import net.gogroups.gowaka.domain.repository.UserRepository;
+import net.gogroups.gowaka.domain.repository.*;
 import net.gogroups.gowaka.domain.service.utilities.CheckInCodeGenerator;
 import net.gogroups.gowaka.dto.RefundDTO;
 import net.gogroups.gowaka.dto.RequestRefundDTO;
@@ -20,7 +18,6 @@ import net.gogroups.notification.model.EmailAddress;
 import net.gogroups.notification.model.SendEmailDTO;
 import net.gogroups.notification.service.NotificationService;
 import net.gogroups.payamgo.constants.PayAmGoPaymentStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +36,7 @@ import static net.gogroups.gowaka.exception.ErrorCodes.*;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RefundServiceImpl implements RefundService {
 
 
@@ -46,24 +44,10 @@ public class RefundServiceImpl implements RefundService {
     private final RefundPaymentTransactionRepository refundPaymentTransactionRepository;
     private final UserRepository userRepository;
     private final PassengerRepository passengerRepository;
+    private final JourneyRepository journeyRepository;
     private final EmailContentBuilder emailContentBuilder;
     private final NotificationService notificationService;
 
-
-    @Autowired
-    public RefundServiceImpl(PaymentTransactionRepository paymentTransactionRepository,
-                             RefundPaymentTransactionRepository refundPaymentTransactionRepository,
-                             UserRepository userRepository,
-                             PassengerRepository passengerRepository,
-                             EmailContentBuilder emailContentBuilder,
-                             NotificationService notificationService) {
-        this.paymentTransactionRepository = paymentTransactionRepository;
-        this.refundPaymentTransactionRepository = refundPaymentTransactionRepository;
-        this.userRepository = userRepository;
-        this.passengerRepository = passengerRepository;
-        this.emailContentBuilder = emailContentBuilder;
-        this.notificationService = notificationService;
-    }
 
     @Override
     public void requestRefund(RequestRefundDTO requestRefundDTO, String userId) {
@@ -138,9 +122,25 @@ public class RefundServiceImpl implements RefundService {
     @Override
     public List<RefundDTO> getAllJourneyRefunds(Long journeyId, String userId) {
 
-        return refundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_IdAndPaymentTransaction_BookedJourney_User_UserId(journeyId, userId).stream()
-                .map(this::getRefundDTO)
-                .collect(Collectors.toList());
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (!userOptional.isPresent()) {
+            log.info("User not found userId: '{}'", userId);
+            throw new ResourceNotFoundException("User not found.");
+        }
+        Optional<Journey> journeyOptional = journeyRepository.findById(journeyId);
+        if (!journeyOptional.isPresent()) {
+            log.info("Journey not found journeyId: '{}'", journeyId);
+            throw new ResourceNotFoundException("Journey not found.");
+        }
+        Journey journey = journeyOptional.get();
+        OfficialAgency officialAgency = userOptional.get().getOfficialAgency();
+        if (journey.getCar() instanceof Bus && officialAgency.getId().equals(((Bus) journey.getCar()).getOfficialAgency().getId())) {
+            return refundPaymentTransactionRepository.findByPaymentTransaction_BookedJourney_Journey_Id(journeyId).stream()
+                    .map(this::getRefundDTO)
+                    .collect(Collectors.toList());
+        }
+        log.info("user agency do not own this journey. journeyId: '{}', userId: {}", journeyId, userId);
+        throw new ResourceNotFoundException("Resource not found.");
 
     }
 
@@ -214,9 +214,20 @@ public class RefundServiceImpl implements RefundService {
         refundDTO.setRefundedDate(refundPaymentTransaction.getRefundedDate());
 
         refundDTO.setStatus(RefundStatus.valueOf(refundPaymentTransaction.getRefundStatus()));
+        PaymentTransaction paymentTransaction = refundPaymentTransaction.getPaymentTransaction();
+        BookedJourney bookedJourneyEntity = paymentTransaction.getBookedJourney();
+
+        RefundDTO.BookedJourney bookedJourney = new RefundDTO.BookedJourney();
+        bookedJourney.setId(bookedJourneyEntity.getId());
+        bookedJourney.setAgencyCharge(paymentTransaction.getAgencyAmount());
+        bookedJourney.setDepartureTime(bookedJourneyEntity.getJourney().getDepartureTime());
+
+        bookedJourney.setDestination(getLocationStr(bookedJourneyEntity.getDestination()));
+        bookedJourney.setDeparture(getLocationStr(bookedJourneyEntity.getJourney().getDepartureLocation()));
+        refundDTO.setBookedJourney(bookedJourney);
 
         try {
-            User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
+            User user = bookedJourneyEntity.getUser();
             refundDTO.setUser(new RefundDTO.User(user.getFullName(), user.getEmail(), user.getPhoneNumber()));
         } catch (NullPointerException exception) {
             log.info("a null pointer was thrown while getting user info for refund: {}", refundPaymentTransaction.getId());
@@ -225,11 +236,15 @@ public class RefundServiceImpl implements RefundService {
         return refundDTO;
     }
 
+    private String getLocationStr(TransitAndStop destination) {
+        return destination.getLocation().getAddress()+", "+ destination.getLocation().getCity()
+                +", "+ destination.getLocation().getState()+", "+ destination.getLocation().getCountry();
+    }
+
     private void sendRefundEmail(RefundPaymentTransaction refundPaymentTransaction) {
         User user = refundPaymentTransaction.getPaymentTransaction().getBookedJourney().getUser();
         if (user != null) {
             String message = emailContentBuilder.buildRefundStatusEmail(refundPaymentTransaction, user);
-//        log.info("Email message: {}", message);
             SendEmailDTO emailDTO = new SendEmailDTO();
             emailDTO.setSubject(EmailFields.REFUND_UPDATE_SUBJECT.getMessage());
             emailDTO.setMessage(message);
@@ -239,7 +254,6 @@ public class RefundServiceImpl implements RefundService {
             emailDTO.setCcAddresses(Collections.emptyList());
             emailDTO.setBccAddresses(Collections.emptyList());
             notificationService.sendEmail(emailDTO);
-            //TODO: should also send SMS
         }
     }
 }

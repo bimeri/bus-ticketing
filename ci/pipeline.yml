@@ -1,11 +1,19 @@
+
+resource_types:
+  - name: enhanced-semver
+    type: docker-image
+    source:
+      repository: gstack/semver-resource
+
 resources:
   - name: source-code-from-gitlab
     type: git
     source:
-      uri: http://golab.live/gowaka/gowaka-service
+      uri: https://golab.live/gowaka/gowaka-service
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: develop
+      skip_ssl_verification: true
 
   - name: minio-s3
     type: s3
@@ -19,23 +27,26 @@ resources:
       skip_ssl_verification: true
 
   - name: version
-    type: semver
+    type: enhanced-semver
     source:
       driver: git
-      uri: http://golab.live/gowaka/gowaka-service
+      uri: https://golab.live/gowaka/gowaka-service
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: version
       file: version
+      skip_ssl_verification: true
 
   - name: nexus-settings
     type: git
     source:
       driver: git
-      uri: http://golab.live/gg-cicd-credentails/nexus-pipeline-creds-files
+      uri: https://golab.live/gg-cicd-credentails/nexus-pipeline-creds-files.git
       username: ((gitlab_username))
       password: ((gitlab_password))
       branch: master
+      skip_ssl_verification: true
+
 jobs:
   - name: test-and-build
     build_log_retention:
@@ -43,7 +54,7 @@ jobs:
     public: true
     plan:
       - get: source-code-from-gitlab
-        trigger: true
+        trigger: false
       - get: version
         params: { pre: rc }
       - get: nexus-settings
@@ -54,8 +65,11 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: java
-              tag: 8
+              repository: "ggs2.space:8123/java8-node14"
+              username: ((lcs_username))
+              password: ((lcs_password))
+              tag: "latest"
+              insecure_registries: [ "ggs2.space:8123" ]
           inputs:
             - name: source-code-from-gitlab
             - name: version
@@ -89,8 +103,11 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: eddytnk/lc
-              tag: latest
+              repository: "ggs2.space:8123/lc"
+              username: ((lcs_username))
+              password: ((lcs_password))
+              tag: "latest"
+              insecure_registries: [ "ggs2.space:8123" ]
           inputs:
             - name: source-code-from-gitlab
             - name: minio-s3
@@ -127,8 +144,11 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: tutum/curl
-              tag: latest
+              repository: "ggs2.space:8123/curl"
+              username: ((lcs_username))
+              password: ((lcs_password))
+              tag: "latest"
+              insecure_registries: [ "ggs2.space:8123" ]
           inputs:
             - name: source-code-from-gitlab
             - name: minio-s3

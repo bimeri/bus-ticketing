@@ -40,8 +40,8 @@ class UserControllerTest {
     @Test
     void loginUser_calls_UserService() {
         EmailPasswordDTO emailPasswordDTO = new EmailPasswordDTO();
-        userController.loginUser(emailPasswordDTO);
-        verify(mockUserService).loginUser(emailPasswordDTO);
+        userController.loginUser(emailPasswordDTO, "MOBILE");
+        verify(mockUserService).loginUser(emailPasswordDTO, "MOBILE");
     }
 
     @Test
@@ -87,6 +87,14 @@ class UserControllerTest {
         emailDTO.setEmail("email@email.com");
         userController.validateGWUserByEmail(emailDTO);
         verify(mockUserService).validateGWUserByEmail(emailDTO);
+    }
+
+ @Test
+    void getUserAccountInfo_calls_UserService() {
+        CodeDTO codeDTO = new CodeDTO();
+        codeDTO.setCode("1234");
+        userController.getUserAccountInfo(codeDTO);
+        verify(mockUserService).getAccountInfo("1234");
     }
 
 }
