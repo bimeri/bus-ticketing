@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -811,9 +812,12 @@ public class JourneyServiceImplTest {
         assertThat(apiException.getMessage(), is("Journey\'s car not in AuthUser\'s Agency"));
     }
 
+    private final static LocalDateTime LOCAL_DATE = LocalDateTime.of(2019, 12, 17,04,44,56);
+
     @Test
     void updateJourneyArrivalIndicator_should_shouldUpDate_and_sendNotificationToPassengers() {
 
+        LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("GMT+02:00"));
         GgCfsSurveyTemplateJson ggCfsSurveyTemplateJson = new GgCfsSurveyTemplateJson();
         ggCfsSurveyTemplateJson.setId("1");
         ggCfsSurveyTemplateJson.setSurveyTemplateJson("" +
@@ -917,6 +921,7 @@ public class JourneyServiceImplTest {
 
         JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO = new JourneyArrivalIndicatorDTO();
         journeyArrivalIndicatorDTO.setArrivalIndicator(true);
+        journey.setArrivalTime(localDateTime);
         journeyService.updateJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO);
 
         verify(mockJourneyRepository).save(any());
@@ -926,13 +931,15 @@ public class JourneyServiceImplTest {
 
         ArgumentCaptor<SendEmailDTO> sendEmailDTOArgumentCaptor = ArgumentCaptor.forClass(SendEmailDTO.class);
         ArgumentCaptor<SendSmsDTO> sendSmsDTOArgumentCaptor = ArgumentCaptor.forClass(SendSmsDTO.class);
-
+        ArgumentCaptor<Journey> journeyArgumentCaptor = ArgumentCaptor.forClass(Journey.class);
         verify(mockNotificationService).sendSMS(sendSmsDTOArgumentCaptor.capture());
         verify(mockNotificationService).sendEmail(sendEmailDTOArgumentCaptor.capture());
+        verify(mockJourneyRepository).save(journeyArgumentCaptor.capture());
 
         assertThat(sendSmsDTOArgumentCaptor.getValue().getMessage(), is("Your trip to Buea on GoWaka just ended"));
         assertThat(sendSmsDTOArgumentCaptor.getValue().getPhoneNumber(), is("237678787878"));
         assertThat(sendSmsDTOArgumentCaptor.getValue().getSenderLabel(), is("GoWaka"));
+        assertThat(journeyArgumentCaptor.getValue().getArrivalTime(),is(journey.getArrivalTime()));
 
         assertThat(sendEmailDTOArgumentCaptor.getValue().getMessage(), is("some update message"));
         assertThat(sendEmailDTOArgumentCaptor.getValue().getToAddresses().get(0).getEmail(), is("no-reply@mygowaka.com"));

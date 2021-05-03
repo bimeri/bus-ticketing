@@ -218,6 +218,8 @@ public class JourneyServiceImpl implements JourneyService {
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
+            if(journeyArrivalIndicatorDTO.getArrivalIndicator())
+                journey.setArrivalTime(LocalDateTime.now());
             journeyRepository.save(journey);
         }
         if (journeyArrivalIndicatorDTO.getArrivalIndicator()) {

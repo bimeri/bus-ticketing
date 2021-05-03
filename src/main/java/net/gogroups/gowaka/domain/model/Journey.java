@@ -44,6 +44,9 @@ public class Journey extends BaseEntity{
     @Column(name = "arrival_indicator")
     private Boolean arrivalIndicator;
 
+    @Column(name = "arrival_time")
+    private  LocalDateTime arrivalTime;
+
     @OneToMany(mappedBy = "journey", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BookedJourney> bookedJourneys;
 
