@@ -194,7 +194,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
         Journey journey =  getJourney(journeyId);
-        if (journey.getIsJourneyFinished() == true) {
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
             log.info("journey is finished: journeyId: {}", journeyId);
             throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -220,7 +220,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
         Journey journey =  getJourney(journeyId);
-        if (journey.getIsJourneyFinished() == true) {
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
             log.info("journey is finished: journeyId: {}", journeyId);
             throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -323,7 +323,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
         Journey journey = getJourney(journeyId);
-        if (journey.getIsJourneyFinished() == true) {
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
             log.info("journey is finished: journeyId: {}", journeyId);
             throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -338,7 +338,7 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
         Journey journey =  getJourney(journeyId);
-        if (journey.getIsJourneyFinished() == true) {
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
             log.info("journey is finished: journeyId: {}", journeyId);
             throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
