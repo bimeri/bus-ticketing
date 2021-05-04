@@ -28,6 +28,14 @@ public class CreateOfficialAgencyDTO {
     @NotBlank(message = "agency policy required.")
     private String policy;
 
+    @Size(max = 50, message = "agencyAddress can not be more than 50 characters")
+    @NotBlank(message = "agencyAddress policy required.")
+    private String agencyAddress;
+
+    @Size(max = 50, message = "agencyPhoneNumber can not be more than 50 characters")
+    @NotBlank(message = "agencyPhoneNumber policy required.")
+    private String agencyPhoneNumber;
+
     @Size(max = 50, message = "agency code can not be more than 5 characters")
     @NotBlank(message = "agency agency code is required.")
     private String code;

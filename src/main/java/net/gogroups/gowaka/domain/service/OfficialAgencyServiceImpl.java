@@ -88,6 +88,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgency.setIsDisabled(false);
         officialAgency.setPolicy(createOfficialAgencyDTO.getPolicy());
         officialAgency.setCode(createOfficialAgencyDTO.getCode());
+        officialAgency.setAddress(createOfficialAgencyDTO.getAgencyAddress());
+        officialAgency.setPhoneNumber(createOfficialAgencyDTO.getAgencyPhoneNumber());
 
         OfficialAgency saveOfficialAgency = officialAgencyRepository.save(officialAgency);
 
@@ -111,6 +113,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgencyDTO.setAgencyAdmin(agencyAdminDTO);
         officialAgencyDTO.setPolicy(saveOfficialAgency.getPolicy());
         officialAgencyDTO.setCode(saveOfficialAgency.getCode());
+        officialAgencyDTO.setAddress(officialAgency.getAddress());
+        officialAgency.setPhoneNumber(officialAgency.getPhoneNumber());
 
         OfficialAgencyDTO.Branch branch = new OfficialAgencyDTO.Branch();
         branch.setId(savedAgencyBranch.getId());
@@ -163,6 +167,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
         officialAgency.setPolicy(officialAgencyDTO.getPolicy());
         officialAgency.setCode(officialAgencyDTO.getCode());
         officialAgency.setAgencyRegistrationNumber(officialAgencyDTO.getAgencyRegistrationNumber());
+        officialAgency.setAddress(officialAgencyDTO.getAddress());
+        officialAgency.setPhoneNumber(officialAgencyDTO.getPhoneNumber());
 
         officialAgencyRepository.save(officialAgency);
     }
@@ -473,6 +479,8 @@ public class OfficialAgencyServiceImpl implements OfficialAgencyService {
                 .code(agency.getCode())
                 .agencyAdmin(officialAgencyAdminUserDTO)
                 .numberOfCompletedTrips(numberOfCompletedTrips)
+                .phoneNumber(agency.getPhoneNumber())
+                .address(agency.getAddress())
                 .build();
     }
 

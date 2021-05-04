@@ -208,7 +208,7 @@ public class JourneyServiceImpl implements JourneyService {
                 gwCacheLoaderService.deleteJourneyJourney(journey.getAgencyBranch().getOfficialAgency().getId(), journey.getAgencyBranch().getId(), journey.getId());
                 sendSMSAndEmailNotificationToSubscribers(journey, "just started");
             } catch (Exception e) {
-                log.error("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
+                log.info("Error sending request to SMS notifications for journeyId: {} ", journey.getId());
                 e.printStackTrace();
             }
         } else {
@@ -227,6 +227,8 @@ public class JourneyServiceImpl implements JourneyService {
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
+            if(journeyArrivalIndicatorDTO.getArrivalIndicator())
+                journey.setArrivalTime(LocalDateTime.now());
             journeyRepository.save(journey);
         }
         if (journeyArrivalIndicatorDTO.getArrivalIndicator()) {

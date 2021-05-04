@@ -41,3 +41,7 @@ ___________________________________________
 --------------------------------------------------------------------
 * Thur Apr 08, 2021
  * Add `seat_structure_code` to seat_structure table environment
+
+* Thur Apr 29, 2021
+ * Add TLA for address, city, state and country in location TransitAndStop
+ * Add address and phone number  field of agency
