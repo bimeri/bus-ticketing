@@ -1,5 +1,6 @@
 package net.gogroups.gowaka.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import net.gogroups.dto.PaginatedResponse;
 import net.gogroups.gowaka.dto.*;
 import net.gogroups.gowaka.service.JourneyService;
@@ -17,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/protected")
+@Slf4j
 public class JourneyController {
     private JourneyService journeyService;
 
@@ -90,7 +92,9 @@ public class JourneyController {
     public ResponseEntity<Void> updateJourneyDepartureIndicator(
             @RequestBody @Valid JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO,
             @PathVariable("journeyId") Long journeyId) {
+        log.info("updating departure indicator for: {} to {}", journeyId, journeyDepartureIndicatorDTO.getDepartureIndicator());
         journeyService.updateJourneyDepartureIndicator(journeyId, journeyDepartureIndicatorDTO);
+        log.info("departure updated");
         return ResponseEntity.noContent().build();
     }
 
