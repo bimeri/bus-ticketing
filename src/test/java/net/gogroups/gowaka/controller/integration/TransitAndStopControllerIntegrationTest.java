@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.gogroups.gowaka.domain.model.Location;
 import net.gogroups.gowaka.domain.model.TransitAndStop;
 import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
-import net.gogroups.gowaka.domain.repository.UserRepository;
 import net.gogroups.gowaka.dto.LocationDTO;
 import net.gogroups.gowaka.dto.LocationResponseDTO;
 import org.junit.jupiter.api.AfterEach;
@@ -71,13 +70,12 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setTlaState("SWR");
         locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(locationDTO))
                 .accept(MediaType.APPLICATION_JSON);
         mockMvc.perform(requestBuilder)
-                .andExpect(status().isCreated())
-                .andReturn();
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -92,7 +90,7 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setTlaState("SWR");
         locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(locationDTO))
                 .accept(MediaType.APPLICATION_JSON);
@@ -123,7 +121,7 @@ public class TransitAndStopControllerIntegrationTest {
         transitAndStop.setLocation(location);
         transitAndStopRepository.save(transitAndStop);
         RequestBuilder requestBuilder = post("/api/protected/location/" + transitAndStop.getId())
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(locationDTO))
                 .accept(MediaType.APPLICATION_JSON);
@@ -143,7 +141,7 @@ public class TransitAndStopControllerIntegrationTest {
         locationDTO.setTlaState("SWR");
         locationDTO.setTlaCountry("CMR");
         RequestBuilder requestBuilder = post("/api/protected/location/1")
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + jwtToken)
                 .content(new ObjectMapper().writeValueAsString(locationDTO))
                 .accept(MediaType.APPLICATION_JSON);

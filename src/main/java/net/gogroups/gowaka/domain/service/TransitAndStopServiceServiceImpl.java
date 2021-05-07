@@ -1,16 +1,15 @@
 package net.gogroups.gowaka.domain.service;
 
-import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.gogroups.gowaka.domain.model.Location;
 import net.gogroups.gowaka.domain.model.TransitAndStop;
+import net.gogroups.gowaka.domain.repository.TransitAndStopRepository;
 import net.gogroups.gowaka.dto.LocationDTO;
 import net.gogroups.gowaka.dto.LocationResponseDTO;
 import net.gogroups.gowaka.exception.ApiException;
 import net.gogroups.gowaka.exception.ErrorCodes;
 import net.gogroups.gowaka.service.TransitAndStopService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -23,21 +22,17 @@ import java.util.stream.Collectors;
  * @date 07 Oct 2019
  */
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
-    private TransitAndStopRepository transitAndStopRepository;
 
-
-    @Autowired
-    public TransitAndStopServiceServiceImpl(TransitAndStopRepository transitAndStopRepository) {
-        this.transitAndStopRepository = transitAndStopRepository;
-    }
+    private final TransitAndStopRepository transitAndStopRepository;
 
     @Override
-    public TransitAndStop addLocation(LocationDTO locationDTO) {
+    public LocationResponseDTO addLocation(LocationDTO locationDTO) {
         TransitAndStop transitAndStop = new TransitAndStop();
         transitAndStop.setLocation(verifyLocation(locationDTO));
-        return transitAndStopRepository.save(transitAndStop);
+        return getLocationResponseDTO(transitAndStopRepository.save(transitAndStop));
     }
 
     @Override
@@ -79,8 +74,8 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         location.setTlaCountry(locationDTO.getTlaCountry());
         Optional<TransitAndStop> optionalTransitAndStop = transitAndStopRepository.findDistinctFirstByLocation(location);
         if (optionalTransitAndStop.isPresent()){
-            logger.info("Search: {}", location.toString() );
-            logger.info("Found: {}", optionalTransitAndStop.get().getLocation().toString());
+            log.info("Search: {}", location.toString() );
+            log.info("Found: {}", optionalTransitAndStop.get().getLocation().toString());
             throw new ApiException("TransitAndStop already Exists", ErrorCodes.TRANSIT_AND_STOP_ALREADY_IN_USE.toString(), HttpStatus.CONFLICT);
         }
         return location;
@@ -95,7 +90,7 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
 
     private Long journeyCheck(TransitAndStop transitAndStop){
         if (!transitAndStop.getJourneyStops().isEmpty()){
-            logger.warn("Cannot delete record: \n <{}> \n has journeys", transitAndStop.toString());
+            log.warn("Cannot delete record: \n <{}> \n has journeys", transitAndStop.toString());
             throw new ApiException(ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.getMessage(),
                     ErrorCodes.LOCATION_HAS_BOOKED_JOURNEY.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -113,6 +108,10 @@ public class TransitAndStopServiceServiceImpl implements TransitAndStopService {
         locationResponseDTO.setCity(location.getCity());
         locationResponseDTO.setState(location.getState());
         locationResponseDTO.setCountry(location.getCountry());
+        locationResponseDTO.setTlaAddress(location.getTlaAddress());
+        locationResponseDTO.setTlaCity(location.getTlaCity());
+        locationResponseDTO.setTlaState(location.getTlaState());
+        locationResponseDTO.setTlaCountry(location.getTlaCountry());
         return locationResponseDTO;
     }
 
