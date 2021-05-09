@@ -41,6 +41,9 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.gogroups.gowaka.exception.ErrorCodes.JOURNEY_IS_FINISHED;
+import static net.gogroups.gowaka.exception.ErrorCodes.REFUND_REQUEST_NOT_APPROVED;
+
 /**
  * @author Nnouka Stephen
  * @date 17 Oct 2019
@@ -190,8 +193,11 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
-
-        Journey journey = getJourney(journeyId);
+        Journey journey =  getJourney(journeyId);
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
+            log.info("journey is finished: journeyId: {}", journeyId);
+            throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
@@ -213,8 +219,11 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO) {
-
-        Journey journey = getJourney(journeyId);
+        Journey journey =  getJourney(journeyId);
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
+            log.info("journey is finished: journeyId: {}", journeyId);
+            throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInOfficialAgency(journey);
             journey.setArrivalIndicator(journeyArrivalIndicatorDTO.getArrivalIndicator());
@@ -316,6 +325,10 @@ public class JourneyServiceImpl implements JourneyService {
     @Override
     public void updateSharedJourneyDepartureIndicator(Long journeyId, JourneyDepartureIndicatorDTO journeyDepartureIndicator) {
         Journey journey = getJourney(journeyId);
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
+            log.info("journey is finished: journeyId: {}", journeyId);
+            throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
         if (journeyTerminationFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
             journey.setDepartureIndicator(journeyDepartureIndicator.getDepartureIndicator());
@@ -326,7 +339,11 @@ public class JourneyServiceImpl implements JourneyService {
 
     @Override
     public void updateSharedJourneyArrivalIndicator(Long journeyId, JourneyArrivalIndicatorDTO journeyArrivalIndicator) {
-        Journey journey = getJourney(journeyId);
+        Journey journey =  getJourney(journeyId);
+        if (journey.getIsJourneyFinished() != null && journey.getIsJourneyFinished()) {
+            log.info("journey is finished: journeyId: {}", journeyId);
+            throw new ApiException(JOURNEY_IS_FINISHED.getMessage(), JOURNEY_IS_FINISHED.toString(), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
         log.info("Arrival Indicator: {}", journey.getArrivalIndicator());
         if (journeyDepartureFilter(journey)) {
             checkJourneyCarInPersonalAgency(journey);
@@ -551,6 +568,7 @@ public class JourneyServiceImpl implements JourneyService {
         journey.setAmount(journeyDTO.getDestination().getAmount());
         journey.setDepartureIndicator(false);
         journey.setArrivalIndicator(false);
+        journey.setIsJourneyFinished(false);
         journey.setCreatedAt(TimeProvider.now());
 
         Driver driver = new Driver();
@@ -589,6 +607,7 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        journeyResponseDTO.setIsJourneyFinished(journey.getIsJourneyFinished());
         journeyResponseDTO.setDepartureLocation(getLocationResponseDTO(departureTransitAndStop));
         journeyResponseDTO.setDepartureTime(journeyDTO.getDepartureTime());
         journeyResponseDTO.setDestination(getLocationStopResponseDTO(destinationTransitAndStop,
@@ -712,6 +731,7 @@ public class JourneyServiceImpl implements JourneyService {
         journeyResponseDTO.setArrivalIndicator(journey.getArrivalIndicator());
         journeyResponseDTO.setCar(getCarResponseDTO(journey.getCar()));
         journeyResponseDTO.setDepartureIndicator(journey.getDepartureIndicator());
+        journeyResponseDTO.setIsJourneyFinished(journey.getIsJourneyFinished());
         if (user != null) {
             journeyResponseDTO.setUserBranch(journey.getAgencyBranch().getId().equals(user.getAgencyBranch().getId()));
         }

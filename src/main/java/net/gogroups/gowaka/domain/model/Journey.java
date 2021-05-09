@@ -44,6 +44,8 @@ public class Journey extends BaseEntity{
     @Column(name = "arrival_indicator")
     private Boolean arrivalIndicator;
 
+    @Column(name = "is_journey_finished")
+    private Boolean isJourneyFinished;
     @Column(name = "arrival_time")
     private  LocalDateTime arrivalTime;
 

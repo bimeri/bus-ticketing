@@ -156,6 +156,7 @@ public class JourneyController {
     public ResponseEntity<Void> updateShareJourneyArrivalIndicator(
             @PathVariable("journeyId") Long journeyId,
             @RequestBody @Valid JourneyArrivalIndicatorDTO arrivalIndicatorDTO) {
+
         journeyService.updateSharedJourneyArrivalIndicator(journeyId, arrivalIndicatorDTO);
         return ResponseEntity.noContent().build();
     }

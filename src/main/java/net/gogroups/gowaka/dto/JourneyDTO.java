@@ -34,4 +34,5 @@ public class JourneyDTO {
     private AddStopDTO destination;
 
     private List<AddStopDTO> transitAndStops;
+    private Boolean isJourneyFinished;
 }

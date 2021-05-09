@@ -32,7 +32,8 @@ public enum ErrorCodes {
     INVALID_AMOUNT_LIMIT("Amount must not be more than ticket fee"),
     BRANCH_HAS_JOURNEY("This branch has assigned journeys"),
     BRANCH_HAS_USERS("This branch has assigned users"),
-    REFUND_REQUEST_NOT_APPROVED("Refund request not approved.");
+    REFUND_REQUEST_NOT_APPROVED("Refund request not approved."),
+    JOURNEY_IS_FINISHED("The journey is closed.");
 
     private String message;
 
