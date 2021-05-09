@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -812,8 +813,6 @@ public class JourneyServiceImplTest {
         assertThat(apiException.getMessage(), is("Journey\'s car not in AuthUser\'s Agency"));
     }
 
-    private final static LocalDateTime LOCAL_DATE = LocalDateTime.of(2019, 12, 17,04,44,56);
-
     @Test
     void updateJourneyArrivalIndicator_should_shouldUpDate_and_sendNotificationToPassengers() {
 
@@ -946,6 +945,25 @@ public class JourneyServiceImplTest {
         assertThat(sendEmailDTOArgumentCaptor.getValue().getToAddresses().get(0).getName(), is("no-reply@mygowaka.com"));
         assertThat(sendEmailDTOArgumentCaptor.getValue().getBccAddresses().get(0).getName(), is("passenger@gmail.com"));
         assertThat(sendEmailDTOArgumentCaptor.getValue().getBccAddresses().get(0).getEmail(), is("passenger@gmail.com"));
+    }
+
+    @Test
+    void updateJourneyArrivalIndicator_throwsException_whenJourneyFinished() {
+
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(true);
+        journey.setIsJourneyFinished(Boolean.TRUE);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+
+        JourneyArrivalIndicatorDTO journeyArrivalIndicatorDTO = new JourneyArrivalIndicatorDTO();
+        journeyArrivalIndicatorDTO.setArrivalIndicator(true);
+        ApiException apiException = assertThrows(ApiException.class, () -> journeyService.updateJourneyArrivalIndicator(1L, journeyArrivalIndicatorDTO));
+        assertThat(apiException.getErrorCode(), is("JOURNEY_IS_FINISHED"));
+        assertThat(apiException.getHttpStatus(), is(HttpStatus.UNPROCESSABLE_ENTITY));
+        assertThat(apiException.getMessage(), is("The journey is closed."));
+
     }
 
     @Test
@@ -1167,6 +1185,24 @@ public class JourneyServiceImplTest {
         assertThat(apiException.getMessage(), is("Journey not found"));
     }
 
+    @Test
+    void updateJourneyDepartureIndicator_throwsException_whenJourneyFinished() {
+
+        Journey journey = new Journey();
+        journey.setId(1L);
+        journey.setDepartureIndicator(true);
+        journey.setIsJourneyFinished(Boolean.TRUE);
+
+        when(mockJourneyRepository.findById(anyLong())).thenReturn(Optional.of(journey));
+
+        JourneyDepartureIndicatorDTO journeyDepartureIndicatorDTO = new JourneyDepartureIndicatorDTO();
+        journeyDepartureIndicatorDTO.setDepartureIndicator(true);
+        ApiException apiException = assertThrows(ApiException.class, () -> journeyService.updateJourneyDepartureIndicator(1L, journeyDepartureIndicatorDTO));
+        assertThat(apiException.getErrorCode(), is("JOURNEY_IS_FINISHED"));
+        assertThat(apiException.getHttpStatus(), is(HttpStatus.UNPROCESSABLE_ENTITY));
+        assertThat(apiException.getMessage(), is("The journey is closed."));
+
+    }
 
     /**
      * USERS can change departureIndicator state
